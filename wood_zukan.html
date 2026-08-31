@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>木の図鑑ラボ</title>
+  <style>
+    :root {
+      --main: #6f4e37;
+      --sub: #a67c52;
+      --accent: #d9c3a3;
+      --text: #2f2a24;
+      --ok: #2e7d32;
+      --ng: #c62828;
+      --shadow: 0 8px 24px rgba(0,0,0,0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+      background: linear-gradient(180deg, #f8f5f0, #efe7dc);
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    body {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--main), #8b6b4c);
+      color: white;
+      padding: 8px 12px;
+      box-shadow: var(--shadow);
+    }
+
+    header h1 {
+      margin: 0 0 2px;
+      font-size: clamp(1.1rem, 1.4vw, 1.4rem);
+      line-height: 1.15;
+    }
+
+    header p {
+      margin: 0;
+      line-height: 1.2;
+      font-size: clamp(0.74rem, 0.88vw, 0.86rem);
+    }
+
+    .container {
+      width: min(1280px, 100%);
+      margin: 0 auto;
+      padding: 6px 8px 8px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 6px;
+      min-height: 0;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: auto repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      align-items: stretch;
+    }
+
+    .tab-btn, button, select, input {
+      font: inherit;
+    }
+
+    .tab-btn {
+      border: none;
+      background: #fff;
+      color: var(--main);
+      padding: 8px 6px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      min-height: 38px;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tab-btn.active {
+      background: var(--main);
+      color: #fff;
+    }
+
+    .panel {
+      display: none;
+      background: #fff;
+      border-radius: 14px;
+      padding: 10px;
+      box-shadow: var(--shadow);
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .panel.active {
+      display: grid;
+    }
+
+    .section-title {
+      margin: 0 0 2px;
+      font-size: 1.05rem;
+      color: var(--main);
+      line-height: 1.15;
+    }
+
+    .section-lead {
+      margin: 0;
+      font-size: 0.82rem;
+      line-height: 1.22;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    input[type="text"], select {
+      padding: 7px 9px;
+      border-radius: 9px;
+      border: 1px solid #d8cdbf;
+      background: #fff;
+      min-height: 36px;
+      font-size: 0.88rem;
+    }
+
+    #searchInput {
+      flex: 1 1 180px;
+      min-width: 140px;
+    }
+
+    .view-toggle {
+      display: inline-flex;
+      gap: 3px;
+      background: #f4ede4;
+      padding: 3px;
+      border-radius: 999px;
+      box-shadow: inset 0 0 0 1px #e2d5c2;
+    }
+
+    .toggle-btn {
+      border: none;
+      background: transparent;
+      color: var(--main);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.84rem;
+      cursor: pointer;
+      min-height: 32px;
+      line-height: 1;
+    }
+
+    .toggle-btn.active {
+      background: var(--main);
+      color: #fff;
+    }
+
+    .wood-preview {
+      width: 100%;
+      max-width: 180px;
+      height: 82px;
+      border-radius: 14px;
+      margin-bottom: 4px;
+      border: 1px solid rgba(60, 35, 15, 0.18);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 30%, rgba(255,255,255,0.16), transparent 20%),
+        radial-gradient(circle at 82% 70%, rgba(255,255,255,0.09), transparent 22%),
+        var(--pattern-overlay, linear-gradient(transparent, transparent)),
+        repeating-linear-gradient(
+          var(--grain-angle, 90deg),
+          var(--grain-dark, rgba(90,60,35,0.18)) 0px,
+          var(--grain-mid, rgba(150,110,70,0.08)) 3px,
+          transparent 7px,
+          rgba(255,255,255,0.05) 12px,
+          transparent 17px
+        ),
+        linear-gradient(135deg, var(--tone-1, #c79e6a), var(--tone-2, #d9b583) 45%, var(--tone-3, #b88352));
+    }
+
+    .wood-preview::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--pattern-before, repeating-linear-gradient(calc(var(--grain-angle, 90deg) + 10deg), transparent 0 14px, rgba(70, 40, 20, 0.08) 15px 18px, transparent 19px 30px));
+      mix-blend-mode: multiply;
+      opacity: var(--pattern-opacity, 0.55);
+    }
+
+    .wood-preview .vessel-layer,
+    .wood-preview .ray-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .wood-preview .vessel-layer {
+      opacity: var(--vessel-opacity, 0);
+      background:
+        radial-gradient(circle at 14% 28%, var(--vessel-color, rgba(70,40,20,0.26)) 0 2px, transparent 2.4px),
+        radial-gradient(circle at 28% 62%, var(--vessel-color, rgba(70,40,20,0.26)) 0 2.5px, transparent 3px),
+        radial-gradient(circle at 48% 24%, var(--vessel-color, rgba(70,40,20,0.26)) 0 1.8px, transparent 2.3px),
+        radial-gradient(circle at 63% 48%, var(--vessel-color, rgba(70,40,20,0.26)) 0 2.6px, transparent 3.1px),
+        radial-gradient(circle at 82% 35%, var(--vessel-color, rgba(70,40,20,0.26)) 0 1.9px, transparent 2.5px),
+        radial-gradient(circle at 76% 72%, var(--vessel-color, rgba(70,40,20,0.26)) 0 2.4px, transparent 2.9px),
+        radial-gradient(circle at 36% 78%, var(--vessel-color, rgba(70,40,20,0.26)) 0 1.8px, transparent 2.2px);
+      mix-blend-mode: multiply;
+    }
+
+    .wood-preview .ray-layer {
+      opacity: var(--ray-opacity, 0);
+      background: repeating-linear-gradient(0deg, transparent 0 11px, rgba(255,255,255,0.18) 11px 12px, transparent 12px 24px);
+      mix-blend-mode: screen;
+    }
+
+    .wood-preview::after {
+      content: attr(data-label);
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      background: rgba(255,255,255,0.82);
+      color: #5a3c25;
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 999px;
+    }
+
+    .type-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .type-card {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      justify-content: flex-start;
+    }
+
+    .type-card h3 { font-size: 0.88rem; margin: 0; color: var(--main); }
+    .type-card p  { font-size: 0.82rem; margin: 0; line-height: 1.4; }
+
+    .detail-card,
+    .compare-preview-card,
+    .quiz-box,
+    .wood-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .encyclopedia-main {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,2.2fr);
+      gap: 8px;
+      min-height: 0;
+      align-items: start;
+    }
+
+    /* ── zuho形式モーダル ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal-box {
+      background: #fff;
+      max-width: 680px;
+      width: 92%;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      max-height: 88vh;
+      overflow: auto;
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--text);
+    }
+    .modal-box h2 { margin: 0 0 10px; font-size: 19px; color: var(--main); }
+    .modal-box p  { margin: 6px 0; white-space: pre-wrap; }
+    .modal-box b  { color: var(--main); }
+    .modal-footer { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+    .modal-start-btn {
+      padding: 10px 20px; border: none; border-radius: 7px;
+      background: var(--main); color: #fff; font-weight: 700; cursor: pointer; font-size: 15px;
+    }
+    .modal-start-btn:hover { background: #8b6b4c; }
+    .modal-index-btn {
+      padding: 10px 16px; border: none; border-radius: 7px;
+      background: #888; color: #fff; font-weight: 700; cursor: pointer; font-size: 14px;
+    }
+    .modal-index-btn:hover { background: #555; }
+
+    /* ── encyclopedia 2カラム（左:CG+選択, 右:詳細） ── */
+    .encyclopedia-main {
+      display: grid;
+      grid-template-columns: minmax(200px, 280px) minmax(0, 1fr);
+      gap: 10px;
+      min-height: 0;
+      align-items: start;
+    }
+
+    .wood-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-self: end;
+      margin-top: 4px;
+    }
+
+    .back-to-menu {
+      background: #5c4a35; color: #fff; border: none; border-radius: 8px;
+      padding: 0 14px; font-size: 0.84rem; font-weight: 700; cursor: pointer;
+      flex: 0 0 auto; white-space: nowrap; min-height: 38px;
+    }
+    .back-to-menu:hover { background: var(--main); }
+
+    .wood-list-btn {
+      border: 1px solid #e5d7c3;
+      background: #fff;
+      border-radius: 10px;
+      padding: 6px 8px;
+      text-align: left;
+      cursor: pointer;
+      min-height: 36px;
+      font-size: 0.88rem;
+    }
+
+    .wood-list-btn.active {
+      background: var(--main);
+      color: #fff;
+      border-color: var(--main);
+    }
+
+    .wood-list-btn small {
+      display: block;
+      opacity: 0.86;
+      font-size: 0.7rem;
+      margin-top: 2px;
+    }
+
+    .detail-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 155px;
+      gap: 6px;
+      align-items: start;
+      height: fit-content;
+    }
+
+    .detail-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 8px;
+      align-content: start;
+    }
+
+    .detail-info p {
+      margin: 0;
+      font-size: 0.82rem;
+      line-height: 1.3;
+      display: flex;
+      gap: 4px;
+    }
+
+    .detail-summary {
+      grid-column: 1 / -1;
+      background: #fff;
+      border: 1px solid #eadfce;
+      border-radius: 10px;
+      padding: 5px 8px;
+      margin: 0;
+      font-size: 0.82rem;
+      line-height: 1.3;
+    }
+
+    /* ── クイズ進捗バー ── */
+    .quiz-progress-bar-wrap {
+      width: 100%;
+      height: 7px;
+      background: #e8ddd0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .quiz-progress-bar {
+      height: 100%;
+      background: var(--main);
+      border-radius: 999px;
+      transition: width 0.35s;
+    }
+
+    .quiz-box {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .quiz-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      flex-wrap: wrap;
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--main);
+    }
+
+    .question {
+      font-size: 0.96rem;
+      font-weight: 700;
+      line-height: 1.5;
+      margin: 0;
+      background: #fffaf4;
+      border: 1px solid #e8ddd0;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+
+    .choice-btn {
+      border: 2px solid #e8ddd0;
+      background: #fff;
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: left;
+      min-height: 42px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .choice-btn:hover:not(:disabled) { background: #f5ede3; border-color: var(--sub); }
+    .choice-btn.correct { background: #e6f4ea; border-color: #2e7d32; color: #1b5e20; font-weight: 700; }
+    .choice-btn.wrong   { background: #fdecea; border-color: #c62828; color: #7f0000; font-weight: 700; }
+    .choice-btn:disabled { cursor: default; }
+
+    .action-btn {
+      border: none;
+      background: var(--main);
+      color: #fff;
+      padding: 9px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 700;
+      min-height: 38px;
+    }
+    .action-btn:hover { background: #8b6b4c; }
+
+    .result {
+      padding: 9px 12px;
+      border-radius: 10px;
+      line-height: 1.55;
+      font-size: 0.86rem;
+      display: none;
+    }
+
+    .result.ok  { background: #e9f7ea; color: var(--ok);  border: 1px solid #a5d6a7; display: block; }
+    .result.ng  { background: #fdecec; color: var(--ng);  border: 1px solid #ef9a9a; display: block; }
+    .result.fin { background: #fff8e1; color: #5d4037;    border: 1px solid #ffe082; display: block; }
+
+    .compare-layout {
+      grid-template-rows: auto auto auto 1fr;
+      gap: 6px;
+    }
+
+    .compare-preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .compare-table th, .compare-table td {
+      border: 1px solid #e7dccd;
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .compare-table th {
+      background: #f4ede4;
+      color: var(--main);
+      width: 18%;
+      font-size: 0.82rem;
+    }
+
+    footer {
+      text-align: center;
+      color: #6d6154;
+      font-size: 0.72rem;
+    }
+
+    @media (max-width: 1300px) and (max-height: 700px) {
+      html, body { font-size: 14px; }
+      .container { width: min(1260px, 100%); padding: 4px 6px 6px; gap: 4px; }
+      .tabs { gap: 4px; }
+      .tab-btn { min-height: 32px; padding: 6px 4px; font-size: 0.84rem; }
+      .panel { padding: 8px; border-radius: 12px; }
+      .section-title { font-size: 0.96rem; }
+      .section-lead { font-size: 0.76rem; }
+      .wood-preview { height: 72px; max-width: 170px; }
+      .encyclopedia-main { grid-template-columns: minmax(180px,240px) minmax(0,1fr); gap: 6px; }
+      .detail-card { grid-template-columns: minmax(0, 1fr) 145px; gap: 5px; }
+      .detail-info { gap: 3px 6px; }
+      .compare-preview-grid { gap: 4px; }
+      .compare-table { font-size: 0.76rem; }
+      .compare-table th, .compare-table td { padding: 4px 6px; }
+    }
+
+    @media (max-width: 900px) {
+      html, body {
+        overflow: auto;
+        font-size: 14px;
+      }
+      body {
+        display: block;
+      }
+      .container {
+        display: block;
+      }
+      .panel.active {
+        display: block;
+      }
+      .tabs,
+      .type-demo,
+      .encyclopedia-main,
+      .detail-card,
+      .detail-info,
+      .choices,
+      .compare-preview-grid {
+        grid-template-columns: 1fr;
+      }
+      .panel {
+        overflow: visible;
+      }
+      .wood-preview {
+        height: 110px;
+      }
+    }
+  
+
+    /* ===== Priority A improvements ===== */
+    html, body { font-size: 16px; }
+    header h1 { font-size: clamp(1.25rem, 2vw, 1.6rem); }
+    header p { font-size: clamp(0.95rem, 1.2vw, 1.05rem); }
+    .tab-btn, .back-to-menu { min-height: 48px; font-size: clamp(0.95rem,1.2vw,1.05rem); }
+    .section-title { font-size: clamp(1.2rem,1.6vw,1.4rem); }
+    .section-lead { font-size: clamp(1rem,1.2vw,1.08rem); line-height:1.5; }
+    input[type="text"], select { min-height:48px; font-size:1rem; }
+    .toggle-btn { min-height:44px; font-size:1rem; padding:8px 14px; }
+    .type-card h3 { font-size:1.08rem; }
+    .type-card p, .detail-info p, .detail-summary, .preview-caption, .compare-table { font-size:1rem; line-height:1.55; }
+    .wood-preview { max-width:none; height:120px; }
+    .question { font-size:1.15rem; }
+    .choice-btn { min-height:56px; font-size:1rem; }
+    .action-btn { min-height:48px; font-size:1rem; }
+    .result { font-size:1rem; }
+    .modal-box { font-size:1rem; }
+    .modal-box h2 { font-size:1.35rem; }
+    .modal-start-btn, .modal-index-btn { min-height:48px; font-size:1rem; }
+
+    .progress-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:6px}
+    .progress-step{padding:8px 6px;border:1px solid #c8d0d7;border-radius:8px;background:#eef1f3;color:#68737d;text-align:center;font-weight:800;font-size:.92rem}
+    .progress-step.current{border:2px solid #1565c0;background:#e8f1ff;color:#0d47a1}
+    .progress-step.done{border-color:#72b47a;background:#e7f5e9;color:#1b5e20}
+    .tab-btn.locked{background:#ddd;color:#777;cursor:not-allowed;box-shadow:none}
+    .lock-hint{display:none;position:fixed;left:50%;top:95px;transform:translateX(-50%);z-index:9000;background:#7a3a0a;color:#fff;padding:10px 16px;border-radius:10px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+    .lock-hint.show{display:block}
+    .completion-box{margin-top:10px;padding:10px 12px;border:2px solid #b7d7b9;border-radius:10px;background:#f3f8f2;font-weight:800;font-size:1rem}
+    .completion-box.locked{background:#f4f4f4;border-color:#ccc;color:#777}
+    .checked-wood::after{content:' ✓';color:#2e7d32;font-weight:900}
+    .quiz-review{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+    .quiz-review-item{background:#fff;border:1px solid #e6cfc7;border-left:5px solid var(--ng);border-radius:9px;padding:8px 10px;font-size:.96rem;line-height:1.5}
+    .quiz-review-answer{color:#1b5e20;font-weight:800}
+    .quiz-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    #restartBtn{grid-column:1}
+    #nextBtn{grid-column:2;background:#1565c0}
+    #nextBtn:disabled{background:#c5c9cc;cursor:not-allowed}
+
+    .compare-cards{display:none}
+    .compare-card{border:1px solid #e7dccd;border-radius:10px;padding:10px;background:#fff}
+    .compare-card h4{margin:0 0 6px;color:var(--main);font-size:1rem}
+    .compare-card p{margin:3px 0;font-size:1rem;line-height:1.45}
+
+    button:focus-visible, input:focus-visible, select:focus-visible{outline:3px solid #1565c0;outline-offset:3px}
+
+    @media (max-width: 900px) {
+      html, body { font-size:16px; overflow:auto; }
+      body{display:block}
+      .container{display:block}
+      .tabs{grid-template-columns:1fr 1fr}
+      .back-to-menu{grid-column:1 / -1}
+      .panel{overflow:visible}
+      .panel.active{display:block}
+      .encyclopedia-main,.detail-card,.detail-info,.compare-preview-grid,.choices{grid-template-columns:1fr}
+      .wood-preview{height:150px}
+      .compare-table{display:none}
+      .compare-cards{display:grid;gap:8px}
+    }
+    @media (max-width: 600px) {
+      .tabs{grid-template-columns:1fr 1fr}
+      .controls{display:grid;grid-template-columns:1fr;align-items:stretch}
+      .view-toggle{display:grid;grid-template-columns:1fr 1fr;border-radius:10px}
+      .toggle-btn{border-radius:8px}
+      .wood-preview{height:140px}
+      .quiz-review{grid-template-columns:1fr}
+      .quiz-actions{grid-template-columns:1fr 1fr}
+    }
+
+    /* 今回の画面整理 */
+    .panel{overflow-y:auto;overflow-x:hidden;padding-bottom:22px;scrollbar-gutter:stable}
+    .encyclopedia-layout,.compare-layout{min-height:min-content;padding-bottom:8px}
+    .encyclopedia-heading{display:grid;gap:10px;margin-bottom:10px}
+    .wood-picker-row{display:grid;grid-template-columns:auto minmax(220px,1fr) auto auto;gap:10px;align-items:center;background:#fffaf4;border:2px solid #e5d7c3;border-radius:12px;padding:10px 12px}
+    .wood-picker-label{font-size:1.08rem;font-weight:900;color:var(--main);white-space:nowrap}
+    #woodSelect{font-size:1.08rem;font-weight:800;border:2px solid var(--sub)}
+    #typeFilter{min-width:150px}
+    .encyclopedia-main{grid-template-columns:minmax(260px,340px) minmax(0,1fr);align-items:start}
+    .detail-card{grid-template-columns:minmax(0,1fr) minmax(300px,42%);gap:16px}
+    .detail-card .wood-preview{height:220px;width:100%;max-width:none}
+    .detail-card h3{font-size:1.55rem;margin:.25rem 0 .65rem}
+    .detail-card .badge{font-size:1rem}
+    .compare-preview-card .wood-preview{height:190px;max-width:none}
+    .compare-preview-grid{gap:14px}
+    .completion-box{margin-top:14px;margin-bottom:6px;position:relative;z-index:2;flex:0 0 auto}
+    footer{padding:6px 0 12px}
+    @media(max-width:1000px){
+      .wood-picker-row{grid-template-columns:1fr 1fr}.wood-picker-label{grid-column:1/-1}.view-toggle{width:100%}
+      .encyclopedia-main,.detail-card{grid-template-columns:1fr}
+      .detail-card .wood-preview{height:240px}
+    }
+    @media(max-width:600px){
+      .wood-picker-row{grid-template-columns:1fr}.wood-picker-label{grid-column:auto;white-space:normal}
+      #woodSelect,#typeFilter{width:100%}
+      .detail-card .wood-preview,.compare-preview-card .wood-preview{height:190px}
+      .panel{padding-bottom:30px}
+      .completion-box{font-size:1rem;line-height:1.55}
+    }
+
+    /* 比較モード：木材選択を中央に大きく表示 */
+    .compare-picker{
+      display:grid;
+      grid-template-columns:minmax(260px,360px) auto minmax(260px,360px);
+      justify-content:center;
+      align-items:end;
+      gap:18px;
+      width:100%;
+      margin:10px auto 16px;
+      padding:14px 18px;
+      background:#fffaf4;
+      border:2px solid #e5d7c3;
+      border-radius:14px;
+    }
+    .compare-picker-item{display:flex;flex-direction:column;gap:7px;min-width:0;}
+    .compare-picker-label{font-size:1.18rem;font-weight:900;color:var(--main);text-align:center;}
+    #woodA,#woodB{
+      width:100%;
+      min-height:56px;
+      padding:10px 14px;
+      border:2px solid var(--sub);
+      border-radius:12px;
+      font-size:1.18rem;
+      font-weight:800;
+      text-align:center;
+      text-align-last:center;
+      background:#fff;
+    }
+    .compare-vs{align-self:center;font-size:1.25rem;font-weight:900;color:var(--main);padding-bottom:2px;}
+
+    /* クイズ操作：左に最初から、右に次の問題へ */
+    .quiz-actions{display:grid;grid-template-columns:minmax(150px,1fr) minmax(170px,1fr);gap:14px;align-items:center;}
+    #restartBtn{grid-column:1;background:#8b6b4c;}
+    #nextBtn{grid-column:2;background:#1565c0;}
+
+    @media(max-width:900px){
+      .compare-picker{grid-template-columns:1fr auto 1fr;gap:10px;padding:12px;}
+      #woodA,#woodB{min-height:52px;font-size:1.08rem;}
+    }
+    @media(max-width:600px){
+      .compare-picker{grid-template-columns:1fr;gap:10px;}
+      .compare-vs{padding:0;text-align:center;}
+      #woodA,#woodB{min-height:54px;font-size:1.08rem;}
+      .quiz-actions{grid-template-columns:1fr 1fr;gap:10px;}
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>木の図鑑ラボ</h1>
+      <p>中学生向けに、木材の種類や分類を学べるWebアプリです。図鑑・クイズ・比較の3つの方法で学習できます。</p>
+    </div>
+  </header>
+
+  <!-- ── zuho形式 起動時モーダル ── -->
+  <div id="startupModal" class="modal-overlay">
+    <div class="modal-box">
+      <h2>📖 使い方ガイド</h2>
+      <p>このアプリは、<b>木材の種類</b>について学ぶアプリです。
+
+木材には大別して、年中葉が茂っている<b>針葉樹</b>と、秋に落葉する<b>広葉樹</b>があります。またそれぞれの木も、その性質により用途も異なります。ここでは代表的な木材について学びます。
+
+<b>■ 操作</b>
+・最初に「<b>木材図鑑</b>」で木の種類を選択すると各木材の特徴が表示されます
+・「<b>柾目</b>」「<b>板目</b>」のボタンでその違いが解説されます
+・板の表面の木目がCGで表示されます
+・「<b>比較モード</b>」では、選択した2種類の木を比較します
+・「<b>確認クイズ</b>」では、木材についての10問のクイズで理解度を確認できます</p>
+      <div class="modal-footer">
+        <button class="modal-start-btn" onclick="closeModal()">はじめる</button>
+        <button class="modal-index-btn" onclick="location.href='index.html'">🏠 メニューに戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <div class="tabs">
+      <button class="back-to-menu" type="button" onclick="showMenu()">🏠 メニュー</button>
+      <button class="tab-btn active" data-panel="encyclopedia" type="button">木材図鑑</button>
+      <button class="tab-btn" data-panel="compare" type="button">比較モード</button>
+      <button class="tab-btn" data-panel="quiz" type="button">🎯 確認クイズ</button>
+    </div>
+    <section id="encyclopedia" class="panel active">
+      <div class="encyclopedia-layout">
+        <div class="encyclopedia-heading">
+          <h2 class="section-title">木材図鑑</h2>
+          <p class="section-lead">木材の名前や特徴を見て、一つ詳しく確かめてみましょう。</p>
+          <div class="wood-picker-row">
+            <label class="label wood-picker-label" for="woodSelect">木の種類を選択してください</label>
+            <select id="woodSelect"></select>
+            <select id="typeFilter" aria-label="木材の分類で絞り込む">
+              <option value="すべて">すべての分類</option>
+              <option value="針葉樹">針葉樹</option>
+              <option value="広葉樹">広葉樹</option>
+            </select>
+            <div class="view-toggle" aria-label="木目の見え方を切り替える">
+              <button class="toggle-btn active" id="quarterToggle" type="button">柾目</button>
+              <button class="toggle-btn" id="flatToggle" type="button">板目</button>
+            </div>
+          </div>
+        </div>
+        <div class="encyclopedia-main">
+          <!-- 左カラム：針葉樹/広葉樹CG比較 + 木材選択 -->
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div class="type-demo">
+              <div class="type-card">
+                <div id="softwoodPreview"></div>
+                <h3>針葉樹の見た目</h3>
+                <p>まっすぐで細かい木目が続きやすく、やさしい印象です。</p>
+              </div>
+              <div class="type-card">
+                <div id="hardwoodPreview"></div>
+                <h3>広葉樹の見た目</h3>
+                <p>波打つ木目や導管が見えやすく、重厚な印象です。</p>
+              </div>
+            </div>
+          </div>
+          <!-- 右カラム：選択した木材の詳細 -->
+          <div id="woodDetail" class="detail-card"></div>
+        </div>
+        <div class="completion-box locked" id="encyclopediaCompletion">針葉樹2種類・広葉樹2種類を含む6種類以上を確認し、柾目と板目の両方を見ると完了です。<div id="encyclopediaProgress">確認済み 0 / 8</div></div>
+      </div>
+    </section>
+
+    <section id="quiz" class="panel">
+      <div class="quiz-layout">
+        <div>
+          <h2 class="section-title">確認クイズ</h2>
+          <p class="section-lead">木材の種類・特徴をクイズで確かめましょう。</p>
+        </div>
+        <div class="quiz-box">
+          <div class="quiz-meta">
+            <div id="quizProgress">問題 1 / 10</div>
+            <div id="quizScore">得点 0</div>
+          </div>
+          <div class="quiz-progress-bar-wrap">
+            <div class="quiz-progress-bar" id="quizProgressBar" style="width:10%"></div>
+          </div>
+          <div id="question" class="question"></div>
+          <div id="choices" class="choices"></div>
+          <div id="resultBox" class="result"></div>
+          <div class="quiz-actions">
+            <button id="restartBtn" class="action-btn" type="button">最初から</button>
+            <button id="nextBtn" class="action-btn" type="button">次の問題へ</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="compare" class="panel">
+      <div class="compare-layout">
+        <div>
+          <h2 class="section-title">比較モード</h2>
+          <p class="section-lead">2つの木材を選んで、ちがいを見比べましょう。</p>
+        </div>
+        <div class="compare-picker">
+          <div class="compare-picker-item">
+            <label class="compare-picker-label" for="woodA">木材A</label>
+            <select id="woodA"></select>
+          </div>
+          <div class="compare-vs" aria-hidden="true">VS</div>
+          <div class="compare-picker-item">
+            <label class="compare-picker-label" for="woodB">木材B</label>
+            <select id="woodB"></select>
+          </div>
+        </div>
+        <div class="compare-preview-grid">
+          <div class="compare-preview-card">
+            <div id="comparePreviewA"></div>
+            <p id="comparePreviewTextA" class="preview-caption"></p>
+            <div id="compareVesselLabelA"></div>
+          </div>
+          <div class="compare-preview-card">
+            <div id="comparePreviewB"></div>
+            <p id="comparePreviewTextB" class="preview-caption"></p>
+            <div id="compareVesselLabelB"></div>
+          </div>
+        </div>
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>比べる点</th>
+              <th id="nameA">木材A</th>
+              <th id="nameB">木材B</th>
+            </tr>
+          </thead>
+          <tbody id="compareBody"></tbody>
+        </table>
+        <div class="compare-cards" id="compareCards"></div>
+        <div class="completion-box locked" id="compareCompletion">針葉樹と広葉樹の比較と、同じ分類同士の比較を行うと完了です。</div>
+      </div>
+    </section>
+
+    <footer>木材の分類学習用 試作アプリ（HTML + JavaScriptのみ）</footer>
+  </main>
+
+  <div id="lockHint" class="lock-hint">前の学習を完了してから進んでください。</div>
+  <script>
+    function closeModal(){
+      document.getElementById('startupModal').classList.add('hidden');
+    }
+    function showMenu(){
+      document.getElementById('startupModal').classList.remove('hidden');
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      const learningState = {
+        encyclopediaDone:false, compareDone:false,
+        viewedWoods:new Set(), viewedViews:new Set(['quarter']),
+        comparedCross:false, comparedSame:false, compareViews:new Set(['quarter']),
+        quizMistakes:[]
+      };
+      const encyclopediaViewState = { value: 'quarter' };
+      const compareViewState = { value: 'quarter' };
+      let selectedWoodName = 'スギ';
+
+      const typePreviewStyles = {
+        softwood: {
+          name: '針葉樹', type: '針葉樹',
+          tones: ['#dec08f', '#cfaa74', '#b88753'],
+          grainAngle: '90deg', grainDark: 'rgba(100,68,36,0.18)', grainMid: 'rgba(195,148,93,0.10)',
+          patternOverlay: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%)',
+          patternBefore: 'repeating-linear-gradient(100deg, transparent 0 16px, rgba(70, 40, 20, 0.05) 17px 19px, transparent 20px 32px)',
+          patternOpacity: '0.45', flatGrainAngle: '86deg',
+          flatPatternOverlay: 'radial-gradient(ellipse at 20% 50%, rgba(255,255,255,0.08) 0 18%, transparent 19%), radial-gradient(ellipse at 62% 52%, rgba(255,255,255,0.06) 0 16%, transparent 17%), linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%)',
+          flatPatternBefore: 'repeating-radial-gradient(circle at -10% 50%, transparent 0 18px, rgba(90,50,25,0.08) 19px 22px, transparent 23px 42px)'
+        },
+        hardwood: {
+          name: '広葉樹', type: '広葉樹',
+          tones: ['#c38a58', '#9c623a', '#734024'],
+          grainAngle: '88deg', grainDark: 'rgba(75,42,18,0.28)', grainMid: 'rgba(163,100,52,0.12)',
+          patternOverlay: 'repeating-radial-gradient(circle at 0% 50%, rgba(255,255,255,0.00) 0 10px, rgba(90,55,28,0.10) 11px 14px, rgba(255,255,255,0.00) 15px 28px)',
+          patternBefore: 'repeating-linear-gradient(105deg, transparent 0 12px, rgba(70, 40, 20, 0.10) 13px 18px, transparent 19px 28px)',
+          patternOpacity: '0.7', flatGrainAngle: '83deg',
+          flatPatternOverlay: 'repeating-radial-gradient(ellipse at -10% 50%, rgba(0,0,0,0) 0 14px, rgba(90,55,28,0.12) 15px 18px, rgba(0,0,0,0) 19px 36px)',
+          flatPatternBefore: 'repeating-radial-gradient(circle at 0% 50%, transparent 0 8px, rgba(70,40,20,0.12) 9px 12px, transparent 13px 24px)',
+          vesselOpacity: '0.75', vesselColor: 'rgba(68,38,18,0.30)', rayOpacity: '0.28'
+        }
+      };
+
+      const woods = [
+        { name: 'スギ', type: '針葉樹', hardness: 'やわらかめ', weight: 'とても軽い', grain: 'まっすぐで均一な木目（年輪がはっきり）', smell: '独特の香りがある', use: '柱、板材、内装', feature: '年輪がはっきりし、軽くて乾きやすく加工しやすい', tones: ['#d3a97a','#c7925c','#a8703f'], grainAngle: '90deg', grainDark: 'rgba(120,70,30,0.22)', grainMid: 'rgba(200,150,90,0.12)', patternOverlay: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%)', patternBefore: 'repeating-linear-gradient(100deg, transparent 0 18px, rgba(70,40,20,0.05) 19px 21px, transparent 22px 36px)', patternOpacity: '0.45', flatGrainAngle: '86deg', flatPatternOverlay: 'radial-gradient(ellipse at 20% 50%, rgba(255,255,255,0.08) 0 18%, transparent 19%), radial-gradient(ellipse at 62% 52%, rgba(255,255,255,0.06) 0 16%, transparent 17%), linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%)', flatPatternBefore: 'repeating-radial-gradient(circle at -10% 50%, transparent 0 18px, rgba(90,50,25,0.08) 19px 22px, transparent 23px 42px)' },
+        { name: 'ヒノキ', type: '針葉樹', hardness: 'やややわらかめ', weight: '軽い', grain: '細かく美しい木目（均一）', smell: '強い香りがある', use: '建築、風呂、神社仏閣', feature: '油分を含み耐久性が高く、水にも比較的強い', tones: ['#f0e0b0','#e0c98a','#c9a96b'], grainAngle: '92deg', grainDark: 'rgba(120,90,40,0.18)', grainMid: 'rgba(210,180,120,0.10)', patternOverlay: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%)', patternBefore: 'repeating-linear-gradient(100deg, transparent 0 20px, rgba(70,40,20,0.04) 21px 23px, transparent 24px 38px)', patternOpacity: '0.4', flatGrainAngle: '87deg', flatPatternOverlay: 'radial-gradient(ellipse at 18% 50%, rgba(255,255,255,0.09) 0 17%, transparent 18%), radial-gradient(ellipse at 66% 52%, rgba(255,255,255,0.06) 0 15%, transparent 16%), linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%)', flatPatternBefore: 'repeating-radial-gradient(circle at -10% 50%, transparent 0 20px, rgba(90,50,25,0.06) 21px 23px, transparent 24px 46px)' },
+        { name: 'マツ', type: '針葉樹', hardness: 'ふつう', weight: 'やや軽い', grain: '年輪差が大きくはっきりした木目', smell: 'ややある（樹脂のにおい）', use: '構造材、内装', feature: 'やにを多く含み、強度と粘りがある', tones: ['#e0b27c','#c98c4d','#a86732'], grainAngle: '88deg', grainDark: 'rgba(110,60,20,0.26)', grainMid: 'rgba(210,140,80,0.12)', patternOverlay: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%)', patternBefore: 'repeating-linear-gradient(100deg, transparent 0 14px, rgba(70,40,20,0.08) 15px 18px, transparent 19px 28px)', patternOpacity: '0.55', flatGrainAngle: '84deg', flatPatternOverlay: 'radial-gradient(ellipse at 24% 50%, rgba(255,255,255,0.06) 0 18%, transparent 19%), radial-gradient(ellipse at 72% 50%, rgba(255,255,255,0.04) 0 15%, transparent 16%), linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%)', flatPatternBefore: 'repeating-radial-gradient(circle at -10% 50%, transparent 0 15px, rgba(90,50,25,0.10) 16px 20px, transparent 21px 34px)' },
+        { name: 'ナラ', type: '広葉樹', hardness: 'かたい', weight: '重い', grain: 'はっきりした導管による力強い木目', smell: '少ない', use: '家具、床材、樽', feature: '導管が大きく、重厚で耐久性が高い', tones: ['#b68652','#9c653a','#7a4a2a'], grainAngle: '90deg', grainDark: 'rgba(70,40,20,0.30)', grainMid: 'rgba(150,90,50,0.14)', patternOverlay: 'repeating-radial-gradient(circle at 0% 50%, rgba(0,0,0,0) 0 10px, rgba(90,55,28,0.12) 11px 14px, rgba(0,0,0,0) 15px 28px)', patternBefore: 'repeating-linear-gradient(105deg, transparent 0 12px, rgba(70,40,20,0.12) 13px 18px, transparent 19px 28px)', patternOpacity: '0.7', flatGrainAngle: '83deg', flatPatternOverlay: 'repeating-radial-gradient(ellipse at -10% 50%, rgba(0,0,0,0) 0 14px, rgba(90,55,28,0.12) 15px 18px, rgba(0,0,0,0) 19px 36px)', flatPatternBefore: 'repeating-radial-gradient(circle at 0% 50%, transparent 0 8px, rgba(70,40,20,0.12) 9px 12px, transparent 13px 24px)', vesselOpacity: '0.75', vesselColor: 'rgba(68,38,18,0.30)', rayOpacity: '0.28' },
+        { name: 'ケヤキ', type: '広葉樹', hardness: 'とてもかたい', weight: '重い', grain: '波打つような美しい木目（けやき特有）', smell: '少ない', use: '高級家具、建築', feature: '木目が非常に美しく、日本を代表する高級材', tones: ['#c57c3d','#9c5a2e','#6f3a20'], grainAngle: '88deg', grainDark: 'rgba(70,35,15,0.32)', grainMid: 'rgba(160,90,45,0.16)', patternOverlay: 'repeating-radial-gradient(circle at 0% 55%, rgba(0,0,0,0) 0 9px, rgba(90,55,28,0.14) 10px 13px, rgba(0,0,0,0) 14px 25px)', patternBefore: 'repeating-linear-gradient(106deg, transparent 0 10px, rgba(70,40,20,0.14) 11px 17px, transparent 18px 26px)', patternOpacity: '0.75', flatGrainAngle: '82deg', flatPatternOverlay: 'repeating-radial-gradient(ellipse at -8% 50%, rgba(0,0,0,0) 0 12px, rgba(90,55,28,0.14) 13px 17px, rgba(0,0,0,0) 18px 34px)', flatPatternBefore: 'repeating-radial-gradient(circle at 0% 50%, transparent 0 7px, rgba(70,40,20,0.14) 8px 12px, transparent 13px 22px)', vesselOpacity: '0.7', vesselColor: 'rgba(70,35,15,0.34)', rayOpacity: '0.24' },
+        { name: 'ブナ', type: '広葉樹', hardness: 'かため', weight: 'やや重い', grain: '比較的均一でおとなしい木目', smell: '少ない', use: '家具、曲木製品', feature: '導管が細かく、なめらかな質感', tones: ['#d9bf9c','#c8a47a','#b2845d'], grainAngle: '91deg', grainDark: 'rgba(110,70,40,0.18)', grainMid: 'rgba(180,130,90,0.08)', patternOverlay: 'repeating-radial-gradient(circle at 0% 50%, rgba(0,0,0,0) 0 12px, rgba(90,55,28,0.06) 13px 15px, rgba(0,0,0,0) 16px 30px)', patternBefore: 'repeating-linear-gradient(104deg, transparent 0 14px, rgba(70,40,20,0.07) 15px 18px, transparent 19px 30px)', patternOpacity: '0.55', flatGrainAngle: '84deg', flatPatternOverlay: 'radial-gradient(ellipse at 24% 50%, rgba(255,255,255,0.06) 0 18%, transparent 19%), radial-gradient(ellipse at 72% 50%, rgba(255,255,255,0.04) 0 15%, transparent 16%), linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%)', flatPatternBefore: 'repeating-radial-gradient(circle at -10% 50%, transparent 0 15px, rgba(90,50,25,0.10) 16px 20px, transparent 21px 34px)', vesselOpacity: '0.28', vesselColor: 'rgba(88,60,36,0.18)', rayOpacity: '0.18' },
+        { name: 'サクラ', type: '広葉樹', hardness: 'かため', weight: 'やや重い', grain: '細かくなめらかな木目（やや波状）', smell: '少ない', use: '家具、器具、楽器', feature: '肌目が細かく、上品な仕上がりになる', tones: ['#d89a85','#b76f5c','#8f4c42'], grainAngle: '93deg', grainDark: 'rgba(100,60,50,0.22)', grainMid: 'rgba(190,120,100,0.10)', patternOverlay: 'repeating-radial-gradient(circle at 0% 48%, rgba(0,0,0,0) 0 11px, rgba(100,60,50,0.08) 12px 14px, rgba(0,0,0,0) 15px 27px)', patternBefore: 'repeating-linear-gradient(106deg, transparent 0 13px, rgba(70,40,20,0.08) 14px 17px, transparent 18px 28px)', patternOpacity: '0.6', flatGrainAngle: '84deg', flatPatternOverlay: 'repeating-radial-gradient(ellipse at -10% 50%, rgba(0,0,0,0) 0 12px, rgba(100,60,50,0.08) 13px 16px, rgba(0,0,0,0) 17px 32px)', flatPatternBefore: 'repeating-radial-gradient(circle at 0% 50%, transparent 0 8px, rgba(70,40,20,0.08) 9px 11px, transparent 12px 24px)', vesselOpacity: '0.45', vesselColor: 'rgba(96,56,46,0.24)', rayOpacity: '0.16' },
+        { name: 'キリ', type: '広葉樹', hardness: 'やわらかい', weight: '非常に軽い', grain: '導管が大きく粗い木目', smell: '少ない', use: 'たんす、箱', feature: '軽くて断熱性が高く、湿気に強い', tones: ['#e0d6c8','#cbbcab','#b19c88'], grainAngle: '90deg', grainDark: 'rgba(100,90,70,0.16)', grainMid: 'rgba(200,180,160,0.08)', patternOverlay: 'repeating-radial-gradient(circle at 0% 50%, rgba(0,0,0,0) 0 13px, rgba(90,55,28,0.05) 14px 16px, rgba(0,0,0,0) 17px 32px)', patternBefore: 'repeating-linear-gradient(104deg, transparent 0 15px, rgba(70,40,20,0.05) 16px 18px, transparent 19px 32px)', patternOpacity: '0.5', flatGrainAngle: '84deg', flatPatternOverlay: 'repeating-radial-gradient(ellipse at -10% 50%, rgba(0,0,0,0) 0 13px, rgba(90,55,28,0.06) 14px 17px, rgba(0,0,0,0) 18px 34px)', flatPatternBefore: 'repeating-radial-gradient(circle at 0% 50%, transparent 0 10px, rgba(70,40,20,0.06) 11px 14px, transparent 15px 26px)', vesselOpacity: '0.38', vesselColor: 'rgba(88,74,58,0.22)', rayOpacity: '0.12' }
+      ];
+
+      function woodStyleVars(source, view = 'quarter') {
+        const isFlat = view === 'flat';
+        return [
+          `--tone-1:${source.tones[0]}`,
+          `--tone-2:${source.tones[1]}`,
+          `--tone-3:${source.tones[2]}`,
+          `--grain-angle:${isFlat ? (source.flatGrainAngle || source.grainAngle) : source.grainAngle}`,
+          `--grain-dark:${source.grainDark}`,
+          `--grain-mid:${source.grainMid}`,
+          `--pattern-overlay:${isFlat ? (source.flatPatternOverlay || source.patternOverlay) : source.patternOverlay}`,
+          `--pattern-before:${isFlat ? (source.flatPatternBefore || source.patternBefore) : source.patternBefore}`,
+          `--pattern-opacity:${source.patternOpacity || '0.55'}`,
+          `--vessel-opacity:${source.type === '広葉樹' ? (source.vesselOpacity || '0.4') : '0'}`,
+          `--vessel-color:${source.vesselColor || 'rgba(70,40,20,0.26)'}`,
+          `--ray-opacity:${(!isFlat && source.type === '広葉樹') ? (source.rayOpacity || '0.14') : '0'}`
+        ].join(';');
+      }
+
+      function createPreviewHTML(source, view = 'quarter', label = '木目CG') {
+        return `<div class="wood-preview" data-label="${label}" style="${woodStyleVars(source, view)}" aria-label="${source.name}の${view === 'flat' ? '板目' : '柾目'}をイメージしたCG表示"><div class="vessel-layer"></div><div class="ray-layer"></div></div>`;
+      }
+
+      function vesselNote(source, view) {
+        if (source.type === '広葉樹') {
+          return view === 'flat' ? '導管が帯や点のように見えやすい。' : '導管や放射組織が細かく見えやすい。';
+        }
+        return view === 'flat' ? '年輪が山形や波形に見えやすい。' : 'まっすぐな木目がそろって見えやすい。';
+      }
+
+      function renderTypePreviews() {
+        const softwoodPreview = document.getElementById('softwoodPreview');
+        const hardwoodPreview = document.getElementById('hardwoodPreview');
+        if (softwoodPreview) softwoodPreview.innerHTML = createPreviewHTML(typePreviewStyles.softwood, encyclopediaViewState.value, '針葉樹CG');
+        if (hardwoodPreview) hardwoodPreview.innerHTML = createPreviewHTML(typePreviewStyles.hardwood, encyclopediaViewState.value, '広葉樹CG');
+      }
+
+      const tabs = document.querySelectorAll('.tab-btn');
+      const panels = document.querySelectorAll('.panel');
+      const lockHint=document.getElementById('lockHint');
+      function showLockHint(){ lockHint.classList.add('show'); setTimeout(()=>lockHint.classList.remove('show'),1800); }
+      function updateLearningUI(active='encyclopedia'){
+        tabs.forEach(btn=>{
+          const p=btn.dataset.panel;
+          const locked=(p==='compare'&&!learningState.encyclopediaDone)||(p==='quiz'&&!learningState.compareDone);
+          btn.classList.toggle('locked',locked); btn.disabled=false;
+        });
+        document.querySelectorAll('.progress-step').forEach(el=>{
+          const s=el.dataset.step;
+          const done=(s==='encyclopedia'&&learningState.encyclopediaDone)||(s==='compare'&&learningState.compareDone);
+          el.classList.toggle('done',done); el.classList.toggle('current',s===active);
+        });
+      }
+      function activatePanel(name){
+        tabs.forEach(b=>b.classList.toggle('active',b.dataset.panel===name));
+        panels.forEach(p=>p.classList.toggle('active',p.id===name));
+        updateLearningUI(name);
+      }
+      tabs.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const p=btn.dataset.panel;
+          if((p==='compare'&&!learningState.encyclopediaDone)||(p==='quiz'&&!learningState.compareDone)){ showLockHint(); return; }
+          activatePanel(p);
+        });
+      });
+
+      const searchInput = document.getElementById('searchInput');
+      const typeFilter = document.getElementById('typeFilter');
+      const woodSelect = document.getElementById('woodSelect');
+      const woodDetail = document.getElementById('woodDetail');
+
+      function getFilteredWoods() {
+        const keyword = searchInput ? searchInput.value.trim() : '';
+        const type = typeFilter ? typeFilter.value : 'すべて';
+        return woods.filter(w => {
+          const matchType = type === 'すべて' || w.type === type;
+          const matchText = [w.name, w.type, w.feature, w.use, w.hardness, w.weight, w.grain].join(' ').includes(keyword);
+          return matchType && matchText;
+        });
+      }
+
+      function renderWoodList() {
+        if (!woodSelect || !woodDetail) return;
+        const filtered = getFilteredWoods();
+        if (!filtered.length) {
+          woodSelect.innerHTML = '<option>見つかる木材がありませんでした</option>';
+          woodDetail.innerHTML = '<div class="detail-summary">検索条件を変えてみてください。</div>';
+          return;
+        }
+        if (!filtered.some(w => w.name === selectedWoodName)) {
+          selectedWoodName = filtered[0].name;
+        }
+        woodSelect.innerHTML = filtered.map(w => `<option value="${w.name}" ${w.name === selectedWoodName ? 'selected' : ''}>${w.name}（${w.type}）</option>`).join('');
+      }
+
+      function renderWoodDetail() {
+        if (!woodDetail) return;
+        const currentName = woodSelect && woodSelect.value ? woodSelect.value : selectedWoodName;
+        const wood = woods.find(w => w.name === currentName) || woods[0];
+        selectedWoodName = wood.name;
+        woodDetail.innerHTML = `
+          <div>
+            <div class="badge">${wood.type}</div>
+            <h3>${wood.name}</h3>
+            <div class="detail-info">
+              <p><span class="label">かたさ：</span>${wood.hardness}</p>
+              <p><span class="label">重さ：</span>${wood.weight}</p>
+              <p><span class="label">木目：</span>${wood.grain}</p>
+              <p><span class="label">におい：</span>${wood.smell}</p>
+              <p class="detail-summary"><span class="label">用途：</span>${wood.use}</p>
+              <p class="detail-summary"><span class="label">特ちょう：</span>${wood.feature}</p>
+            </div>
+          </div>
+          <div>
+            ${createPreviewHTML(wood, encyclopediaViewState.value, encyclopediaViewState.value === 'flat' ? '板目CG' : '柾目CG')}
+            <p class="preview-caption">${encyclopediaViewState.value === 'flat' ? '板目' : '柾目'}の見え方：${vesselNote(wood, encyclopediaViewState.value)}</p>
+            ${wood.type === '広葉樹' ? '<div class="vessel-highlight">広葉樹の導管に注目</div>' : ''}
+          </div>
+        `;
+      }
+
+      function updateEncyclopediaProgress(){
+        const names=[...learningState.viewedWoods];
+        const soft=names.filter(n=>(woods.find(w=>w.name===n)||{}).type==='針葉樹').length;
+        const hard=names.filter(n=>(woods.find(w=>w.name===n)||{}).type==='広葉樹').length;
+        const done=names.length>=6 && soft>=2 && hard>=2 && learningState.viewedViews.has('quarter') && learningState.viewedViews.has('flat');
+        learningState.encyclopediaDone=done;
+        const p=document.getElementById('encyclopediaProgress'); if(p) p.textContent=`確認済み ${names.length} / ${woods.length}（針葉樹${soft}・広葉樹${hard}）`;
+        const box=document.getElementById('encyclopediaCompletion'); if(box){box.classList.toggle('locked',!done); if(done) box.innerHTML='✓ 木材図鑑の学習が完了しました。「木材を比較」へ進めます。';}
+        updateLearningUI('encyclopedia');
+      }
+      function renderCards() {
+        renderWoodList();
+        renderWoodDetail();
+        if(woodSelect&&woodSelect.value){ learningState.viewedWoods.add(woodSelect.value); updateEncyclopediaProgress(); }
+      }
+
+      if (searchInput) searchInput.addEventListener('input', renderCards);
+      if (typeFilter) typeFilter.addEventListener('change', renderCards);
+      if (woodSelect) {
+        woodSelect.addEventListener('change', () => {
+          selectedWoodName = woodSelect.value;
+          renderWoodDetail(); learningState.viewedWoods.add(woodSelect.value); updateEncyclopediaProgress();
+        });
+      }
+
+      const quizSet = [
+        { question: 'スギは「針葉樹」と「広葉樹」のどちらでしょう。', choices: ['針葉樹', '広葉樹'], answer: '針葉樹', explanation: 'スギは針葉樹です。軽くて加工しやすいため、建築や工作でもよく使われます。' },
+        { question: '家具や床など、丈夫さが必要なものによく使われる木材はどれでしょう。', choices: ['ナラ', 'スギ', 'キリ', 'ヒノキ'], answer: 'ナラ', explanation: 'ナラは広葉樹で、かたくて重く、丈夫な家具や床材に向いています。' },
+        { question: '「非常に軽くて断熱性が高い」という特ちょうに近い木材はどれでしょう。', choices: ['キリ', 'ケヤキ', 'ナラ', 'マツ'], answer: 'キリ', explanation: 'キリは非常に軽く断熱性が高いため、たんすや箱などに使われます。' },
+        { question: 'ヒノキの特ちょうとして、もっとも合っているものはどれでしょう。', choices: ['香りがよく油分を含む', 'とても重くかたい', '木目がほとんど見えない', '導管が大きい'], answer: '香りがよく油分を含む', explanation: 'ヒノキは香りがよく油分を含み耐久性が高いことで知られています。建築や風呂などにも使われます。' },
+        { question: '次のうち、広葉樹をすべて選んでいるものはどれでしょう。', choices: ['マツ・ヒノキ・スギ', 'ナラ・ケヤキ・ブナ', 'スギ・ナラ・サクラ', 'ヒノキ・サクラ・ケヤキ'], answer: 'ナラ・ケヤキ・ブナ', explanation: 'ナラ・ケヤキ・ブナはすべて広葉樹です。マツ・ヒノキ・スギは針葉樹です。' },
+        { question: '木材の木目として「波打つような美しい木目」が特ちょうなのはどれでしょう。', choices: ['ケヤキ', 'ヒノキ', 'スギ', 'キリ'], answer: 'ケヤキ', explanation: 'ケヤキは波打つような独特の美しい木目が特ちょうで、日本を代表する高級材です。' },
+        { question: 'マツの特ちょうとして正しいのはどれでしょう。', choices: ['やにを多く含み強度と粘りがある', '非常に軽くて断熱性が高い', '導管が細かくなめらかな質感', '木目がほとんど見えない'], answer: 'やにを多く含み強度と粘りがある', explanation: 'マツはやにを多く含み、強度と粘りがあります。構造材や内装に使われます。' },
+        { question: '「肌目が細かく、上品な仕上がりになる」という特ちょうの木材はどれでしょう。', choices: ['サクラ', 'スギ', 'ナラ', 'ブナ'], answer: 'サクラ', explanation: 'サクラは肌目が細かく上品な仕上がりになるため、家具・器具・楽器などに使われます。' },
+        { question: '針葉樹と広葉樹の木目のちがいについて正しいのはどれでしょう。', choices: ['針葉樹はまっすぐな木目が多く、広葉樹は導管が目立ちやすい', '針葉樹は必ず重く、広葉樹は必ず軽い', '針葉樹には木目がなく、広葉樹にだけ木目がある', '針葉樹は秋に落葉し、広葉樹は年中葉が茂る'], answer: '針葉樹はまっすぐな木目が多く、広葉樹は導管が目立ちやすい', explanation: '針葉樹はまっすぐで均一な木目が多く、広葉樹は導管が点や帯状に見えやすいのが特ちょうです。' },
+        { question: '家具・曲木製品によく使われ、「導管が細かくなめらかな質感」の広葉樹はどれでしょう。', choices: ['ブナ', 'スギ', 'マツ', 'ヒノキ'], answer: 'ブナ', explanation: 'ブナは導管が細かくなめらかな質感で、家具や曲木製品に向いた広葉樹です。' }
+      ];
+
+      let quizIndex = 0;
+      let score = 0;
+      let answered = false;
+      const questionEl  = document.getElementById('question');
+      const choicesEl   = document.getElementById('choices');
+      const resultBox   = document.getElementById('resultBox');
+      const quizProgress = document.getElementById('quizProgress');
+      const quizScore   = document.getElementById('quizScore');
+      const quizBarFill = document.getElementById('quizProgressBar');
+
+      function shuffleArr(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+
+      function renderQuiz() {
+        if (!questionEl || !choicesEl || !resultBox || !quizProgress || !quizScore) return;
+        const q = quizSet[quizIndex];
+        answered = false;
+        if(nextBtn) nextBtn.disabled=true;
+        quizProgress.textContent = `問題 ${quizIndex + 1} / ${quizSet.length}`;
+        quizScore.textContent    = `得点 ${score}`;
+        if (quizBarFill) quizBarFill.style.width = `${((quizIndex + 1) / quizSet.length) * 100}%`;
+        questionEl.textContent = q.question;
+        resultBox.className    = 'result';
+        resultBox.style.display = 'none';
+        resultBox.textContent  = '';
+        choicesEl.innerHTML    = '';
+        shuffleArr(q.choices).forEach(choice => {
+          const btn = document.createElement('button');
+          btn.className = 'choice-btn';
+          btn.type = 'button';
+          btn.textContent = choice;
+          btn.addEventListener('click', () => {
+            if (answered) return;
+            answered = true;
+            const correct = choice === q.answer;
+            if (correct) score++; else learningState.quizMistakes.push({q:q.question,user:choice,answer:q.answer,exp:q.explanation});
+            quizScore.textContent = `得点 ${score}`;
+            // 全ボタン無効化＋正解をハイライト
+            choicesEl.querySelectorAll('.choice-btn').forEach(b => {
+              b.disabled = true;
+              if (b.textContent === q.answer) b.classList.add('correct');
+              else if (b === btn && !correct) b.classList.add('wrong');
+            });
+            resultBox.className = `result ${correct ? 'ok' : 'ng'}`;
+            resultBox.style.display = 'block';
+            if(nextBtn) nextBtn.disabled=false; updateLearningUI('quiz');
+            resultBox.innerHTML = `${correct ? '✅ 正解！' : `❌ 不正解。正解は「${q.answer}」`}<br><span style="font-weight:normal">${q.explanation}</span>`;
+          });
+          choicesEl.appendChild(btn);
+        });
+      }
+
+      const nextBtn = document.getElementById('nextBtn');
+      const restartBtn = document.getElementById('restartBtn');
+      if (nextBtn) nextBtn.addEventListener('click', () => {
+        if (quizIndex < quizSet.length - 1) {
+          quizIndex++;
+          renderQuiz();
+        } else {
+          const pct = Math.round(score / quizSet.length * 100);
+          if (quizBarFill) quizBarFill.style.width = '100%';
+          resultBox.className = 'result fin';
+          resultBox.style.display = 'block';
+          const review=learningState.quizMistakes.length?`<div class="quiz-review">${learningState.quizMistakes.map((m,i)=>`<div class="quiz-review-item"><b>問題${i+1}</b><br>${m.q}<br>あなたの回答：${m.user}<br><span class="quiz-review-answer">正解：${m.answer}</span><br>${m.exp}</div>`).join('')}</div>`:'<div class="quiz-review-item" style="border-left-color:var(--ok)">全問正解です。間違えた問題はありません。</div>';
+          resultBox.innerHTML = `🎉 クイズ終了！<br>得点：<b>${score} / ${quizSet.length} 点（${pct}%）</b><br>${
+            pct >= 80 ? '素晴らしい！木材の特ちょうをよく理解できています。'
+            : pct >= 60 ? 'もう少しです。図鑑や比較モードで復習してみましょう。'
+            : '図鑑や比較モードでもう一度確認してから再挑戦しましょう。'}${review}`;
+          choicesEl.innerHTML = ''; if(nextBtn) nextBtn.disabled=true;
+        }
+      });
+      if (restartBtn) restartBtn.addEventListener('click', () => {
+        quizIndex = 0;
+        score = 0; learningState.quizMistakes=[];
+        renderQuiz();
+      });
+
+      const quarterToggle = document.getElementById('quarterToggle');
+      const flatToggle = document.getElementById('flatToggle');
+      const compareQuarterToggle = document.getElementById('compareQuarterToggle');
+      const compareFlatToggle = document.getElementById('compareFlatToggle');
+
+      function syncToggleButtons() {
+        if (quarterToggle) quarterToggle.classList.toggle('active', encyclopediaViewState.value === 'quarter');
+        if (flatToggle) flatToggle.classList.toggle('active', encyclopediaViewState.value === 'flat');
+        if (compareQuarterToggle) compareQuarterToggle.classList.toggle('active', compareViewState.value === 'quarter');
+        if (compareFlatToggle) compareFlatToggle.classList.toggle('active', compareViewState.value === 'flat');
+      }
+
+      if (quarterToggle) quarterToggle.addEventListener('click', () => {
+        encyclopediaViewState.value = 'quarter'; learningState.viewedViews.add('quarter');
+        syncToggleButtons();
+        renderTypePreviews();
+        renderCards();
+      });
+      if (flatToggle) flatToggle.addEventListener('click', () => {
+        encyclopediaViewState.value = 'flat'; learningState.viewedViews.add('flat');
+        syncToggleButtons();
+        renderTypePreviews();
+        renderCards();
+      });
+      if (compareQuarterToggle) compareQuarterToggle.addEventListener('click', () => {
+        compareViewState.value = 'quarter'; learningState.compareViews.add('quarter');
+        syncToggleButtons();
+        renderComparison();
+      });
+      if (compareFlatToggle) compareFlatToggle.addEventListener('click', () => {
+        compareViewState.value = 'flat'; learningState.compareViews.add('flat');
+        syncToggleButtons();
+        renderComparison();
+      });
+
+      const woodA = document.getElementById('woodA');
+      const woodB = document.getElementById('woodB');
+      const compareBody = document.getElementById('compareBody');
+      const nameA = document.getElementById('nameA');
+      const nameB = document.getElementById('nameB');
+      const comparePreviewA = document.getElementById('comparePreviewA');
+      const comparePreviewB = document.getElementById('comparePreviewB');
+      const comparePreviewTextA = document.getElementById('comparePreviewTextA');
+      const comparePreviewTextB = document.getElementById('comparePreviewTextB');
+      const compareVesselLabelA = document.getElementById('compareVesselLabelA');
+      const compareVesselLabelB = document.getElementById('compareVesselLabelB');
+
+      function renderComparison() {
+        if (!woodA || !woodB || !compareBody || !nameA || !nameB || !comparePreviewA || !comparePreviewB || !comparePreviewTextA || !comparePreviewTextB || !compareVesselLabelA || !compareVesselLabelB) return;
+        const a = woods.find(w => w.name === woodA.value) || woods[0];
+        const b = woods.find(w => w.name === woodB.value) || woods[3];
+        nameA.textContent = a.name;
+        nameB.textContent = b.name;
+        comparePreviewA.innerHTML = createPreviewHTML(a, 'quarter', '板表面CG');
+        comparePreviewB.innerHTML = createPreviewHTML(b, 'quarter', '板表面CG');
+        comparePreviewTextA.textContent = `${a.name}の木目・色合いを表した模式CGです。`;
+        comparePreviewTextB.textContent = `${b.name}の木目・色合いを表した模式CGです。`;
+        compareVesselLabelA.innerHTML = a.type === '広葉樹' ? '<div class="vessel-highlight">広葉樹の導管に注目</div>' : '';
+        compareVesselLabelB.innerHTML = b.type === '広葉樹' ? '<div class="vessel-highlight">広葉樹の導管に注目</div>' : '';
+        const items = [
+          ['分類', a.type, b.type],
+          ['かたさ', a.hardness, b.hardness],
+          ['重さの感じ', a.weight, b.weight],
+          ['木目', a.grain, b.grain],
+          ['におい', a.smell, b.smell],
+          ['用途', a.use, b.use],
+          ['特ちょう', a.feature, b.feature]
+        ];
+        compareBody.innerHTML = items.map(([label, av, bv]) => `
+          <tr>
+            <th>${label}</th>
+            <td>${av}</td>
+            <td>${bv}</td>
+          </tr>
+        `).join('');
+        const compareCards=document.getElementById('compareCards');
+        if(compareCards) compareCards.innerHTML=items.map(([label,av,bv])=>`<div class="compare-card"><h4>${label}</h4><p><b>${a.name}：</b>${av}</p><p><b>${b.name}：</b>${bv}</p></div>`).join('');
+        if(a.type===b.type) learningState.comparedSame=true; else learningState.comparedCross=true;
+        const done=learningState.comparedSame&&learningState.comparedCross;
+        learningState.compareDone=done;
+        const cb=document.getElementById('compareCompletion'); if(cb){cb.classList.toggle('locked',!done); if(done) cb.innerHTML='✓ 比較学習が完了しました。「確認クイズ」へ進めます。';}
+        updateLearningUI('compare');
+      }
+
+      function populateCompareSelectors() {
+        if (!woodA || !woodB) return;
+        const options = woods.map(w => `<option value="${w.name}">${w.name}</option>`).join('');
+        woodA.innerHTML = options;
+        woodB.innerHTML = options;
+        woodA.value = 'スギ';
+        woodB.value = 'ナラ';
+        woodA.addEventListener('change', renderComparison);
+        woodB.addEventListener('change', renderComparison);
+      }
+
+      syncToggleButtons();
+      renderTypePreviews();
+      renderCards();
+      renderQuiz();
+      populateCompareSelectors();
+      renderComparison();
+      updateEncyclopediaProgress();
+      updateLearningUI('encyclopedia');
+    });
+  </script>
+</body>
+</html>

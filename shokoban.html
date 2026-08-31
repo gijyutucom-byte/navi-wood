@@ -1,0 +1,2457 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>丸鋸昇降盤の安全な操作 ― 横引きを中心とした教員研修用シミュレータ</title>
+<style>
+  :root{
+    --main:#3d523f; --main-2:#506652; --sub:#4a634d; --accent:#cfe0d1;
+    --bg:#f2f5f2; --panel:#ffffff; --line:#d9e2da; --text:#232823;
+    --normal:#2e7d32; --warning:#ed8b00; --danger:#c62828; --stop:#607d8b;
+    --teach:#4527a0; --teach-2:#5e35b1;
+    --shadow:0 8px 22px rgba(0,0,0,.10); --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%;font-size:17px;font-family:"Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+    background:linear-gradient(180deg,#f4f7f4,#e6ede6);color:var(--text)}
+  /* Header */
+  header{background:linear-gradient(135deg,var(--main),var(--main-2));color:#fff;
+    padding:8px 16px;box-shadow:var(--shadow)}
+  header h1{font-size:clamp(1rem,2vw,1.28rem);font-weight:700;line-height:1.25;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  header .sub{font-size:clamp(.78rem,1.2vw,.92rem);opacity:.85;font-weight:500}
+  .container{width:min(1280px,100%);margin:0 auto;padding:6px 10px;display:flex;flex-direction:column;gap:5px}
+  /* Tabs */
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .tab-btn{border:none;background:#fff;color:var(--main);padding:10px 10px;border-radius:12px;
+    font-weight:700;cursor:pointer;box-shadow:var(--shadow);font-family:inherit;
+    font-size:clamp(.9rem,1.3vw,1.02rem);min-height:44px;transition:.18s;position:relative}
+  .tab-btn.active{background:var(--main);color:#fff}
+  .tab-btn.locked{opacity:.5;cursor:not-allowed}
+  .tab-btn .lock{font-size:.7em;margin-left:2px}
+  .back-to-menu{background:#3a4a3c;color:#fff;border:none;border-radius:10px;padding:0 12px;
+    font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap;min-height:44px;font-family:inherit}
+  .back-to-menu:hover{background:var(--main)}
+  /* Panels */
+  .panel{display:none;background:var(--panel);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+  .panel.active{display:block}
+  .section-title{color:var(--main);font-size:clamp(1.05rem,1.6vw,1.25rem);font-weight:700;display:inline}
+  .section-lead{font-size:clamp(.9rem,1.2vw,1rem);color:#4a5a4c;display:inline;margin-left:.5em}
+  .section-line{margin-bottom:8px;line-height:1.4}
+  .mode-pill{display:inline-block;background:var(--teach);color:#fff;font-size:.7rem;font-weight:700;
+    padding:2px 9px;border-radius:999px;margin-left:6px;vertical-align:middle}
+
+  /* ── Panel 1 parts ── */
+  .diagram-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(230px,1fr);gap:14px;align-items:start}
+  @media(max-width:820px){.diagram-layout{grid-template-columns:1fr}}
+  .cg-wrap{position:relative;background:#eef3ee;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .cg-wrap svg{width:100%;height:auto;display:block}
+  .view-tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+  .view-tab{flex:1;min-width:70px;background:#eef3ee;border:1px solid var(--line);color:var(--main);
+    border-radius:9px;padding:9px 8px;font-weight:700;cursor:pointer;font-size:.95rem;font-family:inherit;min-height:38px}
+  .view-tab.active{background:var(--main);color:#fff;border-color:var(--main)}
+  .part-hot{cursor:pointer}
+  .part-label{cursor:pointer;font-size:12px;font-weight:700;fill:#fff}
+  .part-tag{fill:var(--main);stroke:#fff;stroke-width:1.2;rx:5;cursor:pointer;transition:.15s}
+  .part-tag.done{fill:var(--normal)}
+  .part-tag.active{fill:var(--warning)}
+  .info-card{background:#f7faf7;border:1px solid var(--line);border-radius:12px;padding:12px;min-height:230px}
+  .info-badge{display:inline-block;background:var(--main);color:#fff;border-radius:8px;padding:2px 10px;
+    font-size:.9rem;font-weight:700;margin-bottom:6px}
+  .info-title{font-size:1.24rem;font-weight:800;color:var(--main);margin-bottom:6px}
+  .info-block{margin-bottom:9px;font-size:1rem;line-height:1.6}
+  .info-block .h{font-weight:800;color:var(--sub);display:block;font-size:.92rem;margin-bottom:1px}
+  .info-block.teach{background:#efeafc;border-left:3px solid var(--teach);padding:6px 8px;border-radius:6px}
+  .info-block.teach .h{color:var(--teach)}
+  .info-block.vert{background:#e8f0fb;border-left:3px solid #2f6fd0;padding:7px 9px;border-radius:6px}
+  .info-block.vert .h{color:#1a4a8f}
+  .info-block.confirm{background:#e9f4ea;border-left:3px solid var(--normal);padding:6px 8px;border-radius:6px}
+  .info-block.confirm .h{color:var(--normal)}
+  .info-hint{font-size:.9rem;color:#33413a;background:#eef3ee;border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin-top:8px;line-height:1.5}
+  .adv-toggle{margin-top:8px;font-size:.95rem}
+  .adv-toggle summary{cursor:pointer;font-weight:700;color:var(--teach);padding:4px 0}
+  .completion-box{margin-top:10px;background:#eef3ee;border:1px dashed var(--main);border-radius:10px;padding:9px 11px}
+  .completion-box.locked{opacity:.7}
+  .completion-box label{display:flex;gap:8px;align-items:flex-start;font-size:1rem;font-weight:700;cursor:pointer}
+  .completion-box input{margin-top:2px;width:18px;height:18px}
+  .progress-mini{font-size:.9rem;color:#4a5a4c;font-weight:600;margin-top:2px}
+
+  /* ── Panel 2 safety ── */
+  .safety-stage-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .safety-stage-btn{background:#eef3ee;border:1px solid var(--line);color:var(--main);border-radius:9px;
+    padding:9px 12px;font-weight:700;cursor:pointer;font-size:.95rem;font-family:inherit;min-height:44px}
+  .safety-stage-btn.active{background:var(--main);color:#fff}
+  .safety-card{background:#f7faf7;border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:10px}
+  .safety-card h3{color:var(--main);font-size:1.18rem;margin-bottom:8px}
+  .safety-card ul{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:5px 16px}
+  @media(max-width:640px){.safety-card ul{grid-template-columns:1fr}}
+  .safety-card ul li{position:relative;padding-left:22px;font-size:1rem;line-height:1.6}
+  .safety-card ul li::before{content:"✓";position:absolute;left:0;color:var(--normal);font-weight:800}
+  .safety-card ul.no li::before{content:"✕";color:var(--danger)}
+  .teach-note{background:#efeafc;border-left:4px solid var(--teach);border-radius:8px;padding:10px 13px;
+    font-size:.98rem;line-height:1.6;margin-top:8px}
+  .teach-note b{color:var(--teach)}
+  .voice-chip{display:inline-block;background:#fff;border:1px solid var(--teach);color:var(--teach);
+    border-radius:999px;padding:4px 11px;font-size:.76rem;font-weight:700;margin:3px 4px 0 0}
+  .judge-box{background:#fff8e8;border:1px solid #ffd98a;border-radius:12px;padding:13px 15px;margin-top:6px}
+  .judge-q{font-weight:800;color:#7a5b00;margin-bottom:8px;font-size:1.08rem}
+  .judge-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media(max-width:560px){.judge-choices{grid-template-columns:1fr}}
+  .judge-btn{background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px;font-weight:700;
+    cursor:pointer;font-family:inherit;font-size:.98rem;min-height:52px;text-align:left}
+  .judge-btn:hover:not(:disabled){border-color:var(--main-2);background:#f5f9f5}
+  .judge-btn.correct{background:#e6f4ea;border-color:var(--normal);color:#1b5e20}
+  .judge-btn.wrong{background:#fdecea;border-color:var(--danger);color:#7f0000}
+  .judge-btn:disabled{cursor:default}
+  .judge-feedback{margin-top:8px;font-size:.98rem;font-weight:700;display:none;padding:8px 10px;border-radius:8px}
+  .judge-feedback.ok{display:block;background:#e6f4ea;color:#1b5e20}
+  .judge-feedback.ng{display:block;background:#fdecea;color:#7f0000}
+
+  /* ── Panel 3 simulator ── */
+  .sim-modebar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .sim-mode-btn{background:#eef3ee;border:1px solid var(--line);color:var(--main);border-radius:9px;
+    padding:9px 10px;font-weight:700;cursor:pointer;font-size:.92rem;font-family:inherit;min-height:44px;position:relative}
+  .sim-mode-btn.active{background:var(--sub);color:#fff}
+  .sim-mode-btn.teach.active{background:var(--teach);color:#fff}
+  .sim-mode-btn.locked{opacity:.45;cursor:not-allowed}
+  .next-banner{display:flex;align-items:center;gap:10px;background:#e8f0fb;border:2px solid #2f6fd0;
+    border-radius:11px;padding:8px 12px;margin-bottom:8px}
+  .next-num{width:30px;height:30px;flex:0 0 30px;background:#2f6fd0;color:#fff;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-weight:800}
+  .next-text{font-weight:700;font-size:clamp(1rem,1.3vw,1.15rem);color:#123a70}
+  .sim-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(250px,1fr);gap:12px;align-items:start}
+  @media(max-width:860px){.sim-layout{grid-template-columns:1fr}}
+  .sim-canvas-wrap{position:relative;background:#eef3ee;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .blade-height-panel{display:flex;align-items:center;gap:8px;background:#f7faf7;border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:8px}
+  .blade-height-label{font-size:.9rem;font-weight:700;color:var(--main);white-space:nowrap}
+  .sim-canvas-wrap svg{width:100%;height:auto;display:block}
+  .overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;
+    text-align:center;padding:14px}
+  .overlay.show{display:flex}
+  .danger-overlay{background:rgba(198,40,40,.86);color:#fff}
+  .danger-overlay .big{font-size:clamp(1.3rem,3vw,2rem);font-weight:900;letter-spacing:2px;line-height:1.2}
+  .danger-overlay .why{font-size:clamp(.8rem,1.3vw,1rem);font-weight:700;margin-top:8px;max-width:80%;line-height:1.5}
+  .retry-btn{margin-top:12px;background:#fff;color:var(--danger);border:none;border-radius:10px;
+    padding:9px 18px;font-weight:800;cursor:pointer;font-family:inherit;font-size:.9rem;min-height:44px}
+  .result-overlay{background:rgba(46,125,50,.92);color:#fff}
+  .result-overlay .big{font-size:clamp(1.1rem,2.4vw,1.6rem);font-weight:900}
+  .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 18px;margin-top:8px;font-size:.82rem;text-align:left}
+  .result-advice{margin-top:9px;font-size:.82rem;max-width:82%;line-height:1.5;background:rgba(255,255,255,.16);
+    padding:7px 11px;border-radius:8px}
+  .sim-ctrl{background:#f7faf7;border:1px solid var(--line);border-radius:12px;padding:11px;
+    display:flex;flex-direction:column;gap:8px}
+  .badges{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .badge{background:#eef3ee;border:1px solid var(--line);border-radius:8px;padding:7px 7px;font-size:.9rem;
+    font-weight:700;text-align:center}
+  .badge.on{background:#e6f4ea;border-color:var(--normal);color:#1b5e20}
+  .badge.warn{background:#fdecea;border-color:var(--danger);color:#7f0000}
+  .ctrl-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .ctrl-full{grid-column:1 / -1}
+  .sim-btn{background:#e7ede7;border:1px solid var(--line);color:var(--text);border-radius:9px;padding:9px 8px;
+    font-weight:700;cursor:pointer;font-family:inherit;font-size:.95rem;min-height:44px;transition:.15s}
+  .sim-btn:hover:not(:disabled){background:#dbe6db}
+  .sim-btn:disabled{opacity:.4;cursor:not-allowed}
+  .sim-btn.dark{background:#3a4a3c;color:#fff;border-color:#3a4a3c}
+  .sim-btn.on{background:var(--normal);color:#fff;border-color:var(--normal)}
+  .sim-btn.act{background:#2f6fd0;color:#fff;border-color:#2f6fd0}
+  .sim-btn.reset{background:#fff;color:#66584c;border:2px solid #b0a89b}
+  .sim-btn.trouble{background:#fbe3e3;color:#8a1c1c;border:1px solid #e0a3a3}
+  .sim-btn.next-choice{outline:3px solid #2f6fd0;outline-offset:2px;box-shadow:0 0 10px rgba(47,111,208,.4)}
+  .sim-select{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:.98rem}
+  .sim-label{font-size:.9rem;font-weight:700;color:var(--sub);margin-bottom:3px;display:block}
+  .seg-row{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+  .seg-btn{background:#eef3ee;border:1px solid var(--line);border-radius:8px;padding:7px 4px;font-weight:700;
+    cursor:pointer;font-family:inherit;font-size:.9rem;min-height:40px}
+  .seg-btn.active{background:var(--sub);color:#fff;border-color:var(--sub)}
+  .range-row label{font-size:.9rem;font-weight:700;color:var(--sub);display:flex;justify-content:space-between}
+  .range-row input[type=range]{width:100%}
+  .sim-msg{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:.95rem;line-height:1.55}
+  .sim-step{background:#eef3fb;border:1px solid #bcd4f0;border-radius:8px;padding:8px 11px;font-size:.95rem;line-height:1.55;color:#123a70}
+  .sim-step b{color:#0d47a1}
+  .danger-learn{border:1px solid #e0a3a3;border-radius:9px;padding:7px 9px;background:#fdf5f5}
+  .danger-learn summary{cursor:pointer;font-weight:800;color:var(--danger);font-size:.8rem}
+  .danger-learn .note{font-size:.72rem;color:#7a2a2a;margin:5px 0 6px;line-height:1.45}
+  .compare-note{margin-top:8px}
+  .cmp-table{width:100%;border-collapse:collapse;font-size:.92rem}
+  .cmp-table th,.cmp-table td{border:1px solid var(--line);padding:7px 9px;text-align:left;line-height:1.5}
+  .cmp-table th{background:var(--main);color:#fff;font-weight:700}
+  .cmp-table td:first-child{background:#eef3ee;font-weight:700;color:var(--main);white-space:nowrap}
+  .cmp-lead{margin-top:8px;background:#e8f0fb;border-left:4px solid #2f6fd0;border-radius:8px;padding:9px 12px;font-size:.95rem;line-height:1.6}
+  .teach-panel{background:#efeafc;border:1px solid #c5b6ef;border-radius:9px;padding:8px 10px;font-size:.76rem;line-height:1.5}
+  .teach-panel .h{color:var(--teach);font-weight:800;margin-bottom:3px}
+  .teach-scene-choices{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+  .teach-choice{background:#fff;border:2px solid #c5b6ef;border-radius:9px;padding:8px;font-weight:700;
+    cursor:pointer;font-family:inherit;font-size:.76rem;min-height:44px}
+  .teach-choice:hover:not(:disabled){background:#f3effc}
+  .teach-choice.correct{background:#e6f4ea;border-color:var(--normal);color:#1b5e20}
+  .teach-choice.wrong{background:#fdecea;border-color:var(--danger);color:#7f0000}
+  .teach-choice:disabled{cursor:default}
+
+  /* ── Panel 4 quiz ── */
+  .quiz-wrap{display:flex;flex-direction:column;gap:10px;max-width:760px;margin:0 auto}
+  .quiz-meta{display:flex;justify-content:space-between;font-size:1rem;font-weight:700;color:var(--main)}
+  .quiz-mode-row{display:flex;gap:6px;margin-bottom:2px}
+  .quiz-mode-btn{background:#eef3ee;border:1px solid var(--line);color:var(--main);border-radius:8px;padding:7px 14px;
+    font-weight:700;cursor:pointer;font-size:.95rem;font-family:inherit}
+  .quiz-mode-btn.active{background:var(--main);color:#fff}
+  .qbar-wrap{height:8px;background:#e7ede7;border-radius:999px;overflow:hidden}
+  .qbar{height:100%;background:var(--main);border-radius:999px;transition:width .35s}
+  .quiz-cat{font-size:.9rem;font-weight:700;color:#2f6a34;background:#e6f4ea;display:inline-block;
+    padding:3px 11px;border-radius:999px}
+  .quiz-q{background:#f7faf7;border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-weight:800;
+    font-size:clamp(1.1rem,1.5vw,1.32rem);line-height:1.6}
+  .quiz-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media(max-width:560px){.quiz-choices{grid-template-columns:1fr}}
+  .quiz-choice{background:#fff;border:2px solid var(--line);border-radius:10px;padding:11px 13px;font-weight:700;
+    cursor:pointer;font-family:inherit;font-size:1.02rem;min-height:56px;text-align:left;line-height:1.5}
+  .quiz-choice:hover:not(:disabled){background:#f5f9f5;border-color:var(--main-2)}
+  .quiz-choice.correct{background:#e6f4ea;border-color:var(--normal);color:#1b5e20}
+  .quiz-choice.wrong{background:#fdecea;border-color:var(--danger);color:#7f0000}
+  .quiz-choice:disabled{cursor:default}
+  .quiz-result{padding:12px 15px;border-radius:10px;font-weight:700;font-size:1rem;display:none;line-height:1.6}
+  .quiz-result.ok{display:block;background:#e6f4ea;color:#1b5e20;border:1px solid #a5d6a7}
+  .quiz-result.ng{display:block;background:#fdecea;color:#7f0000;border:1px solid #ef9a9a}
+  .quiz-result.fin{display:block;background:#f3effc;color:#3a2870;border:1px solid #c5b6ef}
+  .quiz-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start}
+  .quiz-action{background:var(--main);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:700;
+    cursor:pointer;font-family:inherit;font-size:.98rem;min-height:46px}
+  .quiz-action.sec{background:#fff;color:#4a5a4c;border:2px solid #b0b8b1}
+  .quiz-action.retry{background:var(--warning);color:#fff;border:2px solid #c17800;
+    display:inline-flex;align-items:center;gap:6px}
+  .quiz-action.retry:hover{background:#c17800}
+  .quiz-cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;margin-top:6px}
+  .quiz-cat-score{background:#f7faf7;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:.95rem;
+    font-weight:700;text-align:center}
+  .quiz-review{display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px}
+  .quiz-review-item{background:#fff5f5;border:1px solid #f0c8c8;border-radius:9px;padding:9px 12px;font-size:.95rem;line-height:1.55}
+  .quiz-review-item b{color:#7f0000}
+  .quiz-review-item .ans{color:#1b5e20;font-weight:800}
+
+  /* Modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;
+    z-index:100;padding:16px}
+  .modal-overlay.hidden{display:none}
+  .modal-box{background:#fff;border-radius:16px;padding:20px 22px;max-width:560px;width:100%;max-height:90vh;overflow:auto;box-shadow:var(--shadow)}
+  .modal-box h2{color:var(--main);margin-bottom:10px;font-size:1.3rem}
+  .modal-box p{white-space:pre-wrap;line-height:1.7;font-size:1rem;color:#333}
+  .modal-box b{color:var(--main)}
+  .modal-footer{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .modal-btn{flex:1;background:var(--main);color:#fff;border:none;border-radius:10px;padding:11px;font-weight:700;
+    cursor:pointer;font-family:inherit;font-size:.9rem;min-height:46px}
+  .modal-btn.sec{background:#fff;color:var(--main);border:2px solid var(--main)}
+
+
+  /* ── シミュレータ2 ─────────────────────────────── */
+  .sim2-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:12px;align-items:start}
+  @media(max-width:820px){.sim2-layout{grid-template-columns:1fr}}
+  .sim2-left{display:flex;flex-direction:column;gap:8px}
+  .sim2-topbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:4px}
+  .s2btn{padding:7px 11px;font-size:.85rem;font-weight:700;cursor:pointer;border-radius:7px;border:none;
+    font-family:inherit;transition:.18s;min-height:36px}
+  .s2btn-off{background:#f44336;color:#fff}
+  .s2btn-on{background:#4caf50;color:#fff;box-shadow:0 0 8px #4caf50}
+  .s2btn-neutral{background:#757575;color:#fff}
+  .s2btn-active{background:#2196f3;color:#fff;box-shadow:0 0 8px #2196f3}
+  .s2btn-reset{background:#ff9800;color:#fff}
+  .s2select{padding:6px 8px;border-radius:7px;border:1px solid var(--line);font-family:inherit;
+    font-size:.85rem;font-weight:700;min-height:36px}
+  .sim2-svg-wrap{display:grid;grid-template-columns:1fr 46px 46px;gap:6px;align-items:center}
+  .sim2-svg-panel{position:relative}
+  .sim2-svg-panel svg{width:100%;max-height:320px;height:auto;border:1px solid #ccc;background:#fafafa;display:block;border-radius:8px}
+  .sim2-feed-col{display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;min-height:240px;justify-content:center}
+  .sim2-feed-label{font-size:.82rem;font-weight:700;color:var(--main);writing-mode:horizontal-tb;white-space:nowrap}
+  .sim2-feed-range{writing-mode:vertical-lr;direction:ltr;height:200px;width:auto;cursor:pointer;transform:rotate(180deg)}
+  .sim2-blade-col{display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;min-height:240px;justify-content:center}
+  .sim2-blade-range{writing-mode:vertical-lr;direction:ltr;height:200px;width:auto;cursor:pointer;transform:rotate(180deg);accent-color:#d32f2f}
+  .s2-status-msg{background:#f7faf7;border:1px solid var(--line);border-radius:8px;padding:9px 12px;
+    font-size:.95rem;line-height:1.5;margin-top:4px}
+  .s2-status-msg.danger{background:#fff0f0;border-color:#d32f2f;color:#b00000;font-weight:700}
+  .s2-danger-overlay{position:absolute;left:20%;top:60%;width:60%;height:28%;display:none;
+    align-items:center;justify-content:center;text-align:center;padding:10px;
+    background:rgba(220,0,0,.93);color:#fff;font-size:clamp(16px,4vw,28px);font-weight:900;
+    line-height:1.3;z-index:20;border:3px solid #900;border-radius:6px}
+  .s2-danger-overlay.show{display:flex}
+  .s2-danger-line{white-space:nowrap}
+  .sim2-right{display:flex;flex-direction:column;gap:10px}
+  .s2-ctrl-section{background:#f7faf7;border:1px solid var(--line);border-radius:9px;padding:9px 11px}
+  .s2-ctrl-label{font-size:.9rem;font-weight:700;color:var(--main);margin-bottom:5px}
+  .s2-power-section{background:#f7faf7;border:1px solid var(--line);border-radius:9px;padding:9px 11px;
+    display:flex;flex-direction:column;gap:7px}
+  .s2-status-small{font-size:.85rem;color:#556060;font-weight:600}
+  .s2-result-bar{background:#e6f4ea;border:2px solid var(--normal);border-radius:12px;
+    padding:14px 16px;margin-top:10px}
+  .s2-result-title{font-size:1.1rem;font-weight:800;color:#1b5e20;margin-bottom:8px}
+  /* CSS アニメーション */
+  @keyframes s2-blade-spin{
+    0%{transform:scaleX(1);filter:blur(.5px)}
+    50%{transform:scaleX(1.5);filter:blur(1.5px);opacity:.8}
+    100%{transform:scaleX(1);filter:blur(.5px)}
+  }
+  .s2-spinning{animation:s2-blade-spin .03s infinite linear;transform-origin:center;fill:#000!important}
+  @keyframes s2-dust-flow{0%{stroke-dashoffset:20}100%{stroke-dashoffset:0}}
+  .s2-dust{fill:none;stroke:#8B4513;stroke-width:4;stroke-dasharray:5,5;display:none}
+  .s2-dust-on{display:block;animation:s2-dust-flow .5s infinite linear}
+  .disclaimer{font-size:.86rem;color:#33413a;text-align:center;padding:10px 14px;line-height:1.6;background:#eef3ee;border-radius:10px;margin-top:4px}
+
+
+/* 横引き開始位置では板・手・定規を刃より下に待機表示するため、SVG下端まで見切れないようにする */
+.sim2-svg-panel{overflow:visible}
+
+
+  /* 完了結果はCG内に重ねて表示し、ページを下へ伸ばさない */
+  .sim2-svg-panel{position:relative}
+  .sim2-svg-panel #s2ResultBar{
+    position:absolute;left:3%;right:3%;bottom:3%;z-index:19;
+    margin:0;padding:10px 12px;max-height:44%;overflow:auto;
+    background:rgba(230,244,234,.96);box-shadow:0 5px 18px rgba(0,0,0,.18);
+  }
+  .sim2-svg-panel #s2ResultBar .s2-result-title{font-size:1rem;margin-bottom:4px}
+  .sim2-svg-panel #s2ResultBar .result-grid{font-size:.78rem;gap:2px 12px}
+  .sim2-svg-panel #s2ResultBar .result-advice{font-size:.78rem;margin-top:5px;padding:5px 8px}
+  .sim2-svg-panel #s2ResultReset{margin-top:5px!important;padding:6px 12px!important;min-height:34px}
+  .s2-power-pair{display:grid;grid-template-columns:1fr 1fr;gap:7px;flex:1}
+  .s2-power-pair .s2btn{width:100%}
+
+  /* GIGA端末(1366×768)・iPad(1024×768)対応 */
+  @media(max-height:820px){
+    .container{gap:4px;padding:4px 8px}
+    .tabs{margin-bottom:4px}
+    .tab-btn{padding:5px 4px}
+    .section-line{margin-bottom:4px}
+    .sim2-feed-range,.sim2-blade-range{height:170px}
+    .sim2-feed-col,.sim2-blade-col{min-height:200px}
+    .sim2-svg-panel svg{max-height:290px}
+    .s2-result-bar{padding:8px 12px;margin-top:6px}
+    .s2-result-title{font-size:1rem;margin-bottom:4px}
+    .sim-step{padding:5px 8px;font-size:.85rem}
+    .next-banner{padding:6px 10px;margin-bottom:6px}
+    .s2-ctrl-section{padding:7px 9px}
+    .s2-power-section{padding:7px 9px}
+    .badges{gap:4px}
+    .badge{padding:5px 6px;font-size:.82rem}
+  }
+  @media(max-height:720px){
+    .sim2-svg-panel svg{max-height:250px}
+    .sim2-feed-range,.sim2-blade-range{height:145px}
+    .sim2-feed-col,.sim2-blade-col{min-height:175px}
+    .s2btn{padding:5px 8px;min-height:32px;font-size:.8rem}
+    .sim2-topbar{gap:5px}
+    .s2select{min-height:32px;font-size:.8rem}
+    .next-banner{padding:4px 9px}
+  }
+  /* GIGA / short-height compaction */
+  @media(max-height:820px){
+    .info-card{min-height:auto}
+    .sim-btn{min-height:34px;padding:6px 5px}
+    .badge{padding:4px 5px}
+  }
+
+  /* 2026-08 改修：自動鉋盤アプリとの統一 */
+  .guide-check{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:11px 12px;background:#eef3ee;border:1px solid var(--line);border-radius:10px;font-size:1rem;font-weight:700;line-height:1.55}
+  .guide-check input{width:20px;height:20px;margin-top:2px;flex:0 0 auto}
+  .modal-btn:disabled{opacity:.45;cursor:not-allowed}
+  .part-tag.selected{fill:var(--warning)!important;stroke:#7a4b00!important;stroke-width:2.5!important}
+  .part-tag.done{fill:var(--normal)!important}
+  .parts-status{margin-top:8px;padding:8px 10px;border-radius:9px;background:#eef3ee;border:1px solid var(--line);font-size:.95rem;font-weight:700;color:var(--main)}
+
+  /* 加工シミュレータ：GIGA端末で収める */
+  .sim2-layout{grid-template-columns:minmax(0,.88fr) minmax(520px,1.25fr);gap:10px;align-items:start}
+  .sim2-left{min-width:0;gap:5px}
+  .sim2-topbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-bottom:2px}
+  .sim2-topbar .s2btn,.sim2-topbar .s2select{width:100%;min-width:0;font-size:.78rem;min-height:34px;padding:5px 6px}
+  .sim2-svg-wrap{grid-template-columns:minmax(0,1fr) 38px 38px;gap:4px}
+  .sim2-svg-panel svg{max-height:350px;width:100%;margin:auto}
+  .sim2-feed-col,.sim2-blade-col{min-height:235px}
+  .sim2-feed-range,.sim2-blade-range{height:195px}
+  .sim2-right{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;align-content:start}
+  .sim2-right>.s2-ctrl-section:first-child{grid-column:1/-1}
+  .sim2-right>.badges{grid-column:1/2;grid-template-columns:1fr;align-self:stretch}
+  .sim2-right>.s2-power-section{grid-column:2/3;align-self:stretch}
+  .sim2-right>.sim-step,.sim2-right>.danger-learn{grid-column:1/-1}
+  .s2-ctrl-section,.s2-power-section{padding:7px 8px}
+  .s2-ctrl-label{font-size:.8rem;margin-bottom:3px}
+  .sim2-right .sim-select{font-size:.82rem;padding:6px;min-height:34px}
+  .sim2-right .badge{font-size:.78rem;padding:5px}
+  .sim2-right .s2btn{font-size:.78rem;min-height:34px;padding:5px 7px}
+  .sim2-right .sim-step{font-size:.82rem;padding:6px 8px;line-height:1.4}
+  .s2-status-msg{font-size:.82rem;padding:6px 8px;line-height:1.35}
+  .next-banner{padding:5px 9px;margin-bottom:5px}
+  .next-num{width:26px;height:26px;flex-basis:26px}
+  .next-text{font-size:.95rem}
+
+  @media(max-width:960px){
+    .sim2-layout{grid-template-columns:1fr}
+    .sim2-right{grid-template-columns:1fr 1fr}
+    .sim2-svg-panel svg{max-height:420px}
+  }
+  @media(max-width:640px){
+    .sim2-topbar,.sim2-right{grid-template-columns:1fr}
+    .sim2-right>*{grid-column:1!important}
+    .sim2-svg-wrap{grid-template-columns:1fr}
+    .sim2-blade-col,.sim2-feed-col{min-height:auto;display:grid;grid-template-columns:auto 1fr auto;height:auto}
+    .sim2-feed-range,.sim2-blade-range{writing-mode:horizontal-tb;direction:ltr;transform:none;width:100%;height:auto}
+  }
+  @media(min-width:961px) and (max-height:820px){
+    #panel-sim{padding:9px 11px;overflow:hidden}
+    #panel-sim .section-line{margin-bottom:3px}
+    #panel-sim .sim-modebar{margin-bottom:4px}
+    .sim2-svg-panel svg{max-height:315px}
+    .sim2-feed-col,.sim2-blade-col{min-height:205px}
+    .sim2-feed-range,.sim2-blade-range{height:165px}
+    .s2-result-bar{max-height:150px;overflow:auto}
+  }
+
+
+  /* 2026-08-01: 加工シミュレータをデスクトップでは必ず左右2カラムに固定 */
+  @media(min-width:901px){
+    #panel-sim .sim2-layout{display:grid!important;grid-template-columns:minmax(0,0.92fr) minmax(500px,1.18fr)!important;gap:10px!important;align-items:start!important}
+    #panel-sim .sim2-left{grid-column:1!important;min-width:0!important}
+    #panel-sim .sim2-right{grid-column:2!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;min-width:0!important}
+    #panel-sim .sim2-svg-panel svg{max-height:310px!important}
+    #panel-sim .sim2-feed-col,#panel-sim .sim2-blade-col{min-height:205px!important}
+    #panel-sim .sim2-feed-range,#panel-sim .sim2-blade-range{height:165px!important}
+  }
+  @media(max-width:900px){
+    #panel-sim .sim2-layout{grid-template-columns:1fr!important}
+  }
+
+
+/* 2026-08-01 requested simulator refinements */
+#panel-sim .sim2-layout{display:grid!important;grid-template-columns:minmax(0,58%) minmax(390px,42%)!important;gap:12px!important;align-items:start!important}
+#panel-sim .sim2-left{grid-column:1!important;min-width:0!important}
+#panel-sim .sim2-right{grid-column:2!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;align-content:start!important;min-width:0!important}
+#panel-sim .sim2-right>.s2-safety-buttons{grid-column:1/-1!important}
+#panel-sim .sim2-right>.s2-ctrl-section:not(.s2-safety-buttons){grid-column:1/-1!important}
+#panel-sim .sim2-right>.s2-power-section{grid-column:1/-1!important}
+#panel-sim .sim2-right>.sim-step,#panel-sim .sim2-right>.danger-learn{grid-column:1/-1!important}
+.s2-safety-btn-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.s2-safety-btn-grid .s2btn{width:100%;min-height:38px;font-size:.78rem;padding:5px 6px}
+.sim2-top-status{grid-column:1/-1!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+.sim2-top-status .badge{font-size:.76rem;padding:5px 4px}
+.sim2-topbar{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.sim2-svg-panel svg{max-height:390px!important}
+@media(min-width:760px){#panel-sim .sim2-layout{grid-template-columns:minmax(0,58%) minmax(390px,42%)!important}}
+@media(max-width:759px){#panel-sim .sim2-layout{grid-template-columns:1fr!important}.s2-safety-btn-grid{grid-template-columns:1fr}.sim2-top-status{grid-template-columns:1fr!important}}
+</style>
+
+<style id="final-sim-adjustments">
+@keyframes s2-blade-dash{to{stroke-dashoffset:-22}}
+#s2BladeMotion.s2-motion-on{display:block!important;animation:s2-blade-dash .11s linear infinite}
+#panel-sim .section-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#panel-sim .section-line .s2-status-msg{display:inline-block;margin:0;padding:4px 10px;border-radius:7px;background:#f7faf7;border:1px solid var(--line);font-size:.94rem;line-height:1.35;color:#425047}
+#panel-sim .section-line .s2-status-msg.danger{background:#fff0f0;border-color:#d32f2f;color:#b00000;font-weight:700}
+#panel-sim .sim2-svg-panel svg{max-height:430px!important}
+@media(max-height:820px) and (min-width:760px){#panel-sim .sim2-svg-panel svg{max-height:360px!important}}
+@media(max-height:720px) and (min-width:760px){#panel-sim .sim2-svg-panel svg{max-height:325px!important}}
+</style>
+</head>
+<body>
+<header>
+<h1>🪚 丸鋸昇降盤の安全な操作</h1>
+<div class="sub">― 技術科教員のための安全操作学習アプリ ―</div>
+</header>
+<!-- Startup modal -->
+<div class="modal-overlay" id="startupModal">
+<div class="modal-box">
+<h2>📖 教員向け使い方ガイド</h2>
+<p>このアプリは，丸鋸昇降盤を操作する<b>技術科教員・教員を目指す学生</b>のための学習教材です。実機の操作研修を代替するものではありません。
+
+<b>■ 学習の流れ</b>
+① 各部の名称と役割を確認します。
+② 使用前点検と安全な操作を確認します。
+③ 加工シミュレータで横引きを中心に操作手順を体験します。
+④ 最後に確認クイズへ取り組みます。
+
+</p>
+<label class="guide-check"><input id="guideAgree" type="checkbox"/> 本アプリが教員向けの事前学習教材であり，実機研修の代わりではないことを確認しました。</label>
+<div class="modal-footer">
+<button class="modal-btn" disabled="" id="guideStartBtn">研修をはじめる</button>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="tabs">
+<button class="tab-btn active" data-panel="panel-parts">各部の名称</button>
+<button class="tab-btn" data-panel="panel-safety">安全な使い方</button>
+<button class="tab-btn" data-panel="panel-sim">加工シミュレータ</button>
+<button class="tab-btn" data-panel="panel-quiz">確認クイズ</button>
+</div>
+<!-- ============ PANEL 1: 各部の名称 ============ -->
+<div class="panel active" id="panel-parts">
+<div class="section-line">
+<span class="section-title">各部の名称と役割を確認しよう</span>
+<span class="section-lead">ラベルをタップすると，機能・役割・加工前の確認・縦引きでの扱いが表示されます。</span>
+<span class="mode-pill">横引き優先表示</span>
+</div>
+<div class="view-tabs">
+<button class="view-tab active" data-view="top">上面図（定規・材料送り）</button>
+<button class="view-tab" data-view="front">正面図（刃の高さ・カバー）</button>
+</div>
+<div class="parts-status" id="partsStatus">未確認の名称を順番に選択してください。</div>
+<div class="diagram-layout">
+<div class="cg-wrap" id="partsCgWrap">
+<svg id="partsSvg" viewbox="0 0 640 460" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<div>
+<div class="info-card">
+<div class="info-badge" id="pBadge">‥</div>
+<div class="info-title" id="pTitle">部品を選んでください</div>
+<div id="pBody">
+<div class="info-block">丸鋸昇降盤の各部について，機能・横引きでの役割・加工前の確認・縦引きでの扱いを表示します。</div>
+</div>
+<div class="info-hint">※機種によって部品の形や位置，操作方法が異なる場合があります。</div>
+</div>
+<details class="adv-toggle">
+<summary>▸ 発展部品を表示（縦引き定規・傾斜・枘取りなど）</summary>
+<div style="font-size:.76rem;color:#4a5a4c;padding:6px 2px;line-height:1.5">
+            上のCGに，比較・発展として扱う部品（縦引き定規・テーブル傾斜ハンドル・枘取り定規など）のラベルが追加されます。横引きの理解を終えてから確認しましょう。
+          </div>
+</details>
+<div class="completion-box locked" id="partsCompletion">
+<label>
+<input disabled="" id="partsConfirm" type="checkbox"/>
+<span>横引きの必須部品を確認し，加工前に確認すべき点を理解した。
+              <span class="progress-mini" id="partsProgress">確認済み 0 / 12</span>
+</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- ============ PANEL 2: 安全な使い方 ============ -->
+<div class="panel" id="panel-safety">
+<div class="section-line">
+<span class="section-title">安全な使い方</span>
+<span class="section-lead">加工環境・服装・点検・横引き／縦引きの操作・終了時の対応を学びます。</span>
+</div>
+<div class="safety-stage-nav" id="safetyNav">
+<button class="safety-stage-btn active" data-stage="0">① 実習環境</button>
+<button class="safety-stage-btn" data-stage="1">② 服装・保護具</button>
+<button class="safety-stage-btn" data-stage="2">③ 機械・材料点検</button>
+<button class="safety-stage-btn" data-stage="3">④ 加工中の注意</button>
+<button class="safety-stage-btn" data-stage="4">⑤ 終了・異常時</button>
+</div>
+<div id="safetyContent"></div>
+<div class="judge-box" style="margin-top:12px">
+<div class="judge-q" id="judgeQ">左のタブでステージを選択すると確認問題が表示されます。</div>
+<div class="judge-choices" id="judgeChoices"></div>
+<div class="judge-feedback" id="judgeFb"></div>
+<div style="text-align:right;margin-top:8px">
+<button class="quiz-action retry" id="safetyJudgeRetry" onclick="(function(){
+            document.querySelectorAll('#judgeChoices .judge-btn').forEach(function(x){
+              if(!x.classList.contains('wrong')) x.disabled=false;
+            });
+            document.getElementById('judgeFb').className='judge-feedback';
+            document.getElementById('judgeFb').textContent='';
+            document.getElementById('safetyJudgeRetry').style.cssText='display:none!important';
+          })()" style="display:none">↺ もう一度回答する</button>
+</div>
+</div>
+<div class="completion-box locked" id="safetyCompletion" style="margin-top:10px">
+<label>
+<input disabled="" id="safetyConfirm" type="checkbox"/>
+<span>全5ステージの確認問題に正しく答え，安全事項を理解した。
+          <span class="progress-mini" id="safetyProgress">確認問題 0 / 5</span>
+</span>
+</label>
+</div>
+</div>
+<!-- ============ PANEL 3: 加工シミュレータ ============ -->
+<div class="panel" id="panel-sim">
+<div class="section-line">
+<span class="section-title">加工シミュレータ</span>
+<span class="s2-status-msg" id="s2StatusMsg" style="display:none"></span>
+</div>
+<!-- モード選択 -->
+<div class="sim-modebar" id="simModebar">
+<button class="sim-mode-btn active" data-mode="A">A 横引き操作</button>
+<button class="sim-mode-btn" data-mode="B">B 縦引き操作</button>
+<button class="sim-mode-btn locked" data-mode="E">E 危険を確認する実験 🔒</button>
+</div>
+<!-- 次の操作バナー -->
+<div class="next-banner" id="nextBanner">
+<span class="next-num" id="nextNum">1</span>
+<span class="next-text" id="nextText">安全カバーを確認してください</span>
+</div>
+<!-- メインレイアウト: 左=SVG, 右=操作パネル -->
+<div class="sim2-layout">
+<!-- 左: SVGシミュレータ本体 -->
+<div class="sim2-left">
+<!-- 上部ボタン群 -->
+<div class="sim2-topbar"><div class="badges sim2-top-status">
+<div class="badge" id="bGogglesS2">🥽 眼鏡：未</div>
+<div class="badge" id="bGuardS2">🛡 カバー：OFF</div>
+<div class="badge" id="bVacuumS2">🌀 集塵：OFF</div>
+</div>
+
+
+
+<select class="s2select" id="s2FenceType">
+<option value="cross">横引き定規</option>
+<option value="long">縦引き定規</option>
+</select>
+<select class="s2select" id="s2JigSelect">
+<option value="none">ジグ: なし（手で押さえ）</option>
+<option value="jig">位置決め治具</option>
+<option value="both">位置決め治具＋押し棒</option>
+</select>
+</div>
+<!-- SVG + 刃昇降スライダー + 板送りスライダー（右に並べる） -->
+<div class="sim2-svg-wrap">
+<div class="sim2-svg-panel">
+<svg height="500" id="s2Svg" viewbox="0 0 500 520" width="500">
+<!-- 本体ベース -->
+<rect fill="#4a634d" height="110" stroke="#3d523f" width="210" x="145" y="365"></rect>
+<!-- テーブル面 -->
+<rect fill="#7a8a7c" height="325" stroke="#3d523f" width="400" x="50" y="40"></rect>
+<!-- テーブル溝（装飾） -->
+<g stroke="#5a6a5d" stroke-width="1">
+<path d="M 60 40 V 365 M 90 40 V 365 M 120 40 V 365 M 150 40 V 365 M 180 40 V 365 M 210 40 V 365 M 290 40 V 365 M 320 40 V 365 M 350 40 V 365 M 380 40 V 365 M 410 40 V 365 M 440 40 V 365"></path>
+</g>
+<!-- 丸鋸収納部（円形部） -->
+<rect fill="#bcbcbc" height="155" rx="25" stroke="#999" width="50" x="225" y="135"></rect>
+<!-- 刃（高さ連動） -->
+<rect fill="#111111" height="0" id="s2Blade" rx="2" width="8" x="246" y="230"></rect>
+<line id="s2BladeMotion" x1="250" x2="250" y1="230" y2="230" stroke="#f5f5f5" stroke-width="3" stroke-dasharray="6 5" style="display:none"></line>
+<!-- 昇降ハンドル -->
+<g id="s2Handle" transform="translate(225 425) rotate(0)">
+<circle cx="0" cy="0" fill="none" r="32" stroke="#222" stroke-width="6"></circle>
+<circle cx="0" cy="0" fill="#bcbcbc" r="9" stroke="#222" stroke-width="2"></circle>
+<line stroke="#333" stroke-linecap="round" stroke-width="5" x1="0" x2="0" y1="0" y2="-32"></line>
+<line stroke="#333" stroke-linecap="round" stroke-width="5" x1="0" x2="28" y1="0" y2="16"></line>
+<line stroke="#333" stroke-linecap="round" stroke-width="5" x1="0" x2="-28" y1="0" y2="16"></line>
+<circle cx="0" cy="-38" fill="#111" r="7"></circle>
+</g>
+<!-- 横引き定規グループ
+                   構成: cross-guide = 刃位置に立てた縦のストッパー（右端が刃に接する）
+                         cross-rail  = テーブル左端〜刃まで渡る横バー（材料を当てて送る面）
+                   材料は横バー上に乗り、横バーの端（左端）から刃に向かって送り込まれる -->
+<g id="s2CrossFence" opacity="1">
+  <!-- 写真に近い横引き定規：半月形の角度調整部を180度回転し、横長の木製ガイド板を備える -->
+  <g id="s2CrossGuide">
+    <!-- ガイド板直下の半月形角度調整部 -->
+    <path d="M 82 455 A 42 42 0 0 0 166 455 L 152 455 A 28 28 0 0 1 96 455 Z" fill="#5f8f67" stroke="#31563a" stroke-width="3"></path>
+    <path d="M 91 458 A 33 33 0 0 0 157 458" fill="none" stroke="#dce9de" stroke-dasharray="3 4" stroke-width="2"></path>
+    <circle cx="124" cy="479" fill="#111" r="8" stroke="#333"></circle>
+    <rect fill="#333" height="23" rx="5" width="18" x="115" y="437"></rect>
+  </g>
+  <g id="s2CrossRail">
+    <!-- 刃に当たらない長さの横引きガイド板 -->
+    <rect fill="#d6a35a" height="22" rx="3" stroke="#8a5a25" stroke-width="2" width="145" x="75" y="433"></rect>
+    <rect fill="#777" height="8" rx="2" stroke="#333" width="145" x="75" y="455"></rect>
+    <circle cx="104" cy="444" fill="#eee" r="4" stroke="#777"></circle>
+    <circle cx="190" cy="444" fill="#eee" r="4" stroke="#777"></circle>
+  </g>
+</g>
+<!-- 縦引き定規グループ
+                   縦引き定規は刃の左側に平行に立つ縦棒。材料は定規の右面に当てて送る。 -->
+<g id="s2LongFence" opacity="0" transform="translate(0, 0)">
+<!-- 定規本体（縦棒）: 刃(x=250)の左側に配置 -->
+<rect fill="#b0b0b0" height="300" stroke="#333" width="20" x="80" y="60"></rect>
+<!-- 定規台座（クランプ） -->
+<rect fill="#4a634d" height="40" rx="3" stroke="#000" stroke-width="2" width="80" x="50" y="340"></rect>
+<rect fill="#333" height="40" rx="5" width="10" x="85" y="380"></rect>
+<circle cx="90" cy="420" fill="#111" r="8"></circle>
+</g>
+<!-- 材料グループ -->
+<g id="s2Wood">
+<rect fill="#d6a35a" height="160" id="s2Board" rx="2" stroke="#8a5a25" stroke-width="2" width="40" x="95" y="205"></rect>
+<g id="s2WoodSplit" opacity="0">
+<rect fill="#d6a35a" height="160" id="s2WoodL" rx="2" stroke="#8a5a25" stroke-width="2" width="20" x="95" y="205"></rect>
+<rect fill="#d6a35a" height="160" id="s2WoodR" rx="2" stroke="#8a5a25" stroke-width="2" width="20" x="120" y="205"></rect>
+</g>
+<rect fill="#fafafa" height="0" id="s2CutSlot" opacity="0" width="6" x="102" y="205"></rect>
+<line id="s2CutLine" opacity="0" stroke="#8a3f1c" stroke-dasharray="4,3" stroke-width="2" x1="105" x2="105" y1="205" y2="205"></line>
+<!-- 手 -->
+<g id="s2Hands">
+<g id="s2LeftHand" transform="translate(-10, 80)">
+<path d="M 65 240 C 60 240, 55 245, 55 250 L 55 290 Q 55 295, 60 295 L 80 295 Q 85 295, 85 290 L 85 250 C 85 245, 80 240, 75 240 Z" fill="#f3d5b5" stroke="#d4a373"></path>
+<rect fill="#f3d5b5" height="25" rx="3" stroke="#d4a373" width="6" x="62" y="225"></rect>
+<rect fill="#f3d5b5" height="30" rx="3" stroke="#d4a373" width="6" x="70" y="220"></rect>
+<rect fill="#f3d5b5" height="22" rx="3" stroke="#d4a373" width="6" x="78" y="228"></rect>
+</g>
+<g id="s2RightHand" transform="translate(40, 0)">
+<path d="M 65 240 C 60 240, 55 245, 55 250 L 55 290 Q 55 295, 60 295 L 80 295 Q 85 295, 85 290 L 85 250 C 85 245, 80 240, 75 240 Z" fill="#f3d5b5" stroke="#d4a373"></path>
+<rect fill="#f3d5b5" height="25" rx="3" stroke="#d4a373" width="6" x="62" y="225"></rect>
+<rect fill="#f3d5b5" height="30" rx="3" stroke="#d4a373" width="6" x="70" y="220"></rect>
+<rect fill="#f3d5b5" height="22" rx="3" stroke="#d4a373" width="6" x="78" y="228"></rect>
+</g>
+</g>
+<!-- 位置決め治具: 板の左端に当てて板の位置を決める -->
+<!-- 縦に長い板（板幅+余裕）を板左端に当てて固定 -->
+<g id="s2PushJig" opacity="0">
+<!-- 治具本体: 板の左端(x≈85)に当たる縦板。板幅(woodHeight)より長く -->
+<rect fill="#4CAF50" height="180" id="s2JigBody" rx="3" stroke="#2E7D32" stroke-width="2" width="14" x="73" y="195"></rect>
+<!-- クランプ（上端固定部） -->
+<rect fill="#388E3C" height="12" rx="4" stroke="#2E7D32" stroke-width="1.5" width="28" x="65" y="190"></rect>
+<!-- クランプノブ -->
+<circle cx="79" cy="196" fill="#1B5E20" r="5" stroke="#0A3D12" stroke-width="1"></circle>
+
+</g>
+<!-- 押し棒: 斜め右下方向（縦引きで材料を奥に送り込む） -->
+<!-- 左上から右下に向かって材料上部を押さえながら奥へ送る棒 -->
+<g id="s2PushStick" opacity="0">
+<!-- 棒本体: 斜め線（左上→右下）。SVGの line で描画 -->
+<!-- 始点: 板の中央やや左上 → 終点: 板の右端やや下 -->
+<line id="s2StickHandle" stroke="#FF9800" stroke-linecap="round" stroke-width="10" x1="92" x2="175" y1="218" y2="270"></line>
+<!-- 棒の輪郭をやや細く重ねてリアルさを出す -->
+<line opacity="0.5" stroke="#FF6F00" stroke-linecap="round" stroke-width="5" x1="92" x2="175" y1="218" y2="270"></line>
+<!-- 先端（材料に当たる部分） -->
+<circle cx="92" cy="218" fill="#E65100" id="s2StickTip" r="7" stroke="#BF360C" stroke-width="2"></circle>
+<!-- グリップ（持ち手端） -->
+<ellipse cx="176" cy="271" fill="#FF6F00" rx="11" ry="7" stroke="#E65100" stroke-width="2"></ellipse>
+<rect fill="#FF6F00" height="13" rx="5" stroke="#E65100" stroke-width="1.5" width="22" x="170" y="265"></rect>
+</g>
+</g>
+<!-- 安全カバー -->
+<rect fill="rgba(185,185,185,0.55)" height="160" id="s2SafetyGuard" rx="5" stroke="rgba(100,100,100,0.9)" stroke-width="2.5" style="display:none" width="30" x="235" y="130"></rect>
+<!-- 集塵 -->
+<g id="s2Vacuum">
+<rect fill="#bbb" height="48" stroke="#999" stroke-width="2" width="36" x="232" y="0"></rect>
+<line class="s2-dust" id="s2Dust" x1="250" x2="250" y1="48" y2="4"></line>
+</g>
+<!-- 起動スイッチ -->
+<rect fill="#d4c355" height="34" rx="3" stroke="#333" width="48" x="285" y="433"></rect>
+<circle cx="309" cy="427" fill="#d32f2f" r="7" stroke="#7b1f1f"></circle>
+</svg>
+<!-- 危険オーバーレイ -->
+<div class="s2-danger-overlay" id="s2DangerOverlay">
+<span><span class="s2-danger-line" id="s2DangerBig">危険！危険！</span><br/><span id="s2DangerWhy" style="font-size:.6em;font-weight:600;display:block;margin-top:4px">緊急停止</span></span>
+</div>
+</div><!-- /sim2-svg-panel -->
+<!-- 刃の昇降（縦スライダー） -->
+<div class="sim2-blade-col">
+<label class="sim2-feed-label">刃高</label>
+<input class="sim2-blade-range" id="s2HeightV" max="60" min="0" type="range" value="0"/>
+<span id="s2BladeValV" style="font-size:.78rem;font-weight:800;color:#d32f2f">0mm</span>
+</div>
+<!-- 板送りスライダー（縦） -->
+<div class="sim2-feed-col">
+<label class="sim2-feed-label">板送り</label>
+<input class="sim2-feed-range" id="s2Feed" max="230" min="0" type="range" value="0"/>
+</div>
+</div>
+<!-- 状態メッセージ -->
+
+<input id="s2Height" type="hidden" value="0"/></div>
+<!-- 刃高さの内部同期用（非表示） -->
+
+<!-- 右: 操作コントロール -->
+<div class="sim2-right"><div class="s2-ctrl-section s2-safety-buttons" id="s2SafetyButtons"><div class="s2-ctrl-label">安全装置・保護具</div><div class="s2-safety-btn-grid"><button class="s2btn s2btn-off" id="s2GogglesBtn">🥽 保護眼鏡をつける</button><button class="s2btn s2btn-off" id="s2GuardBtn">🛡 安全カバーをつける</button><button class="s2btn s2btn-neutral" id="s2VacuumBtn">🌀 集塵機 ON</button></div></div>
+<!-- 材料選択 + 材料/定規の位置 横並び -->
+<div class="s2-ctrl-section">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end">
+<div>
+<div class="s2-ctrl-label">材料選択</div>
+<select class="sim-select" id="s2WoodSelect" style="width:100%">
+<option selected="" value="100x400x15">縦100 × 横400 × 厚さ15mm</option>
+<option value="200x400x15">縦200 × 横400 × 厚さ15mm</option>
+<option value="400x100x15">縦400 × 横100 × 厚さ15mm</option>
+<option value="400x200x15">縦400 × 横200 × 厚さ15mm</option>
+</select>
+</div>
+<div id="s2FenceWrap">
+<div class="s2-ctrl-label" id="s2FenceLabel">① 材料の位置</div>
+<input id="s2Fence" max="60" min="-80" style="width:100%" type="range" value="0"/>
+</div>
+</div>
+</div>
+<!-- 状態バッジ（服装・カバー・集塵） -->
+
+<!-- 電源・リセット（服装・カバー・集塵の後） -->
+<div class="s2-power-section">
+<div style="display:flex;gap:8px">
+<div class="s2-power-pair">
+<button class="s2btn s2btn-off" id="s2PowerBtn" type="button">⚡ 電源 ON</button>
+<button class="s2btn s2btn-neutral" id="s2PowerOffBtn" type="button" disabled>■ 電源 OFF</button>
+</div>
+<button class="s2btn s2btn-reset" id="s2ResetBtn" type="button">↺ リセット</button>
+</div>
+<div class="s2-status-small" id="s2StatusSmall"></div>
+</div>
+<!-- 次の操作ガイド -->
+<div class="sim-step" id="simStep"></div>
+<!-- 危険実験 -->
+<details class="danger-learn" id="dangerLearn">
+<summary>⚠ 危険を確認する実験（横引き完了後に解放）</summary>
+<div class="note">実機では絶対に行いません。正常な横引きを1回完了すると解放されます。</div>
+<div class="ctrl-grid" id="dangerExpGrid"></div>
+</details>
+</div>
+</div>
+<!-- 結果オーバーレイ（完了時） -->
+<div class="s2-result-bar" id="s2ResultBar" style="display:none">
+<div class="s2-result-title" id="s2ResultTitle">✅ 横引き操作：安全に完了</div>
+<div class="result-grid" id="s2ResultGrid"></div>
+<div class="result-advice" id="s2ResultAdvice"></div>
+<button class="sim-btn reset" id="s2ResultReset" style="margin-top:8px;padding:10px 18px">↺ もう一度やり直す</button>
+</div>
+</div>
+<!-- ============ PANEL 4: 確認クイズ ============ -->
+<!-- ============ PANEL 4: 確認クイズ ============ -->
+<div class="panel" id="panel-quiz">
+<div class="section-line">
+<span class="section-title">確認クイズ</span>
+<span class="section-lead">横引き操作・安全装置・自身の操作判断・縦引き比較・異常時対応を確認します。</span>
+</div>
+<div class="quiz-wrap">
+<div class="quiz-mode-row">
+<button class="quiz-mode-btn active" data-qmode="10">10問モード</button>
+<button class="quiz-mode-btn" data-qmode="20">20問モード（研修用）</button>
+</div>
+<div class="quiz-meta">
+<span id="quizProgress">問題 1 / 10</span>
+<span id="quizScore">得点 0 / 0</span>
+</div>
+<div class="qbar-wrap"><div class="qbar" id="qbar" style="width:10%"></div></div>
+<div><span class="quiz-cat" id="quizCat">横引き操作</span></div>
+<div class="quiz-q" id="quizQ"></div>
+<div class="quiz-choices" id="quizChoices"></div>
+<div class="quiz-result" id="quizResult"></div>
+<div class="quiz-actions">
+<button class="quiz-action sec" id="quizRestart">↺ 最初から</button>
+<button class="quiz-action retry" id="quizRetry" style="display:none">↺ もう一度回答する</button>
+<button class="quiz-action" id="quizNext" style="display:none">次の問題 ▸</button>
+</div>
+</div>
+</div>
+<div class="disclaimer">
+    本アプリは丸鋸昇降盤の一般的な安全操作を学ぶ教員向け教材です。実機を使用する際は，設置機種の取扱説明書・学校の安全基準・管理者の指示を優先してください。
+  </div>
+</div>
+<script>
+/* =========================================================
+   丸鋸昇降盤 教員研修シミュレータ  —  ロジック
+   ========================================================= */
+'use strict';
+
+const STORE_KEY = 'shokoban_teacher_v1';
+const state = {
+  instructor: false,
+  partsDone: new Set(),
+  safetyJudged: new Set(),
+  simCompleted: false,     // 横引き正常完了1回
+  quizScore: 0,
+  quizMode: 10,
+};
+function saveState(){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      partsDone:[...state.partsDone], safetyJudged:[...state.safetyJudged],
+      simCompleted:state.simCompleted,
+      quizScore:state.quizScore
+    }));
+  }catch(e){}
+}
+function loadState(){
+  // 再読込時は、前回の確認状態を引き継がず必ず初期状態から開始する。
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+  state.partsDone = new Set();
+  state.safetyJudged = new Set();
+  state.simCompleted = false;
+  state.quizScore = 0;
+  state.quizMode = 10;
+}
+
+/* ------------ 部品データ ------------ */
+// 横引き必須12＋発展6。x,y はラベル位置（各視点別）
+const PARTS = [
+  {id:'saw', name:'丸鋸', badge:'刃', adv:false,
+    fn:'木材を切断する円形の刃。高速で回転する。',
+    role:'横引きでは，材料の木目を横切って切断する中心の刃。',
+    vertical:'縦引きでも同じ刃を使い，木目に沿って切断する。回転中は刃の延長線上に体を置かない。',
+    check:['損傷・欠けがないか','締付けが確実か','回転方向が正しいか'],
+    pos:{top:[300,205],front:[320,150]}},
+  {id:'guard', name:'安全カバー', badge:'安全', adv:false,
+    fn:'丸鋸の上部を覆い，手や体の接触を防ぐ接触予防装置。',
+    role:'横引きでも常に取り付ける。法令上も使用が義務付けられている。',
+    vertical:'縦引きでも必ず取り付ける。加工方法にかかわらず外して使わない。',
+    check:['確実に取り付いているか','材料の厚さに応じて上下するか','破損していないか'],
+    pos:{top:[300,120],front:[320,110]}},
+  {id:'riving', name:'割刃', badge:'安全', adv:false,
+    fn:'丸鋸の後方にある薄い板。切断後の材料が刃を挟み込むのを防ぐ。',
+    role:'横引きで材料が反発（キックバック）するのを抑える重要な装置。',
+    vertical:'縦引きでは，切り開いた材料が刃を挟むのを防ぐ役割がさらに重要になる。',
+    check:['丸鋸に合った位置にあるか','丸鋸との隙間が適切（例12mm以下）か','確実に固定されているか'],
+    pos:{top:[300,92],front:[352,120]}},
+  {id:'table', name:'テーブル', badge:'基本', adv:false,
+    fn:'材料を乗せて加工する平らな作業面。',
+    role:'横引きでは材料と横引き定規を乗せて，一体で送る面。',
+    vertical:'縦引きでは，材料を縦引き定規に沿わせて滑らせる面となる。',
+    check:['上に異物がないか','平らで安定しているか','入板に隙間や破損がないか'],
+    pos:{top:[180,340],front:[170,275]}},
+  {id:'crossfence', name:'横引き定規', badge:'横引き', adv:false,
+    fn:'材料を設定した角度に保持し，一定方向へ送るための定規。',
+    role:'横引きの主役。材料を当てて，材料と定規を一体として前方へ送る。',
+    vertical:'縦引きでは使わない。縦引きには縦引き定規を用いる（使い分けが重要）。',
+    check:['確実に固定されているか','設定角度が適切か','材料が定規面に安定して接するか'],
+    pos:{top:[126,215],front:[null,null]}},
+  {id:'halffence', name:'半月定規', badge:'横引き', adv:false,
+    fn:'半円形の目盛りで，材料を任意の角度に固定して送る定規。',
+    role:'横引きで角度を付けた切断（留めなど）に使用する。',
+    vertical:'縦引きでは用いない。角度切りの横引き専用の定規。',
+    check:['角度目盛りが正しく合っているか','確実に固定されているか'],
+    pos:{top:[126,270],front:[null,null]}},
+  {id:'movetable', name:'移動（引出し）テーブル', badge:'横引き', adv:false,
+    fn:'定規と材料を乗せたまま前後にスライドする補助テーブル。',
+    role:'横引きで，材料と定規を一体のまま滑らかに送るのを助ける。',
+    vertical:'縦引きでは基本的に使わない。横引きの送りを滑らかにする補助。',
+    check:['滑らかに前後するか','ガタつきがないか'],
+    pos:{top:[110,320],front:[null,null]}},
+  {id:'insert', name:'入板（インサート）', badge:'基本', adv:false,
+    fn:'丸鋸が通るテーブルの細い溝板。',
+    role:'横引きでも刃の左右のすき間を最小にし，小片の落ち込みを防ぐ。',
+    vertical:'縦引きでも同じ役割。隙間が大きいと切片が挟まり危険。',
+    check:['破損・大きな隙間がないか','丸鋸に合ったものか'],
+    pos:{top:[297,150],front:[290,255]}},
+  {id:'switch', name:'電源スイッチ', badge:'操作', adv:false,
+    fn:'丸鋸の回転を入・切する電源スイッチ。',
+    role:'横引きでは，材料を刃から離した状態で入れる。',
+    vertical:'縦引きでも，材料を刃から離した状態で電源を入れる（当ててから入れない）。',
+    check:['確実に入・切できるか','緑=入 赤=切 を確認したか'],
+    pos:{top:[104,388],front:[110,340]}},
+  {id:'brake', name:'ブレーキレバー', badge:'操作', adv:false,
+    fn:'電源を切った後，惰性回転を素早く止める装置。',
+    role:'横引き後，刃の惰性回転を止め，安全に材料を回収するため。',
+    vertical:'縦引き後も同様に，惰性回転を止めて完全停止を確認してから回収する。',
+    check:['確実に効くか','完全停止まで確認したか'],
+    pos:{top:[150,388],front:[150,340]}},
+  {id:'liftwheel', name:'昇降ハンドル', badge:'操作', adv:false,
+    fn:'刃のテーブル上への突出量（切込み深さ）を調整するハンドル。',
+    role:'横引きで，材料厚に合わせて刃の高さを調整する。',
+    vertical:'縦引きでも材料厚に合わせて調整する。高すぎると刃の露出が増え危険。',
+    check:['狙った高さで固定できるか','材料厚に対して適切か'],
+    pos:{top:[240,410],front:[235,375]}},
+  {id:'dust', name:'集塵口', badge:'環境', adv:false,
+    fn:'切りくずを吸引する集塵装置の接続口。',
+    role:'横引きでも，切りくずと粉じんを減らし視界と健康を守る。',
+    vertical:'縦引きは切りくずが多くなりやすい。集塵の作動確認は特に重要。',
+    check:['集塵機が接続され作動するか','ホースが詰まっていないか'],
+    pos:{top:[440,110],front:[420,140]}},
+  // ---- 発展 ----
+  {id:'longfence', name:'縦引き定規', badge:'発展', adv:true,
+    fn:'刃と平行に固定し，材料をこれに沿わせて送る定規。',
+    role:'縦引き（木目方向）で使用する主役の定規。横引き定規とは使い方が異なる。',
+    vertical:'縦引きの主役。材料をこの定規に沿わせてまっすぐ送る。手を刃に近づけないため押し棒を併用する。',
+    check:['刃と平行か','確実に固定されているか','押し棒を用意したか'],
+    pos:{top:[380,300],front:[400,270]}},
+  {id:'tilt', name:'テーブル傾斜ハンドル', badge:'発展', adv:true,
+    fn:'刃（またはテーブル）を傾け，斜め切りをするための機構。',
+    role:'発展的な角度切断に使用。機種により有無・方式が異なる。',
+    vertical:'傾斜させた縦引きにも使う。機種で操作方法が異なるため取扱説明書を優先する。',
+    check:['狙った角度で固定できるか'],
+    pos:{top:[470,380],front:[460,350]}},
+  {id:'clamp', name:'クランプレバー', badge:'発展', adv:true,
+    fn:'定規や傾斜などを任意位置で固定するレバー。',
+    role:'定規・角度を確実に固定するために使う。',
+    vertical:'横引き・縦引きどちらでも，定規を固定したら必ず締める。締め忘れは材料のずれを招く。',
+    check:['確実に締まるか'],
+    pos:{top:[430,410],front:[400,360]}},
+  {id:'shaftlock', name:'丸鋸軸ロック', badge:'発展', adv:true,
+    fn:'刃の交換時に主軸の回転を止めておく機構。',
+    role:'刃の交換など保守作業で使用。加工中は使わない。',
+    vertical:'加工方法にかかわらず，刃交換時のみ使う。必ず電源・主電源を切ってから操作する。',
+    check:['電源を切ってから操作しているか'],
+    pos:{top:[300,410],front:[300,360]}},
+  {id:'tenontable', name:'枘取りテーブル', badge:'発展', adv:true,
+    fn:'枘（ほぞ）を加工するための補助テーブル。',
+    role:'発展的な接合加工に使用。機種により有無が異なる。',
+    vertical:'縦引き・横引きとは別の専用作業。基本操作の習得後に扱う。',
+    check:['確実に取り付いているか'],
+    pos:{top:[510,250],front:[null,null]}},
+  {id:'tenonfence', name:'枘取り定規', badge:'発展', adv:true,
+    fn:'枘取りで材料を保持・案内する定規。',
+    role:'発展的な枘加工に使用する。',
+    vertical:'枘取り専用。基本の横引き・縦引きが確実にできてから扱う。',
+    check:['確実に固定されているか'],
+    pos:{top:[520,300],front:[null,null]}},
+];
+const REQUIRED_PART_IDS = ['saw','guard','riving','table','crossfence','switch','brake','liftwheel','dust'];
+const REQUIRED_PART_COUNT = REQUIRED_PART_IDS.length;
+
+/* ------------ 安全学習コンテンツ ------------ */
+const SAFETY = [
+ { title:'① 作業環境の準備',
+   lead:'加工者自身と，作業場全体の安全を整えます。',
+   ok:['機械周辺の床に物がない','床が濡れていない','十分な材料送りスペースがある','作業に必要のない人が近くにいない',
+       '丸鋸の延長線上に人が立たない','集塵装置が使用できる','非常停止の方法を確認している','機械全体を見渡せる位置に立てる',
+       '照明が十分である','加工材と加工済み材の置き場所が分かれている'],
+   note:'取扱説明書でも，転倒事故防止のため機械周辺に物を置かず，濡れた床を避けるよう示されています。<b>非常停止の方法</b>と<b>自分の立ち位置</b>を先に確認しておきます。' },
+ { title:'② 服装と保護具',
+   lead:'巻き込まれと，目・呼吸器の保護を徹底します。',
+   ok:['保護眼鏡を着用する','必要に応じて防塵マスクを着用する','袖口を閉じる','上着の裾を整える','長い髪をまとめる','滑りにくい履物を使用する'],
+   no:['手袋・軍手を着けない','ネクタイや首から下げる物を着けない'],
+   note:'取扱説明書では，巻き込まれを避けるため通常の加工時に<b>手袋を使用しない</b>よう示されています。加工前に自分の服装を確認します。' },
+ { title:'③ 機械と材料の点検',
+   lead:'安全装置・刃・定規・材料の状態を加工前に点検します。',
+   ok:['安全カバーの取付と動作','割刃の取付と丸鋸との位置関係','入板の破損や隙間がない','丸鋸の損傷・締付','定規の固定','スイッチとブレーキの動作','集塵装置の接続'],
+   no:['反りが大きい材料は使わない','割れ・欠けのある材料は使わない','丸みで安定しない材料は使わない','極端に小さい材料は使わない','釘・ねじの入った材料は使わない'],
+   note:'取扱説明書では，反りや割れのある材料は<b>跳ね返り（反発）</b>の原因になるため加工しないよう示されています。加工前に材料の可否を判断します。' },
+ { title:'④ 横引き・縦引き加工中の注意',
+   lead:'定規に沿って正しく送り，刃から手を遠ざけます。',
+   ok:['横引きは材料と横引き定規を一体で送る','縦引きは材料を縦引き定規に沿わせて送る','切断線をのぞき込まない','丸鋸の延長線上に体を置かない','手を丸鋸へ近づけない','一定の速さで送る'],
+   no:['横引きで材料だけを送らない','材料を途中で手前へ戻さない','切断後の小片へすぐ手を伸ばさない','縦引きで押し棒を使わずに刃へ手を近づけない'],
+   note:'横引きの要点は<b>「材料と定規が一体で動くこと」</b>。縦引きでは手を刃に近づけないため<b>押し棒</b>を併用します。刃の延長線を外れた位置で加工します。' },
+ { title:'⑤ 終了・異常時の対応',
+   lead:'完全停止の確認と，異常時の止め方を身につけます。',
+   ok:['電源を切る','ブレーキをかける','完全停止を目視で確認する','加工済み材料を回収する','集塵機を切る'],
+   no:['惰性回転中に材料へ手を伸ばさない','材料がずれても手前へ戻さない','異常時に無理に直そうとしない'],
+   note:'異常時は<b>「そのまま動かさず，手を離さない」</b>のが原則。材料を戻す動作は反発を招くため，まず電源を切り，完全停止を待ちます。' },
+];
+
+// 各ステージ（0〜4）に対応した確認問題（1問ずつ）
+const SAFETY_JUDGE = [
+ { id:'sj0', stage:0, q:'作業環境の準備として最も重要なことはどれですか？',
+   choices:[
+     {t:'丸鋸の延長線上に立ち，操作しやすくする', ok:false},
+     {t:'刃の延長線上に人が立たないようにし，床に物を置かない', ok:true},
+     {t:'床が少し濡れていても滑り止めマットがあれば問題ない', ok:false},
+     {t:'集塵装置は任意なので省略できる', ok:false}],
+   fbOk:'正解。刃の延長線上への立入禁止と，床の整理整頓が最優先です。',
+   fbNg:'刃の延長線上は反発物が飛んでくる危険な方向です。人を立ち入れさせないことが最重要です。' },
+ { id:'sj1', stage:1, q:'加工中の服装として正しいものはどれですか？',
+   choices:[
+     {t:'軍手を着けて手を守る', ok:false},
+     {t:'保護眼鏡を着け，袖口を閉じ，長い髪はまとめる', ok:true},
+     {t:'動きやすいよう袖をまくり上げる', ok:false},
+     {t:'ネクタイは作業の後に外せばよい', ok:false}],
+   fbOk:'正解。軍手は刃への巻き込まれ危険があるため禁止。保護眼鏡と体の整えが基本です。',
+   fbNg:'軍手は回転する刃に巻き込まれる危険があります。保護眼鏡を着け，袖口を閉じ，長い髪はまとめます。' },
+ { id:'sj2', stage:2, q:'加工前に点検して使用を見合わせるべき材料はどれですか？',
+   choices:[
+     {t:'平らで安定した板材', ok:false},
+     {t:'割れがある材料', ok:true},
+     {t:'定規にしっかり当てられる大きさの材料', ok:false},
+     {t:'木目がはっきりしている材料', ok:false}],
+   fbOk:'正解。割れ・反り・釘入りの材料は反発の原因になります。加工前に確認して取り除きます。',
+   fbNg:'割れや大きな反りがある材料は加工中に割れたり飛んだりする危険があります。使用しません。' },
+ { id:'sj3', stage:3, q:'横引き加工中に最も注意すべきことはどれですか？',
+   choices:[
+     {t:'材料だけを素早く手で送る', ok:false},
+     {t:'切断線をのぞき込んで確認しながら送る', ok:false},
+     {t:'材料と横引き定規を一体にして，刃の延長線上に体を置かずに一定速で送る', ok:true},
+     {t:'切断後すぐに小片を手で回収する', ok:false}],
+   fbOk:'正解。材料と定規を一体で送り，刃の延長線外に立ち，一定速で送ることが重要です。',
+   fbNg:'材料だけを送ると定規から外れ危険です。刃の延長線外に立ち，材料と定規を一体で一定速で送ります。' },
+ { id:'sj4', stage:4, q:'電源を切った後の正しい手順はどれですか？',
+   choices:[
+     {t:'電源を切ったらすぐに材料を回収してよい', ok:false},
+     {t:'ブレーキをかけ，完全停止を目視確認してから材料を回収する', ok:true},
+     {t:'惰性で回転していても触らなければ大丈夫', ok:false},
+     {t:'集塵機は電源と同時に切ってよい', ok:false}],
+   fbOk:'正解。電源を切っても惰性で回転しています。ブレーキ後，完全停止を目で確認してから回収します。',
+   fbNg:'電源を切っても刃は惰性で回転しています。ブレーキをかけ，完全停止を目視確認してから材料を回収します。' },
+];
+
+/* ------------ 危険実験（モード内） ------------ */
+const DANGER_EXPERIMENTS = [
+ {id:'de_noguard', label:'🛡 安全カバーなしで切る', why:'カバーがないと丸鋸に直接触れる危険があります。実機では必ず取り付けます。'},
+ {id:'de_noriving', label:'🔪 割刃なしで切る', why:'割刃がないと切断後の材料が刃を挟み込み，反発（キックバック）が起こります。'},
+ {id:'de_materialonly', label:'➡ 材料だけを送る', why:'材料が定規から離れ，刃へ斜めに接触します。材料と定規は一体で送ります。'},
+ {id:'de_reverse', label:'⏪ 材料を逆戻しする', why:'回転中の逆戻しは反発・跳ね返りを招きます。動かさず完全停止を待ちます。'},
+];
+
+/* ------------ クイズ問題バンク ------------ */
+// cat: cross(横引き操作) / device(安全装置・点検) / own(自身の操作判断) / compare(縦引き比較) / abnormal(異常時)
+const QUIZ_BANK = [
+ // 横引き操作
+ {cat:'cross', q:'横引き加工で材料を送るとき，最も適切な送り方は？',
+  c:['材料だけを手で前へ送る','材料を横引き定規に当て，定規と一体で送る','縦引き定規だけに沿わせて送る','材料を丸鋸へ押し付けてから電源を入れる'], a:1,
+  ex:'横引きでは，材料を横引き定規に当て，材料と定規を一体として送ります。'},
+ {cat:'cross', q:'横引きで電源を入れる正しいタイミングは？',
+  c:['材料を刃に当ててから','材料を刃から離した状態で','材料を送りながら','ブレーキをかけながら'], a:1,
+  ex:'材料を刃から離した状態で電源を入れます。当ててから入れると反発の原因になります。'},
+ {cat:'cross', q:'横引き加工で刃の高さ（テーブル上の突出）はどう決めるのが適切？',
+  c:['できるだけ高くする','材料が切れなくても低いままにする','材料厚に対して必要な高さにし，高すぎない','刃を出さずに切る'], a:2,
+  ex:'低すぎると切れず，高すぎると刃の露出が増え危険。材料厚に合った高さにします。'},
+ {cat:'cross', q:'横引きで角度を付けて切断するときに使う定規は？',
+  c:['縦引き定規','半月定規','枘取り定規','傾斜ハンドルのみ'], a:1,
+  ex:'角度切りは半月定規で角度を決めて固定します。'},
+ {cat:'cross', q:'横引き加工の一連の流れとして正しい順序は？',
+  c:['電源ON→材料点検→定規固定→送る','材料点検→定規固定→刃高さ→集塵→電源ON→送る','送る→電源ON→材料点検','電源ON→送る→定規固定'], a:1,
+  ex:'点検・定規固定・刃高さ・集塵などの準備を終えてから電源を入れ，回転安定後に送ります。'},
+ {cat:'cross', q:'横引き中，手を置いてはいけない位置は？',
+  c:['材料を定規へ押し当てる位置','定規を前方へ送る位置','丸鋸の延長線上・刃の近く','材料を安定して保持できる位置'], a:2,
+  ex:'丸鋸の延長線上や刃の近くに手を置くのは危険です。'},
+ // 安全装置・点検
+ {cat:'device', q:'割刃（わりば）の主な役割は？',
+  c:['切りくずを集める','切断後の材料が刃を挟み反発するのを防ぐ','刃の高さを調整する','材料を照らす'], a:1,
+  ex:'割刃は切断後の材料が丸鋸を挟み込むのを防ぎ，反発を抑える装置です。'},
+ {cat:'device', q:'加工に使用してはならない材料はどれ？',
+  c:['平らで安定した材料','反りが大きい材料','定規へ確実に当てられる材料','必要な大きさがある材料'], a:1,
+  ex:'反りや割れのある材料は反発の原因になるため使用しません。'},
+ {cat:'device', q:'安全カバーについて正しいものは？',
+  c:['作業に慣れたら外してよい','法令上も使用が義務付けられている','横引きでは不要','集塵のための装置である'], a:1,
+  ex:'安全カバー（接触予防装置）は法令上も使用が義務付けられています。'},
+ // 自身の操作判断
+ {cat:'own', q:'横引き中に材料がずれてしまいました。あなたが取るべき行動は？',
+  c:['そのまま材料を手前へ戻して直す','強く定規へ押し付ける','操作をやめ，電源を切る','安全カバーを持ち上げて確認する'], a:2,
+  ex:'材料の逆戻しは反発を招きます。まず操作をやめ，電源を切ります。'},
+ {cat:'own', q:'横引き中，あなたが最も注意して確認すべきことは？',
+  c:['材料の色','材料と横引き定規が一体で動いているか','照明の明るさ','集塵機の音'], a:1,
+  ex:'横引きの要点は，材料と定規が一体で送られているかを確認しながら切ることです。'},
+ {cat:'own', q:'加工を始める前に，あなたが必ず着けるものは？',
+  c:['軍手','保護眼鏡','装飾品','特に何もいらない'], a:1,
+  ex:'加工前に保護眼鏡を着けます。巻き込まれ防止のため軍手はしません。'},
+ {cat:'own', q:'加工中に立つ位置として適切なのは？',
+  c:['丸鋸の延長線上','刃の延長線を外れ，機械を見渡せる位置','機械の真後ろに密着','材料の真上'], a:1,
+  ex:'反発方向である刃の延長線を外れた位置に立ちます。'},
+ // 縦引き比較
+ {cat:'compare', q:'横引きと縦引きの違いとして適切なものは？',
+  c:['同じ定規を使う','横引きは材料と横引き定規を一体で送る','縦引きは横引き定規を材料と一緒に送る','横引きでは割刃を使わない'], a:1,
+  ex:'横引きは材料と横引き定規を一体で送り，縦引きは材料を縦引き定規に沿わせて送ります。'},
+ {cat:'compare', q:'縦引きで，手を刃に近づけないために使う道具は？',
+  c:['半月定規','押し棒','傾斜ハンドル','枘取りテーブル'], a:1,
+  ex:'縦引きでは，手を刃に近づけないため押し棒を使います。'},
+ // 異常時
+ {cat:'abnormal', q:'加工後，材料を回収してよいのはどの時点？',
+  c:['電源を切った直後','ブレーキをかけた直後','完全停止を目視で確認してから','惰性で回っている間'], a:2,
+  ex:'惰性回転中は危険です。完全停止を目視確認してから回収します。'},
+ {cat:'abnormal', q:'加工中に異常を感じたとき，まず取るべき行動は？',
+  c:['自分で刃を直す','材料を手前に戻す','手を離さず動かさないようにして電源を切る','急いで材料を回収する'], a:2,
+  ex:'材料を動かさず，電源を切って完全停止を待ちます。逆戻しは反発を招きます。'},
+ // 追加（20問モード用）
+ {cat:'cross', q:'横引き定規の固定を確認する適切な時点は？',
+  c:['電源を入れた後','丸鋸が回転してから','電源を入れる前','切断の途中'], a:2,
+  ex:'定規の固定は回転させる前に必ず確認します。'},
+ {cat:'cross', q:'横引きで材料を送る速さとして適切なのは？',
+  c:['できるだけ速く','一定の速さで送る','途中で止めながら','押し込むように力任せに'], a:1,
+  ex:'一定の速さで送ります。無理な押し込みや停止は危険です。'},
+ {cat:'device', q:'入板（インサート）の隙間が大きいと生じる危険は？',
+  c:['刃が冷える','切断した小片が挟まる・落ち込む','集塵が強くなる','定規が固定される'], a:1,
+  ex:'隙間が大きいと小片が挟まり危険です。点検の対象に含めます。'},
+ {cat:'device', q:'加工前の日常点検に含まれないものは？',
+  c:['安全カバーの動作','割刃と刃の位置関係','スイッチ・ブレーキの動作','その日の気温'], a:3,
+  ex:'安全装置・刃・スイッチ・ブレーキ等の動作を点検します。'},
+ {cat:'own', q:'加工中に切断線をのぞき込むと危険なのはなぜ？',
+  c:['危険はない','顔が刃や反発方向に近づくため','照明がまぶしいため','集塵の妨げになるため'], a:1,
+  ex:'のぞき込むと顔が刃や反発方向へ近づき危険です。姿勢と立ち位置に注意します。'},
+ {cat:'own', q:'加工前に軍手を着けてはいけない理由は？',
+  c:['手が汚れるから','刃に巻き込まれる危険があるから','材料が滑るから','集塵の妨げになるから'], a:1,
+  ex:'軍手は回転する刃に巻き込まれる危険があるため，通常の加工では着けません。'},
+ {cat:'compare', q:'縦引きの主な危険として適切なものは？',
+  c:['縦引きに危険はない','定規との挟み込み・反発・押し棒未使用','材料が明るくなる','刃が冷える'], a:1,
+  ex:'横引きは材料のずれ・手の接近，縦引きは挟み込み・反発・押し棒未使用が主な危険です。'},
+ {cat:'abnormal', q:'惰性回転（だせいかいてん）とは？',
+  c:['電源を入れた瞬間の回転','電源を切った後も刃が惰性で回り続けること','ブレーキ専用の回転','材料の回転'], a:1,
+  ex:'電源を切っても刃はしばらく惰性で回ります。完全停止の確認が必要です。'},
+];
+
+/* =========================================================
+   SVG 機械描画（リアル版）
+   ========================================================= */
+const SVGNS='http://www.w3.org/2000/svg';
+function el(tag,attrs){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;}
+
+/* 共通の質感（グラデーション／影）を1度だけ svg に用意 */
+function ensureDefs(svg){
+  if(svg.querySelector('defs')) return;
+  const defs=el('defs',{});
+  defs.innerHTML=`
+    <linearGradient id="gTable" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9fb0a1"/><stop offset="1" stop-color="#7d8f7f"/>
+    </linearGradient>
+    <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5a6f5c"/><stop offset="1" stop-color="#3d523f"/>
+    </linearGradient>
+    <linearGradient id="gMetal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6e9e6"/><stop offset="0.5" stop-color="#b9c0ba"/><stop offset="1" stop-color="#9aa39b"/>
+    </linearGradient>
+    <linearGradient id="gWood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6b878"/><stop offset="1" stop-color="#c98f45"/>
+    </linearGradient>
+    <radialGradient id="gBlade" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f3f4f5"/><stop offset="0.55" stop-color="#c9ccd0"/>
+      <stop offset="0.8" stop-color="#a7abb0"/><stop offset="1" stop-color="#7c8085"/>
+    </radialGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.18"/>
+    </filter>`;
+  svg.appendChild(defs);
+}
+
+/* 円形の丸鋸（歯付き）を描く。上面では細い線に見えるが、正面/刃部では歯付き円で表現 */
+function sawBladeDisc(cx,cy,r,opt={}){
+  const g=el('g',{});
+  // 歯
+  const teeth=el('g',{});
+  const n=opt.teeth||40;
+  let path='';
+  for(let i=0;i<n;i++){
+    const a0=(i/n)*Math.PI*2, a1=((i+0.5)/n)*Math.PI*2;
+    const ro=r+7, ri=r;
+    const x0=cx+Math.cos(a0)*ro, y0=cy+Math.sin(a0)*ro;
+    const x1=cx+Math.cos(a1)*ri, y1=cy+Math.sin(a1)*ri;
+    path+=`M${cx.toFixed(1)},${cy.toFixed(1)} L${x0.toFixed(1)},${y0.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)} Z `;
+  }
+  teeth.appendChild(el('path',{d:path,fill:'#8a8f94'}));
+  g.appendChild(teeth);
+  g.appendChild(el('circle',{cx,cy,r,fill:'url(#gBlade)',stroke:'#6b6f74','stroke-width':1.5}));
+  // 反射リング
+  g.appendChild(el('circle',{cx,cy,r:r*0.66,fill:'none',stroke:'#eef0f2','stroke-width':1.4,opacity:.7}));
+  g.appendChild(el('circle',{cx,cy,r:r*0.4,fill:'none',stroke:'#9aa0a6','stroke-width':1}));
+  // アーバー穴
+  g.appendChild(el('circle',{cx,cy,r:r*0.1,fill:'#3a3d40'}));
+  return g;
+}
+
+/* ハンドル車（十字スポーク） */
+function handWheel(cx,cy,r){
+  const g=el('g',{transform:`translate(${cx},${cy})`});
+  g.appendChild(el('circle',{cx:0,cy:0,r,fill:'none',stroke:'#2a2a2a','stroke-width':7}));
+  g.appendChild(el('circle',{cx:0,cy:0,r,fill:'none',stroke:'#4a4a4a','stroke-width':3}));
+  [[0,-r],[0,r],[-r,0],[r,0]].forEach(([x,y])=>g.appendChild(el('line',{x1:0,y1:0,x2:x,y2:y,stroke:'#3a3a3a','stroke-width':6,'stroke-linecap':'round'})));
+  g.appendChild(el('circle',{cx:0,cy:0,r:r*0.28,fill:'url(#gMetal)',stroke:'#2a2a2a','stroke-width':2}));
+  g.appendChild(el('circle',{cx:0,cy:-r-4,r:6,fill:'#1a1a1a'})); // 握り
+  return g;
+}
+
+
+/* 加工シミュレータと共通形状の横引き定規CG */
+function appendCrossFenceCG(svg, x, y, scale=1){
+  const g=el('g',{transform:`translate(${x},${y}) scale(${scale})`});
+  // 緑の半円形角度調整部
+  g.appendChild(el('path',{d:'M 7 42 A 42 42 0 0 0 91 42 L 77 42 A 28 28 0 0 1 21 42 Z',fill:'#5f8f67',stroke:'#31563a','stroke-width':3}));
+  g.appendChild(el('path',{d:'M 16 45 A 33 33 0 0 0 82 45',fill:'none',stroke:'#dce9de','stroke-dasharray':'3 4','stroke-width':2}));
+  g.appendChild(el('circle',{cx:49,cy:66,r:8,fill:'#111',stroke:'#333'}));
+  g.appendChild(el('rect',{x:40,y:24,width:18,height:23,rx:5,fill:'#333'}));
+  // 木製ガイド板と下側レール
+  g.appendChild(el('rect',{x:-2,y:0,width:145,height:22,rx:3,fill:'#d6a35a',stroke:'#8a5a25','stroke-width':2}));
+  g.appendChild(el('rect',{x:-2,y:22,width:145,height:8,rx:2,fill:'#777',stroke:'#333'}));
+  g.appendChild(el('circle',{cx:27,cy:11,r:4,fill:'#eee',stroke:'#777'}));
+  g.appendChild(el('circle',{cx:113,cy:11,r:4,fill:'#eee',stroke:'#777'}));
+  svg.appendChild(g);
+  return g;
+}
+
+/* --- 上面視点：横引きの主役ビュー --- */
+function drawTopMachine(svg, opt={}){
+  ensureDefs(svg);
+  [...svg.querySelectorAll(':scope > *:not(defs)')].forEach(n=>n.remove());
+  // 本体（テーブル）— 影付き
+  svg.appendChild(el('rect',{x:56,y:60,width:528,height:352,rx:12,fill:'url(#gTable)',stroke:'#3d523f','stroke-width':3,filter:'url(#soft)'}));
+  // 面取りのハイライト
+  svg.appendChild(el('rect',{x:62,y:66,width:516,height:8,rx:4,fill:'#b6c4b8',opacity:.6}));
+  // 入板（刃の通る溝板）: ラベルなしでも識別できる幅広の縦溝CG
+  const insertPlate=el('g',{id:'topInsertPlate'});
+  insertPlate.appendChild(el('rect',{x:274,y:76,width:46,height:246,rx:6,fill:'#c8d0ca',stroke:'#59675d','stroke-width':2.4}));
+  insertPlate.appendChild(el('rect',{x:286,y:82,width:22,height:234,rx:5,fill:'#e8ece9',stroke:'#8d9990','stroke-width':1.4}));
+  insertPlate.appendChild(el('rect',{x:294,y:86,width:6,height:226,rx:3,fill:'#303733',stroke:'#171b18','stroke-width':1.1}));
+  insertPlate.appendChild(el('line',{x1:289,y1:88,x2:289,y2:310,stroke:'#ffffff','stroke-width':1.5,opacity:.75}));
+  insertPlate.appendChild(el('line',{x1:305,y1:88,x2:305,y2:310,stroke:'#8f9a92','stroke-width':1.2,opacity:.75}));
+  svg.appendChild(insertPlate);
+  // 丸鋸（上から：円盤が溝から少し覗く。歯付き円を薄く重ねる）
+  const bladeH = opt.bladeH!==undefined?opt.bladeH:0;
+  const bg=el('g',{id:'topBlade',opacity: bladeH>0?1:0.3});
+  bg.appendChild(sawBladeDisc(297,205,58,{teeth:44}));
+  // 溝でクリップして「テーブル上に出た部分」だけ見せる
+  bg.setAttribute('clip-path','url(#slotClip)');
+  const clip=el('clipPath',{id:'slotClip'});clip.appendChild(el('rect',{x:288,y:80,width:18,height:236}));
+  svg.querySelector('defs').appendChild(clip);
+  svg.appendChild(bg);
+  // 刃の芯線（テーブル上に出た刃）
+  svg.appendChild(el('rect',{x:295,y:120,width:5,height:170,rx:2,fill:'#3a3d40',opacity:bladeH>0?1:0.25}));
+  // 割刃（刃の後方の薄板）
+  svg.appendChild(el('rect',{id:'topRiving',x:295,y:90,width:5,height:30,rx:2,fill:'#7a7f84',stroke:'#5a5f64',opacity:opt.riving?1:0}));
+  // 安全カバー（半透明）
+  const gd=el('g',{id:'topGuard',opacity:opt.guard?1:0});
+  gd.appendChild(el('rect',{x:280,y:120,width:36,height:170,rx:8,fill:'rgba(210,222,212,.5)',stroke:'rgba(70,90,70,.9)','stroke-width':2.5}));
+  gd.appendChild(el('line',{x1:288,y1:130,x2:288,y2:280,stroke:'rgba(255,255,255,.6)','stroke-width':2}));
+  svg.appendChild(gd);
+  // ======== 横引き定規（上面図：T型クロス定規） ========
+  // 横引き定規は「横に延びるバー（クロスバー）＋前後方向のスロット」の形状
+  // 上から見ると: テーブルの手前側に横バーが貼り付いていて、材料を当てて前へ押し出す
+  const fenceX = opt.fenceX!==undefined?opt.fenceX:132;
+  const feedY = opt.feedY||0;
+  const isRip = opt.ripMode||false; // 縦引きモードかどうか
+  const g=el('g',{id:'topFenceGroup',transform:`translate(0,${feedY})`});
+  if(!isRip){
+    const fg=appendCrossFenceCG(g,112,188,0.86);
+  } else {
+    g.appendChild(el('rect',{x:fenceX,y:84,width:16,height:312,rx:4,fill:'url(#gMetal)',stroke:'#3d523f','stroke-width':2}));
+    g.appendChild(el('rect',{x:fenceX-8,y:232,width:32,height:70,rx:5,fill:'url(#gBody)',stroke:'#2a382b','stroke-width':1.5}));
+    g.appendChild(el('circle',{cx:fenceX+8,cy:267,r:6,fill:'#1a1a1a'}));
+  }
+  svg.appendChild(g);
+
+  // 材料
+  const matStartX = isRip ? fenceX+18 : 90;
+  const mat=el('g',{id:'topMaterial',transform:`translate(0,${feedY})`});
+  const matColor = opt.matColor||'url(#gWood)';
+  const mw = opt.matW||250;
+  const mh = 24;
+  mat.appendChild(el('rect',{id:'topBoard',x:matStartX,y:194,width:mw,height:mh,rx:3,fill:matColor,stroke:'#8a5a25','stroke-width':2}));
+  for(let i=0;i<3;i++) mat.appendChild(el('line',{x1:matStartX+8,y1:199+i*7,x2:matStartX+mw-6,y2:199+i*7,stroke:'#b5843f','stroke-width':1,opacity:.6}));
+
+  // 安全ジグ（プッシュブロック）— 横引きモードのみ
+  if(!isRip && opt.useJig){
+    const jig=el('g',{id:'topJig',transform:`translate(0,${feedY})`});
+    // プッシュブロック本体（材料の手前側に配置）
+    jig.appendChild(el('rect',{x:matStartX+mw-10,y:148,width:52,height:30,rx:6,fill:'#e65100',stroke:'#bf360c','stroke-width':2}));
+    // 握り部分
+    jig.appendChild(el('rect',{x:matStartX+mw+5,y:138,width:22,height:14,rx:5,fill:'#ff8f00',stroke:'#e65100','stroke-width':1.5}));
+    // テキスト
+    const jt=el('text',{x:matStartX+mw+16,y:168,'text-anchor':'middle','font-size':9,'font-weight':700,fill:'#fff','pointer-events':'none'});
+    jt.textContent='ジグ';
+    jig.appendChild(jt);
+    mat.appendChild(jig);
+  }
+  svg.appendChild(mat);
+  // 集塵口：丸鋸の縦方向延長上、テーブルの外側上部に配置する。
+  svg.appendChild(el('rect',{x:278,y:8,width:38,height:52,rx:5,fill:'url(#gMetal)',stroke:'#8a9a8c','stroke-width':1.5}));
+  svg.appendChild(el('ellipse',{cx:297,cy:9,rx:19,ry:7,fill:'#4a534b',stroke:'#3a423b'}));
+  return {feedGroups:[svg.querySelector('#topFenceGroup'),svg.querySelector('#topMaterial')]};
+}
+
+/* --- 正面視点：刃の高さ・カバー・昇降が主役 --- */
+function drawFrontMachine(svg, opt={}){
+  ensureDefs(svg);
+  [...svg.querySelectorAll(':scope > *:not(defs)')].forEach(n=>n.remove());
+  // 正面から見た本体とテーブル
+  svg.appendChild(el('rect',{x:120,y:300,width:400,height:150,rx:6,fill:'url(#gBody)',stroke:'#2a382b','stroke-width':2,filter:'url(#soft)'}));
+  for(let i=0;i<5;i++) svg.appendChild(el('line',{x1:150+i*14,y1:330,x2:150+i*14,y2:420,stroke:'#33422f','stroke-width':3,opacity:.5}));
+  svg.appendChild(el('rect',{x:70,y:250,width:500,height:52,rx:4,fill:'url(#gTable)',stroke:'#3d523f','stroke-width':2}));
+  svg.appendChild(el('rect',{x:74,y:254,width:492,height:7,fill:'#b6c4b8',opacity:.5}));
+  const bh=opt.bladeH!==undefined?opt.bladeH:20;
+  const dispH=18+(bh/40)*78;
+  // 丸鋸を90度回転した正面表示：円盤の縁を細い縦形状で示す
+  const bladeTop=250-dispH;
+  const blade=el('g',{id:'frontBlade'});
+  blade.appendChild(el('rect',{x:315,y:bladeTop,width:10,height:dispH,rx:4,fill:'url(#gMetal)',stroke:'#5f6469','stroke-width':1.5}));
+  for(let y=bladeTop+3;y<248;y+=8){blade.appendChild(el('polygon',{points:`325,${y} 333,${y+4} 325,${y+8}`,fill:'#7f858a'}));}
+  svg.appendChild(blade);
+  // 横引き定規：加工シミュレータと同じ形を、テーブル直上に表示。
+  appendCrossFenceCG(svg,112,214,0.72);
+  // 上面図の板を正面から見た表示。幅は上面図と同じ250、厚さは半分の12。
+  svg.appendChild(el('rect',{x:100,y:238,width:210,height:12,rx:2,fill:'url(#gWood)',stroke:'#8a5a25','stroke-width':2}));
+  svg.appendChild(el('rect',{x:326,y:238,width:80,height:12,rx:2,fill:'url(#gWood)',stroke:'#8a5a25','stroke-width':2,opacity:.9}));
+  [125,155,185,215,245,275,350,380].forEach(x=>
+    svg.appendChild(el('line',{x1:x,y1:240,x2:x,y2:248,stroke:'#b5843f','stroke-width':1,opacity:.55}))
+  );
+  // 安全カバー：アクリル板を想定した半透明グレー表示。
+  const gd=el('g',{id:'frontGuard',opacity:opt.guard?1:0});
+  gd.appendChild(el('rect',{x:298,y:bladeTop-10,width:44,height:dispH+10,rx:8,
+    fill:'rgba(150,155,160,.34)',stroke:'rgba(80,85,90,.85)','stroke-width':2.5}));
+  gd.appendChild(el('line',{x1:305,y1:bladeTop-4,x2:305,y2:246,stroke:'rgba(255,255,255,.55)','stroke-width':2}));
+  svg.appendChild(gd);
+  // 昇降ハンドル
+  svg.appendChild(handWheel(220,382,28));
+  // 電源スイッチCGを昇降ハンドルの右側に配置。
+  svg.appendChild(el('rect',{x:278,y:350,width:58,height:42,rx:5,fill:'#c9b84f',stroke:'#3a3a2a','stroke-width':1.5}));
+  svg.appendChild(el('circle',{cx:296,cy:371,r:8,fill:'#2e7d32',stroke:'#1b5e20','stroke-width':1.5}));
+  svg.appendChild(el('circle',{cx:318,cy:371,r:8,fill:'#d32f2f',stroke:'#7b1f1f','stroke-width':1.5}));
+}
+
+/* --- 刃の高さ側面表示 --- */
+function drawBladeSide(bladeH){
+  const svg=document.getElementById('bladeSideSvg');
+  if(!svg) return;
+  svg.innerHTML='';
+  const W=110, H=210, tableY=140, maxUp=100;
+  // テーブル
+  const tbl=el('rect',{x:5,y:tableY,width:W-10,height:14,rx:3,fill:'url(#gTable)',stroke:'#3d523f','stroke-width':1.5});
+  svg.appendChild(tbl);
+  // 本体
+  svg.appendChild(el('rect',{x:10,y:tableY+14,width:W-20,height:60,rx:4,fill:'url(#gBody)',stroke:'#2a382b','stroke-width':1.5}));
+  // スリット
+  for(let i=0;i<3;i++) svg.appendChild(el('line',{x1:22+i*14,y1:tableY+18,x2:22+i*14,y2:tableY+70,stroke:'#33422f','stroke-width':2,opacity:.4}));
+  // 刃の突出量
+  const pxH = (bladeH/40)*maxUp;
+  // 刃（テーブル下の部分 - 円盤本体）
+  svg.appendChild(el('ellipse',{cx:W/2,cy:tableY+6,rx:28,ry:6,fill:'#9aa0a6',stroke:'#6b6f74','stroke-width':1,opacity:.5}));
+  // テーブル上に出た刃部分
+  if(pxH>2){
+    const bladeG=el('g',{});
+    // 刃の側面（細い楕円で表現）
+    bladeG.appendChild(el('rect',{x:W/2-10,y:tableY-pxH,width:20,height:pxH,fill:'#b0b5ba',stroke:'#7a7f84','stroke-width':1.5,rx:2}));
+    // 歯のギザギザ（右端）
+    for(let i=0;i<Math.floor(pxH/8);i++){
+      const ty=tableY-pxH+i*8+2;
+      bladeG.appendChild(el('polygon',{points:`${W/2+10},${ty} ${W/2+16},${ty+4} ${W/2+10},${ty+8}`,fill:'#8a8f94'}));
+    }
+    svg.appendChild(bladeG);
+  }
+  // 安全カバー（刃の上を覆う半透明）
+  if(pxH>4){
+    svg.appendChild(el('rect',{x:W/2-16,y:tableY-pxH-4,width:32,height:pxH+4,rx:5,fill:'rgba(200,220,200,.45)',stroke:'rgba(60,100,60,.7)','stroke-width':1.5}));
+  }
+  // 高さ矢印＋数値
+  if(pxH>8){
+    svg.appendChild(el('line',{x1:W/2+22,y1:tableY,x2:W/2+22,y2:tableY-pxH,stroke:'#d32f2f','stroke-width':2,'marker-end':'url(#arr)'}));
+    svg.appendChild(el('line',{x1:W/2+18,y1:tableY,x2:W/2+26,y2:tableY,stroke:'#d32f2f','stroke-width':2}));
+    const ht=el('text',{x:W/2+30,y:tableY-pxH/2+4,'font-size':11,'font-weight':700,fill:'#c62828'});
+    ht.textContent=bladeH+'mm';
+    svg.appendChild(ht);
+  }
+  // 材料厚ガイド（15mm基準）
+  const matPx=15/40*maxUp;
+  svg.appendChild(el('line',{x1:5,y1:tableY-matPx,x2:W-5,y2:tableY-matPx,stroke:'#2f6fd0','stroke-width':1.5,'stroke-dasharray':'4,3'}));
+  const mt=el('text',{x:8,y:tableY-matPx-3,'font-size':10,fill:'#2f6fd0','font-weight':700});
+  mt.textContent='材料厚15mm';
+  svg.appendChild(mt);
+  // 判定テキスト
+  let judge='', jcolor='';
+  if(bladeH<10){ judge='低すぎ'; jcolor='#c62828'; }
+  else if(bladeH<=25){ judge='適切 ✓'; jcolor='#2e7d32'; }
+  else { judge='高すぎ'; jcolor='#ed8b00'; }
+  const jt=el('text',{x:W/2,y:H-6,'text-anchor':'middle','font-size':12,'font-weight':800,fill:jcolor});
+  jt.textContent=judge;
+  svg.appendChild(jt);
+  // defs内にarrow markerを追加（なければ）
+  if(!svg.querySelector('#arr')){
+    const defs2 = svg.querySelector('defs') || (() => {const d=el('defs',{});svg.insertBefore(d,svg.firstChild);return d;})();
+    const m=el('marker',{id:'arr',markerWidth:'6',markerHeight:'6',refX:'3',refY:'3',orient:'auto'});
+    m.appendChild(el('path',{d:'M0,0 L6,3 L0,6 Z',fill:'#d32f2f'}));
+    defs2.appendChild(m);
+  }
+  // bladeHeightText更新
+  const bht=document.getElementById('bladeHeightText');
+  if(bht) bht.textContent=bladeH+'mm';
+}
+
+/* 教員向けガイド確認 */
+const guideAgree=document.getElementById('guideAgree');
+const guideStartBtn=document.getElementById('guideStartBtn');
+if(guideAgree&&guideStartBtn){
+  guideAgree.addEventListener('change',()=>{guideStartBtn.disabled=!guideAgree.checked;});
+  guideStartBtn.addEventListener('click',()=>{if(guideAgree.checked)document.getElementById('startupModal').classList.add('hidden');});
+}
+
+/* =========================================================
+   ナビゲーション / ロック管理
+   ========================================================= */
+const $ = s=>document.querySelector(s);
+const $$ = s=>[...document.querySelectorAll(s)];
+
+function panelUnlocked(id){
+  if(state.instructor) return true;
+  if(id==='panel-parts') return true;
+  if(id==='panel-safety') return state.partsDone.size>=REQUIRED_PART_COUNT;
+  if(id==='panel-sim') return state.safetyJudged.size>=SAFETY_JUDGE.length;
+  if(id==='panel-quiz') return state.simCompleted;
+  return true;
+}
+function refreshTabLocks(){
+  $$('.tab-btn').forEach(b=>{
+    const id=b.dataset.panel;
+    const un=panelUnlocked(id);
+    b.classList.toggle('locked',!un);
+    let base=b.textContent.replace(/\s*🔒$/,'');
+    b.textContent = un?base:base+' 🔒';
+  });
+}
+function switchPanel(id){
+  if(!panelUnlocked(id)){
+    alert(lockMsg(id)); return;
+  }
+  $$('.panel').forEach(p=>p.classList.remove('active'));
+  $('#'+id).classList.add('active');
+  $$('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.panel===id));
+  window.scrollTo(0,0);
+}
+function lockMsg(id){
+  if(id==='panel-safety') return '先に「各部の名称」で横引きの必須部品をすべて確認してください。';
+  if(id==='panel-sim') return '先に「安全な使い方」の安全判断（2問）に正しく答えてください。';
+  if(id==='panel-quiz') return '先に「加工シミュレータ」で横引き基本操作を正常に完了してください。';
+  return '';
+}
+$$('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchPanel(b.dataset.panel)));
+
+/* =========================================================
+   PANEL 1: 各部の名称
+   ========================================================= */
+let currentView='top';
+let showAdv=false;
+let selectedPartId=null;
+const LABEL_POS={
+ top:{saw:[342,205],guard:[342,116],riving:[342,82],insert:[238,145],table:[165,350],crossfence:[145,220],dust:[342,34],longfence:[415,300],tilt:[490,390],clamp:[420,430],shaftlock:[325,425],tenontable:[530,245],tenonfence:[530,300]},
+ front:{saw:[365,150],guard:[365,104],table:[150,286],crossfence:[170,214],switch:[310,405],brake:[155,350],liftwheel:[220,405],longfence:[440,270],tilt:[490,355],clamp:[410,390],shaftlock:[320,390]}
+};
+
+function renderPartsView(){
+  const svg=$('#partsSvg');
+  if(currentView==='front') drawFrontMachine(svg,{guard:true,riving:true,bladeH:20});
+  else drawTopMachine(svg,{guard:true,riving:true,bladeH:20,fenceX:132,matW:250});
+  if(currentView==='top'){
+    const insertHot=el('rect',{x:274,y:76,width:46,height:246,rx:6,fill:'rgba(0,0,0,0)','data-id':'insert'});
+    insertHot.style.cursor='pointer';
+    insertHot.addEventListener('click',()=>selectPart('insert'));
+    svg.appendChild(insertHot);
+  }
+  PARTS.forEach(p=>{
+    if(p.adv && !showAdv) return;
+    // 視点ごとに実際に見える部品だけを表示する。
+    const hiddenTopParts = new Set(['halffence','movetable','switch','brake','liftwheel']);
+    const hiddenFrontParts = new Set(['insert','riving','dust','halffence','movetable','tenontable','tenonfence']);
+    if(currentView==='top' && hiddenTopParts.has(p.id)) return;
+    if(currentView==='front' && hiddenFrontParts.has(p.id)) return;
+    if(currentView==='top' && p.id==='insert') return; // ラベルは付けず、CG本体をクリック対象にする
+    const pos=(LABEL_POS[currentView]&&LABEL_POS[currentView][p.id])||p.pos[currentView];
+    if(!pos || pos[0]===null) return;
+    const [x,y]=pos;
+    const done=state.partsDone.has(p.id);
+    const selected=selectedPartId===p.id;
+    const g=el('g',{class:'part-hot','data-id':p.id});
+    const displayName=(done?'✓ ':'')+p.name;
+    const fontSize=displayName.length>11?11:12;
+    const w=Math.min(138,Math.max(62,displayName.length*fontSize*.72+18));
+    const fillColor=selected?'#ed8b00':(done?'#2e7d32':(p.adv?'#5e35b1':'#3d523f'));
+    const rect=el('rect',{x:x-w/2,y:y-13,width:w,height:26,rx:6,fill:fillColor,stroke:selected?'#7a4b00':(done?'#a5d6a7':'#fff'),'stroke-width':selected||done?2.2:1.1,opacity:.97,class:'part-tag'+(done?' done':'')+(selected?' selected':'')});
+    const t=el('text',{x:x,y:y+4,'text-anchor':'middle','font-size':fontSize,'font-weight':700,fill:'#fff','pointer-events':'none'});
+    t.textContent=displayName;
+    g.appendChild(rect);g.appendChild(t);g.style.cursor='pointer';
+    g.addEventListener('click',()=>selectPart(p.id));svg.appendChild(g);
+  });
+}
+function selectPart(id){
+  const p=PARTS.find(x=>x.id===id);
+  selectedPartId=id;
+  if(!p) return;
+  state.partsDone.add(id); saveState();
+  $('#pBadge').textContent=p.badge;
+  $('#pTitle').textContent=p.name;
+  const checks = p.check.map(c=>`<li style="list-style:none;position:relative;padding-left:16px"><span style="position:absolute;left:0">・</span>${c}</li>`).join('');
+  $('#pBody').innerHTML=`
+    <div class="info-block"><span class="h">機能</span>${p.fn}</div>
+    <div class="info-block"><span class="h">横引きでの役割</span>${p.role}</div>
+    <div class="info-block confirm"><span class="h">加工前の確認</span><ul style="margin:0;padding:0">${checks}</ul></div>
+    <div class="info-block vert"><span class="h">縦引きでの扱い</span>${p.vertical}</div>`;
+  renderPartsView();
+  updatePartsProgress();
+}
+function updatePartsProgress(){
+  const reqDone=[...state.partsDone].filter(id=>REQUIRED_PART_IDS.includes(id)).length;
+  $('#partsProgress').textContent=`確認済み ${reqDone} / ${REQUIRED_PART_COUNT}`;
+  const st=$('#partsStatus'); if(st) st.textContent=reqDone>=REQUIRED_PART_COUNT?'すべての必須部品を確認しました。次は「安全な使い方」へ進んでください。':`未確認の名称を選択してください。確認済み ${reqDone} / ${REQUIRED_PART_COUNT}`;
+  const box=$('#partsCompletion');const cb=$('#partsConfirm');
+  if(reqDone>=REQUIRED_PART_COUNT){box.classList.remove('locked');cb.disabled=false;cb.checked=true;refreshTabLocks();}
+}
+$$('.view-tab').forEach(b=>b.addEventListener('click',()=>{
+  currentView=b.dataset.view;
+  $$('.view-tab').forEach(x=>x.classList.toggle('active',x===b));
+  renderPartsView();
+}));
+$('.adv-toggle').addEventListener('toggle',function(){showAdv=this.open;renderPartsView();});
+
+/* =========================================================
+   PANEL 2: 安全な使い方
+   ========================================================= */
+let safetyStage=0, judgeIndex=0;
+function renderSafetyStage(){
+  const s=SAFETY[safetyStage];
+  let html=`<div class="safety-card"><h3>${s.title}</h3><p style="font-size:.8rem;color:#4a5a4c;margin-bottom:8px">${s.lead}</p>`;
+  html+=`<ul>${s.ok.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+  if(s.no) html+=`<ul class="no" style="margin-top:8px">${s.no.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+  html+=`<div class="teach-note"><b>ポイント：</b>${s.note}</div></div>`;
+  $('#safetyContent').innerHTML=html;
+}
+let judgeAnsweredWrong = false;
+function renderJudge(){
+  // 現在のステージに対応した問題を探す
+  const j=SAFETY_JUDGE.find(x=>x.stage===safetyStage);
+  if(!j){
+    $('#judgeQ').textContent='このステージの確認問題はありません。';
+    $('#judgeChoices').innerHTML='';$('#judgeFb').className='judge-feedback';
+    $('#safetyJudgeRetry').style.cssText='display:none!important';
+    return;
+  }
+  judgeAnsweredWrong=false;
+  const already=state.safetyJudged.has(j.id);
+  $('#judgeQ').textContent=`【確認問題】 ${j.q}`;
+  const wrap=$('#judgeChoices');wrap.innerHTML='';
+  $('#judgeFb').className='judge-feedback';$('#judgeFb').textContent='';
+  $('#safetyJudgeRetry').style.cssText='display:none!important';
+  j.choices.forEach((c,i)=>{
+    const b=document.createElement('button');b.className='judge-btn';b.textContent=c.t;
+    if(already) b.disabled=true;
+    b.addEventListener('click',()=>{
+      if(c.ok){
+        $$('#judgeChoices .judge-btn').forEach(x=>x.disabled=true);
+        b.classList.add('correct');
+        $('#judgeFb').className='judge-feedback ok';
+        $('#judgeFb').textContent=(judgeAnsweredWrong?'◯ 正解！（再回答）':'◯ 正解！')+' '+j.fbOk;
+        $('#safetyJudgeRetry').style.cssText='display:none!important';
+        state.safetyJudged.add(j.id);saveState();updateSafetyProgress();
+      } else {
+        b.classList.add('wrong');b.disabled=true;
+        if(!judgeAnsweredWrong){ /* 1回目の誤答のみ記録 */ }
+        judgeAnsweredWrong=true;
+        $('#judgeFb').className='judge-feedback ng';
+        $('#judgeFb').textContent='✕ 不正解です。もう一度考えてください。';
+        $('#safetyJudgeRetry').style.cssText='display:inline-flex!important';
+      }
+    });
+    wrap.appendChild(b);
+  });
+  if(already){
+    $('#judgeFb').className='judge-feedback ok';
+    $('#judgeFb').textContent='◯ このステージの確認は完了しています。';
+  }
+}
+function updateSafetyProgress(){
+  $('#safetyProgress').textContent=`確認問題 ${state.safetyJudged.size} / ${SAFETY_JUDGE.length}`;
+  if(state.safetyJudged.size>=SAFETY_JUDGE.length){
+    $('#safetyCompletion').classList.remove('locked');
+    const cb=$('#safetyConfirm');cb.disabled=false;cb.checked=true;refreshTabLocks();
+  }
+}
+// judgeNextBtn is no longer used (each stage has its own judge)
+$$('#safetyNav .safety-stage-btn').forEach(b=>b.addEventListener('click',()=>{
+  safetyStage=+b.dataset.stage;
+  $$('#safetyNav .safety-stage-btn').forEach(x=>x.classList.toggle('active',x===b));
+  renderSafetyStage();
+  renderJudge(); // ステージ切替時に対応問題を表示
+}));
+
+
+/* =========================================================
+   PANEL 3: 加工シミュレータ（参考ファイルベース完全再構成）
+   ========================================================= */
+
+// ── 定数 ─────────────────────────────────────────────────
+const S2_SCALE = 2.5;
+const S2_BLADE_X = 250;
+const S2_BLADE_Y = 230;
+// 縦引き定規: SVGでx=80の縦棒。定規の右端がx=100。fenceOffsetで左右移動。
+// 定規右端(100) + fenceOffset が BLADE_X(250) を超えないよう制限
+const S2_LONG_FENCE_X_BASE = 100; // 定規(x=80,width=20)の右端
+// 横引き定規: cross-railはx=55から始まる横バー(width=200)。fenceOffsetで上下移動。
+// cross-guide(縦ストッパー)はBLADE_X(252)の右に固定。
+const S2_CROSS_RAIL_LEFT = 120;   // rail左端固定位置
+const S2_CROSS_RAIL_BASE_Y = 350; // 板送り0でも材料・手・定規はテーブル上の作業者側に置く
+const S2_CROSS_BOARD_LEFT_OVERHANG = 0; // railの左端から材料が始まる
+
+// ── 状態 ─────────────────────────────────────────────────
+const s2 = {
+  isPowerOn: false,
+  isGoggles: false,
+  isGuardOn: false,
+  isVacuumOn: false,
+  fenceType: 'cross',    // 'cross' | 'long'
+  bladeHeight: 0,
+  isCut: false,
+  cutProgress: 0,
+  isDangerStop: false,
+  previousFeedY: 0,
+  woodWidth: 64,   // px (160/2.5)
+  woodHeight: 160, // px (400/2.5)
+  woodThickness: 15,
+  jig: 'none',     // 'none'|'jig'|'both'
+  mode: 'A',
+  simCompleted: false,
+};
+
+// ── DOM参照 ─────────────────────────────────────────────
+const s2Blade       = document.getElementById('s2Blade');
+const s2BladeMotion = document.getElementById('s2BladeMotion');
+const s2Handle      = document.getElementById('s2Handle');
+const s2CrossFence  = document.getElementById('s2CrossFence');
+const s2CrossGuide  = document.getElementById('s2CrossGuide');
+const s2CrossRail   = document.getElementById('s2CrossRail');
+const s2LongFence   = document.getElementById('s2LongFence');
+const s2SafetyGuard = document.getElementById('s2SafetyGuard');
+const s2Dust        = document.getElementById('s2Dust');
+const s2Wood        = document.getElementById('s2Wood');
+const s2Board       = document.getElementById('s2Board');
+const s2WoodSplit   = document.getElementById('s2WoodSplit');
+const s2WoodL       = document.getElementById('s2WoodL');
+const s2WoodR       = document.getElementById('s2WoodR');
+const s2CutLine     = document.getElementById('s2CutLine');
+const s2CutSlot     = document.getElementById('s2CutSlot');
+const s2Hands       = document.getElementById('s2Hands');
+const s2LeftHand    = document.getElementById('s2LeftHand');
+const s2RightHand   = document.getElementById('s2RightHand');
+const s2PushJig     = document.getElementById('s2PushJig');
+const s2PushStick   = document.getElementById('s2PushStick');
+const s2DangerOverlay = document.getElementById('s2DangerOverlay');
+const s2StatusMsg   = document.getElementById('s2StatusMsg');
+const s2StatusSmall = document.getElementById('s2StatusSmall');
+// 完了表示はCG上に重ね、ページ下部へ広がらないようにする。
+const s2ResultBarNode=document.getElementById('s2ResultBar');
+const s2SvgPanelNode=document.querySelector('.sim2-svg-panel');
+if(s2ResultBarNode && s2SvgPanelNode) s2SvgPanelNode.appendChild(s2ResultBarNode);
+const s2BladeVal    = document.getElementById('s2BladeVal');
+
+// ── 危険警告 ─────────────────────────────────────────────
+const S2_WARNINGS = {
+  guard:{
+    title:'危険！ 安全カバーがありません',
+    detail:'安全カバーがないと、回転する丸鋸へ直接触れる危険が増えます。安全カバーを取り付けてから加工してください。'
+  },
+  goggles:{
+    title:'危険！ 保護眼鏡を着用していません',
+    detail:'切りくずや破片が目に入る危険があります。保護眼鏡を着用してから加工してください。'
+  },
+  vacuum:{
+    title:'危険！ 集塵機が作動していません',
+    detail:'切りくずや粉じんがたまり、視界の悪化や吸入の危険が増えます。集塵機を作動させてから加工してください。'
+  },
+  reverse:{
+    title:'危険！ 材料を逆戻ししています',
+    detail:'回転中に材料を逆戻しすると、材料が跳ね返る危険があります。材料を動かさず、電源を切って完全停止を待ってください。'
+  },
+  hand:{
+    title:'危険！ 手が刃に近づいています',
+    detail:'手が回転する丸鋸へ接触する危険があります。手を刃の進行線から離し、位置決め治具や押し棒を使用してください。'
+  },
+  bladeHigh:{
+    title:'危険！ 刃を出しすぎています',
+    detail:'刃の突出量が大きすぎます。材料厚より必要以上に刃を出すと、接触範囲と事故の危険が増えます。材料厚より5mm以内を目安にしてください。'
+  },
+  jig:{
+    title:'危険！ 位置決め治具がありません',
+    detail:'縦引きで治具を使わないと、材料が不安定になり手が刃へ近づく危険があります。位置決め治具を取り付けてください。'
+  },
+  stick:{
+    title:'危険！ 押し棒がありません',
+    detail:'縦引きで押し棒を使わないと、手が刃へ近づく危険があります。位置決め治具と押し棒を使用してください。'
+  },
+  contact:{
+    title:'危険！ 手が刃に接触しました',
+    detail:'手が回転する丸鋸に接触する事故が発生しました。安全カバーを取り付け、手を刃から離し、位置決め治具や押し棒を使用してください。'
+  }
+};
+function s2ShowDanger(type='guard'){
+  s2.isDangerStop = true;
+  s2.isPowerOn = false;
+  s2ApplyPowerState();
+  const warning = S2_WARNINGS[type] || S2_WARNINGS.guard;
+  document.getElementById('s2DangerBig').textContent = warning.title;
+  document.getElementById('s2DangerWhy').textContent = warning.detail;
+  s2DangerOverlay.classList.add('show');
+  s2StatusMsg.textContent = warning.detail;
+  s2StatusMsg.className = 's2-status-msg danger';
+  s2StatusSmall.textContent = '危険動作のため緊急停止しました。';
+  updateS2Badges();
+}
+function s2ClearDanger(){
+  s2.isDangerStop = false;
+  s2DangerOverlay.classList.remove('show');
+  s2StatusMsg.className = 's2-status-msg';
+  s2StatusMsg.textContent = '';
+}
+
+// ── 刃の高さ更新 ─────────────────────────────────────────
+function s2UpdateBladeHeight(){
+  s2.bladeHeight = parseInt(document.getElementById('s2Height').value);
+  if(s2BladeVal) s2BladeVal.textContent = s2.bladeHeight + 'mm';
+  const bvv=document.getElementById('s2BladeValV');
+  if(bvv) bvv.textContent = s2.bladeHeight + 'mm';
+  const maxDisp = 180; // 刃高さCGを従来の2倍の縦長さで表示
+  const dispH = (s2.bladeHeight / 60) * maxDisp;
+  const centerY = 230;
+  s2Blade.setAttribute('height', dispH);
+  s2Blade.setAttribute('y', centerY - dispH / 2);
+  if(s2BladeMotion){
+    s2BladeMotion.setAttribute('y1', centerY - dispH / 2);
+    s2BladeMotion.setAttribute('y2', centerY + dispH / 2);
+  }
+  const angle = s2.bladeHeight * 6;
+  s2Handle.setAttribute('transform', `translate(225 425) rotate(${angle})`);
+  s2UpdateCutState();
+  s2UpdateNextBanner();
+}
+// 刃高さスライダー: 横(s2Height)と縦(s2HeightV)を同期
+function s2SyncBlade(src,dst){
+  document.getElementById(dst).value=document.getElementById(src).value;
+  s2UpdateBladeHeight();
+}
+['input','change'].forEach(ev=>{
+  document.getElementById('s2HeightV').addEventListener(ev, ()=>s2SyncBlade('s2HeightV','s2Height'));
+});
+document.getElementById('s2Fence').addEventListener('change', s2UpdatePosition);     // iOS/iPad対応
+document.getElementById('s2Feed').addEventListener('change', () => {                  // iOS/iPad対応
+  const currentFeedY = parseInt(document.getElementById('s2Feed').value);
+  const resultShown = document.getElementById('s2ResultBar').style.display !== 'none';
+  if(s2.isCut && !resultShown && currentFeedY < s2.previousFeedY){ s2ShowDanger('reverse'); return; }
+  s2.previousFeedY = currentFeedY;
+  s2UpdatePosition(); s2UpdateNextBanner();
+});
+
+// ── 位置更新（定規・材料） ──────────────────────────────
+function s2UpdatePosition(){
+  const feedY = parseInt(document.getElementById('s2Feed').value);
+  const fenceOffset = parseInt(document.getElementById('s2Fence').value);
+  let finalX = 0, finalY = 0;
+
+  if(s2.fenceType === 'long'){
+    // ── 縦引き ──────────────────────────────────────────
+    // 定規(縦棒 x=80,w=20)をfenceOffsetで左右移動
+    // fenceOffset: 正=右へ(刃に近づく), 負=左へ(刃から遠ざかる)
+    // 定規右端 = 80+20+fenceOffset = 100+fenceOffset が刃(250)を超えないよう制限
+    const clampedOffset = Math.min(fenceOffset, S2_BLADE_X - 100 - 5);
+    s2LongFence.setAttribute('transform', `translate(${clampedOffset}, 0)`);
+    s2LongFence.setAttribute('opacity','1');
+    s2CrossFence.setAttribute('opacity','0');
+    // 材料は定規右端(100+offset)の右側から配置。feedYで手前から奥（-y方向）へ送る。
+    finalX = (100 + clampedOffset) - 95; // 定規右端が材料左端
+    finalY = (255 - 205) - feedY; // 縦方向: feedYが増えると上（奥）へ
+    } else {
+    // ── 横引き ────────────────────────────────────────────
+    // s2Fence = 材料の位置（板の左右位置。両手も追従）
+    s2LongFence.setAttribute('opacity','0');
+    s2CrossFence.setAttribute('opacity','1');
+    // 板送り0では、板・手・横引き定規を丸鋸より下（作業者側）に待機させる。
+    // 板送り量に応じて、板・手・定規を同じ移動量で刃方向へ送る。
+    const crossShiftY = -105 - feedY; // 基準CGをテーブル上へ移し、送り量だけ一体移動
+    s2CrossGuide.setAttribute('transform', `translate(0, ${crossShiftY})`);
+    s2CrossRail.setAttribute('transform',  `translate(0, ${crossShiftY})`);
+    const matLeftWorld = 135 + fenceOffset;
+    finalX = matLeftWorld - 95;
+    const boardBottomY = S2_CROSS_RAIL_BASE_Y - feedY;
+    finalY = (boardBottomY - s2.woodHeight) - 205;
+  }
+  s2Wood.setAttribute('transform', `translate(${finalX}, ${finalY})`);
+  s2UpdateHandPositions();
+  s2UpdateCutState();
+}
+
+document.getElementById('s2Fence').addEventListener('input', s2UpdatePosition);
+document.getElementById('s2Feed').addEventListener('input', () => {
+  const currentFeedY = parseInt(document.getElementById('s2Feed').value);
+  // 切断完了後 かつ 結果バーが表示済みの場合は逆戻し許可（板・治具を戻せる）
+  const resultShown = document.getElementById('s2ResultBar').style.display !== 'none';
+  if(s2.isCut && !resultShown && currentFeedY < s2.previousFeedY){
+    s2ShowDanger('reverse'); return;
+  }
+  s2.previousFeedY = currentFeedY;
+  s2UpdatePosition();
+  s2UpdateNextBanner();
+});
+
+// ── 手の位置更新 ─────────────────────────────────────────
+function s2UpdateHandPositions(){
+  // 手は材料グループの子要素。板と一体で移動させつつ、刃の進行線から十分離す。
+  const handCX = 70, handCY = 260;
+  const bL = 95, bT = 205;
+  const isRip = (s2.fenceType === 'long');
+  const scale = 0.56;
+  function setHand(el, x, y){
+    el.setAttribute('transform', `translate(${x},${y}) scale(${scale}) translate(${-handCX},${-handCY})`);
+  }
+
+  if(isRip){
+    setHand(s2LeftHand,  bL + s2.woodWidth * 0.35, bT + s2.woodHeight * 0.34);
+    setHand(s2RightHand, bL + s2.woodWidth * 0.72, bT + s2.woodHeight * 0.72);
+  } else {
+    // 横引きでは左右端寄りに置き、刃の位置（x=250）付近を避ける。
+    setHand(s2LeftHand,  bL + 18,                bT + s2.woodHeight * 0.55);
+    setHand(s2RightHand, bL + Math.min(s2.woodWidth * 0.56, s2.woodWidth - 22), bT + s2.woodHeight * 0.55);
+  }
+}
+
+function s2HandNearBlade(){
+  if(!s2Hands || s2Hands.getAttribute('opacity') === '0') return false;
+  try{
+    const bladeRect = s2Blade.getBoundingClientRect();
+    if(bladeRect.height < 2 || bladeRect.width < 2) return false;
+    const margin = 14;
+    return [s2LeftHand, s2RightHand].some(hand => {
+      const r = hand.getBoundingClientRect();
+      return !(r.right < bladeRect.left - margin || r.left > bladeRect.right + margin ||
+               r.bottom < bladeRect.top - margin || r.top > bladeRect.bottom + margin);
+    });
+  }catch(e){ return false; }
+}
+
+// ── 材料サイズ更新 ───────────────────────────────────────
+function s2UpdateWoodSize(){
+  const val = document.getElementById('s2WoodSelect').value;
+  const [vert, horiz, thick] = val.split('x').map(Number);
+  const isRip = (s2.fenceType === 'long');
+  // 縦引きでは板を90度回転: 木目方向(縦方向=vert)が横幅になる
+  // 横引き: woodWidth=横(horiz), woodHeight=縦(vert)
+  // 縦引き: woodWidth=縦(vert),  woodHeight=横(horiz) → 板が縦長に見える
+  s2.woodWidth     = isRip ? (vert  / S2_SCALE) : (horiz / S2_SCALE);
+  s2.woodHeight    = isRip ? (horiz / S2_SCALE) : (vert  / S2_SCALE);
+  s2.woodThickness = thick;
+  s2Board.setAttribute('width',  s2.woodWidth);
+  s2Board.setAttribute('height', s2.woodHeight);
+  s2WoodL.setAttribute('height', s2.woodHeight);
+  s2WoodR.setAttribute('height', s2.woodHeight);
+  s2.isCut = false; s2.cutProgress = 0;
+  s2UpdateHandPositions();
+  s2UpdateCutState();
+}
+document.getElementById('s2WoodSelect').addEventListener('change', () => {
+  s2UpdateWoodSize(); s2UpdatePosition();
+});
+
+// ── ジグ表示 ─────────────────────────────────────────────
+function s2UpdateJig(){
+  s2.jig = document.getElementById('s2JigSelect').value;
+  const hasJig   = (s2.jig === 'jig' || s2.jig === 'both');
+  const hasStick = (s2.jig === 'both');
+  s2PushJig.setAttribute('opacity', hasJig ? '1' : '0');
+  s2PushStick.setAttribute('opacity', hasStick ? '1' : '0');
+  s2Hands.setAttribute('opacity', (hasStick || s2.fenceType==='long') ? '0' : '1');
+
+  const bL=95, bT=205;
+  const jigBody=document.getElementById('s2JigBody');
+  if(jigBody){
+    const jigH=Math.max(70, s2.woodHeight*0.72);
+    // 位置決め治具は板の左端に当てる。
+    jigBody.setAttribute('x',73);
+    jigBody.setAttribute('y',bT+s2.woodHeight/2-jigH/2);
+    jigBody.setAttribute('height',jigH);
+  }
+  // 元CGの治具左端(73)を、板左端(95)へ合わせる。
+  s2PushJig.setAttribute('transform',`translate(${bL-73},0)`);
+  if(s2.fenceType==='long'){
+    const targetX = (bL + s2.woodWidth * 0.48) - 92;
+    const targetY = (bT + s2.woodHeight * 0.42) - 218;
+    s2PushStick.setAttribute('transform', `translate(${targetX},${targetY})`);
+  }else{
+    const targetX = (bL + s2.woodWidth * 0.50) - 92;
+    const targetY = (bT + s2.woodHeight * 0.48) - 218;
+    s2PushStick.setAttribute('transform', `translate(${targetX},${targetY})`);
+  }
+  s2UpdateHandPositions();
+  s2UpdateNextBanner();
+}
+document.getElementById('s2JigSelect').addEventListener('change', s2UpdateJig);
+
+// ── 安全カバー ───────────────────────────────────────────
+document.getElementById('s2GogglesBtn').addEventListener('click', () => {
+  s2.isGoggles = !s2.isGoggles;
+  const btn = document.getElementById('s2GogglesBtn');
+  if(s2.isGoggles){
+    // ボタンは現在状態ではなく、次に行う操作を表示する
+    btn.textContent = '🥽 保護眼鏡を外す';
+    btn.className = 's2btn s2btn-on';
+  } else {
+    btn.textContent = '🥽 保護眼鏡をつける';
+    btn.className = 's2btn s2btn-off';
+  }
+  updateS2Badges(); s2UpdateNextBanner();
+});
+document.getElementById('s2GuardBtn').addEventListener('click', () => {
+  s2.isGuardOn = !s2.isGuardOn;
+  const btn = document.getElementById('s2GuardBtn');
+  if(s2.isGuardOn){
+    // ボタンは現在状態ではなく、次に行う操作を表示する
+    btn.textContent = '🛡 安全カバーを外す';
+    btn.className = 's2btn s2btn-on';
+    s2SafetyGuard.style.display = 'block';
+    s2ClearDanger();
+  } else {
+    btn.textContent = '🛡 安全カバーをつける';
+    btn.className = 's2btn s2btn-off';
+    s2SafetyGuard.style.display = 'none';
+  }
+  updateS2Badges(); s2UpdateNextBanner();
+});
+
+// ── 集塵機 ───────────────────────────────────────────────
+document.getElementById('s2VacuumBtn').addEventListener('click', () => {
+  s2.isVacuumOn = !s2.isVacuumOn;
+  const btn = document.getElementById('s2VacuumBtn');
+  if(s2.isVacuumOn){
+    // ボタンには現在状態ではなく、次に行う操作を表示する
+    btn.textContent = '🌀 集塵機 OFF';
+    btn.className = 's2btn s2btn-active';
+    s2Dust.classList.add('s2-dust-on');
+  } else {
+    btn.textContent = '🌀 集塵機 ON';
+    btn.className = 's2btn s2btn-neutral';
+    s2Dust.classList.remove('s2-dust-on');
+  }
+  updateS2Badges(); s2UpdateNextBanner();
+});
+
+// ── 定規切替 ─────────────────────────────────────────────
+document.getElementById('s2FenceType').addEventListener('change', e => {
+  s2.fenceType = e.target.value;
+  s2.isCut = false; s2.cutProgress = 0;
+  const lbl = document.getElementById('s2FenceLabel');
+  const fw  = document.getElementById('s2FenceWrap');
+  if(s2.fenceType === 'cross'){
+    // 横引き: スライダーは「材料の位置（左右）」
+    document.getElementById('s2Fence').min   = -60;  // 材料を左へ
+    document.getElementById('s2Fence').max   = 60;   // 材料を右へ
+    document.getElementById('s2Fence').value = 0;
+    if(lbl) lbl.textContent = '① 材料の位置';
+    if(fw)  fw.style.display = 'block';
+    // 横引きのジグ選択肢
+    const jigNone=document.getElementById('s2JigSelect').querySelector('option[value="none"]');
+    const jigJig =document.getElementById('s2JigSelect').querySelector('option[value="jig"]');
+    const jigBoth=document.getElementById('s2JigSelect').querySelector('option[value="both"]');
+    if(jigNone) jigNone.textContent='ジグ: なし（手で押さえ）';
+    if(jigJig)  jigJig.textContent ='位置決め治具';
+    if(jigBoth) jigBoth.textContent='位置決め治具＋押し棒';
+    if(jigBoth) jigBoth.hidden = false;
+  } else {
+    // 縦引き: スライダーは「定規の位置（左右）」
+    document.getElementById('s2Fence').min   = -120; // 定規を左へ（幅広い板）
+    document.getElementById('s2Fence').max   = 80;   // 定規を右へ（刃に近づく）
+    document.getElementById('s2Fence').value = 0;
+    if(lbl) lbl.textContent = '① 定規の位置';
+    if(fw)  fw.style.display = 'block';
+    // 縦引きのジグ選択肢
+    const jigNoneR=document.getElementById('s2JigSelect').querySelector('option[value="none"]');
+    const jigJigR =document.getElementById('s2JigSelect').querySelector('option[value="jig"]');
+    const jigBothR=document.getElementById('s2JigSelect').querySelector('option[value="both"]');
+    if(jigNoneR) jigNoneR.textContent='ジグ: なし（禁止！）';
+    if(jigJigR)  jigJigR.textContent ='安全ジグ（プッシュブロック）';
+    if(jigBothR) jigBothR.textContent='安全ジグ＋押し棒（推奨）';
+    if(jigBothR) jigBothR.hidden = false;
+    document.getElementById('s2JigSelect').value = 'none';
+  }
+  s2UpdateWoodSize(); s2UpdatePosition(); s2UpdateJig(); s2UpdateNextBanner();
+});
+
+// ── 電源 ────────────────────────────────────────────────
+function s2ApplyPowerState(){
+  const onBtn=document.getElementById('s2PowerBtn');
+  const offBtn=document.getElementById('s2PowerOffBtn');
+  onBtn.disabled=s2.isPowerOn;
+  offBtn.disabled=!s2.isPowerOn;
+  onBtn.className='s2btn '+(s2.isPowerOn?'s2btn-neutral':'s2btn-off');
+  offBtn.className='s2btn '+(s2.isPowerOn?'s2btn-on':'s2btn-neutral');
+  if(s2.isPowerOn){
+    s2Blade.classList.add('s2-spinning');
+    if(s2BladeMotion) s2BladeMotion.classList.add('s2-motion-on');
+    s2StatusSmall.textContent='⚠️ 高速回転中。注意！';
+  }else{
+    s2Blade.classList.remove('s2-spinning');
+    if(s2BladeMotion) s2BladeMotion.classList.remove('s2-motion-on');
+    s2StatusSmall.textContent='';
+  }
+}
+function s2PowerOn(){
+  if(s2.isDangerStop) s2ClearDanger();
+  if(s2.isPowerOn) return;
+  if(s2.fenceType==='long'){
+    if(s2.jig==='none'){
+      s2ShowDanger('jig');
+      return;
+    }
+    if(s2.jig!=='both'){
+      s2ShowDanger('stick');
+      return;
+    }
+  }
+  s2.isPowerOn=true;
+  s2ApplyPowerState();updateS2Badges();s2UpdateCutState();s2UpdateNextBanner();
+}
+function s2PowerOff(){
+  if(!s2.isPowerOn) return;
+  s2.isPowerOn=false;
+  s2ApplyPowerState();updateS2Badges();s2UpdateCutState();s2UpdateNextBanner();
+}
+document.getElementById('s2PowerBtn').addEventListener('click',s2PowerOn);
+document.getElementById('s2PowerOffBtn').addEventListener('click',s2PowerOff);
+
+// ── リセット ─────────────────────────────────────────────
+function s2Reset(){
+  s2.isPowerOn = false; s2.isCut = false; s2.isDangerStop = false;
+  s2.cutProgress = 0; s2.previousFeedY = 0;
+  s2ApplyPowerState();
+  document.getElementById('s2Fence').min   = -80;
+  document.getElementById('s2Fence').max   = 60;
+  document.getElementById('s2Fence').value = 0;
+  // 刃の昇降は引き継ぐ。縦スライダーと同期。
+  const hval=document.getElementById('s2Height').value;
+  const hv=document.getElementById('s2HeightV');
+  if(hv) hv.value=hval;
+  document.getElementById('s2Feed').value   = 0;
+  s2.previousFeedY = 0;
+  document.getElementById('s2WoodSelect').value = '100x400x15';
+  document.getElementById('s2JigSelect').value  = 'none';
+  document.getElementById('s2FenceType').value  = s2.mode === 'B' ? 'long' : 'cross';
+  s2.fenceType = document.getElementById('s2FenceType').value;
+  const vBtn = document.getElementById('s2VacuumBtn');
+  vBtn.textContent = '🌀 集塵機 ON'; vBtn.className = 's2btn s2btn-neutral';
+  s2Dust.classList.remove('s2-dust-on'); s2.isVacuumOn = false;
+  const goBtn = document.getElementById('s2GogglesBtn');
+  goBtn.textContent = '🥽 保護眼鏡をつける'; goBtn.className = 's2btn s2btn-off';
+  s2.isGoggles = false;
+  const gBtn = document.getElementById('s2GuardBtn');
+  gBtn.textContent = '🛡 安全カバーをつける'; gBtn.className = 's2btn s2btn-off';
+  s2SafetyGuard.style.display = 'none'; s2.isGuardOn = false;
+  document.getElementById('s2ResultBar').style.display = 'none';
+  delete document.getElementById('s2ResultBar').dataset.shown;
+  s2ClearDanger();
+  s2UpdateWoodSize(); s2UpdatePosition(); s2UpdateBladeHeight(); s2UpdateJig();
+  updateS2Badges(); s2UpdateNextBanner();
+  s2StatusMsg.textContent = '';
+  s2StatusSmall.textContent = ''; 
+}
+document.getElementById('s2ResetBtn').addEventListener('click', s2Reset);
+document.getElementById('s2ResultReset').addEventListener('click', s2Reset);
+
+// ── 切断状態更新 ─────────────────────────────────────────
+function s2UpdateCutState(){
+  const bx = S2_BLADE_X, by = S2_BLADE_Y;
+  const tr = s2Wood.getAttribute('transform');
+  const m  = /translate\(([^,]+),\s*([^)]+)\)/.exec(tr);
+  if(!m) return;
+  const cx = parseFloat(m[1]), cy = parseFloat(m[2]);
+  const wTop = 205 + cy, wBot = 205 + s2.woodHeight + cy;
+  const wL   = 85  + cx, wR   = 85  + s2.woodWidth  + cx;
+  const passing = wTop <= by && wBot >= by && wL < bx && wR > bx && s2.bladeHeight > 0;
+  const canCutH = s2.bladeHeight >= s2.woodThickness;
+  const bladeTooHigh = s2.bladeHeight > s2.woodThickness + 5;
+  if(passing && s2.isPowerOn && bladeTooHigh){
+    s2ShowDanger('bladeHigh');
+    return;
+  }
+  const canCut  = passing && s2.isPowerOn && canCutH && !bladeTooHigh;
+  const hiddenOnly = passing && s2.bladeHeight >= 1 && !canCutH;
+  if(canCut && !s2.isGoggles){ s2ShowDanger('goggles'); return; }
+  if(canCut && !s2.isGuardOn){ s2ShowDanger('guard'); return; }
+  if(canCut && !s2.isVacuumOn){ s2ShowDanger('vacuum'); return; }
+  if(canCut && s2HandNearBlade()){
+    s2ShowDanger('hand');
+    return;
+  }
+  if(canCut){
+    const prog = Math.max(0, Math.min(s2.woodHeight, by - wTop));
+    s2.cutProgress = Math.max(s2.cutProgress, prog);
+    if(s2.cutProgress >= s2.woodHeight * 0.90){
+      s2.isCut = true;
+    }
+  }
+  // 板の後端が刃を通過した場合も、確実に切断完了と判定する。
+  const passedBlade = s2.cutProgress>0 && wBot <= by + 4;
+  if((s2.isCut || passedBlade) && !document.getElementById('s2ResultBar').dataset.shown){
+      s2.isCut = true;
+      if(!s2.simCompleted){
+        s2.simCompleted = true;
+        state.simCompleted = true; saveState(); refreshTabLocks();
+        unlockDangerExperiments();
+        unlockAdvancedSimModes();
+      }
+      document.getElementById('s2ResultBar').dataset.shown='1';
+      s2ShowResult();
+
+  }
+  const cutXL = bx - cx;
+  const kerf  = 6;
+  s2WoodL.setAttribute('width',  Math.max(0, cutXL - 85 - kerf/2));
+  s2WoodR.setAttribute('x',      cutXL + kerf/2);
+  s2WoodR.setAttribute('width',  Math.max(0, (85 + s2.woodWidth) - (cutXL + kerf/2)));
+  const visLP = hiddenOnly
+    ? Math.max(0, Math.min(s2.woodHeight, by - wTop))
+    : (s2.isCut ? s2.woodHeight : s2.cutProgress);
+  s2CutLine.setAttribute('x1', cutXL); s2CutLine.setAttribute('x2', cutXL);
+  s2CutLine.setAttribute('y2', 205 + visLP);
+  s2CutLine.setAttribute('stroke', hiddenOnly ? '#d32f2f' : '#8a3f1c');
+  s2CutSlot.setAttribute('x', cutXL - kerf/2);
+  s2CutSlot.setAttribute('height', s2.isCut ? s2.woodHeight : s2.cutProgress);
+  if(s2.isCut){
+    s2Board.setAttribute('opacity','0'); s2WoodSplit.setAttribute('opacity','1');
+    s2CutSlot.setAttribute('opacity','0'); s2CutLine.setAttribute('opacity','0');
+  } else {
+    s2Board.setAttribute('opacity','1'); s2WoodSplit.setAttribute('opacity','0');
+    s2CutSlot.setAttribute('opacity', (s2.cutProgress>0 && canCutH) ? '1' : '0');
+    s2CutLine.setAttribute('opacity', (visLP > 0) ? '1' : '0');
+  }
+  const col = canCut ? '#c48a3a' : '#d6a35a';
+  s2Board.setAttribute('fill', col);
+  s2WoodL.setAttribute('fill', col);
+  s2WoodR.setAttribute('fill', col);
+}
+
+// ── バッジ更新 ───────────────────────────────────────────
+function updateS2Badges(){
+  const bgo = document.getElementById('bGogglesS2');
+  const bg  = document.getElementById('bGuardS2');
+  const bv  = document.getElementById('bVacuumS2');
+  if(bgo){ bgo.className = 'badge'+(s2.isGoggles?' on':' warn');
+    bgo.textContent = s2.isGoggles ? '🥽 眼鏡：着用' : '🥽 眼鏡：未'; }
+  bg.className = 'badge' + (s2.isGuardOn ? ' on' : ' warn');
+  bg.textContent = s2.isGuardOn ? '🛡 カバー：ON' : '🛡 カバー：OFF';
+  bv.className = 'badge' + (s2.isVacuumOn ? ' on' : '');
+  bv.textContent = s2.isVacuumOn ? '🌀 集塵：ON' : '🌀 集塵：OFF';
+}
+
+// ── 結果表示 ─────────────────────────────────────────────
+function s2ShowResult(){
+  const bar = document.getElementById('s2ResultBar');
+  const rip = (s2.fenceType === 'long');
+  const bladeOK = s2.bladeHeight>=s2.woodThickness && s2.bladeHeight<=s2.woodThickness+5;
+  const handOK = !s2HandNearBlade();
+  const safe = s2.isGoggles && s2.isGuardOn && s2.isVacuumOn && bladeOK && handOK;
+  document.getElementById('s2ResultTitle').textContent = safe
+    ? (rip ? '✅ 縦引き操作：安全に完了' : '✅ 横引き操作：安全に完了')
+    : '⚠ 加工は完了しましたが、安全条件が不足しています';
+  const grid = document.getElementById('s2ResultGrid');
+  const items = [['保護眼鏡',s2.isGoggles],['安全カバー',s2.isGuardOn],['集塵機',s2.isVacuumOn],['刃高さ',bladeOK],['手の位置',handOK]];
+  grid.innerHTML = items.map(([k,v])=>`<span>${k}：${v?'○':'×'}</span>`).join('');
+  document.getElementById('s2ResultAdvice').textContent = safe
+    ? (rip ? '縦引きを安全に完了しました。材料を定規に沿わせて送れました。'
+           : '横引きを安全に完了しました。材料と定規を一体で送れました。')
+    : '×の項目を修正し、手を刃の進行線から離してもう一度行ってください。';
+  bar.style.display = 'block';
+}
+
+// ── 次の操作バナー ───────────────────────────────────────
+const S2_NEXT_STEPS_CROSS = [
+  { key:'goggles', check:()=>!s2.isGoggles,    text:'① 保護眼鏡をONにしてください【安全】' },
+  { key:'guard',   check:()=>!s2.isGuardOn,    text:'② 安全カバーをONにしてください【安全】' },
+  { key:'jig',     check:()=>s2.jig==='none',  text:'③ 位置決め治具を使うと安全です（ジグ: なし 選択中）' },
+  { key:'vacuum',  check:()=>!s2.isVacuumOn,   text:'④ 集塵機をONにしてください' },
+  { key:'blade', check:()=>s2.bladeHeight<s2.woodThickness || s2.bladeHeight>s2.woodThickness+5, text:'⑤ 刃高を材料厚以上・材料厚＋5mm以内に調整してください' },
+  { key:'power',   check:()=>!s2.isPowerOn,    text:'⑥ 電源をONにしてください' },
+  { key:'feed',    check:()=>parseInt(document.getElementById('s2Feed').value)<10,
+                                                text:'⑦ 切断準備ができたら「板送り」のスライダーで板を送ってください' },
+  { key:'cut',     check:()=>!s2.isCut,        text:'⑧ そのまま板を送り続けて切断してください' },
+];
+const S2_NEXT_STEPS_RIP = [
+  { key:'goggles', check:()=>!s2.isGoggles,    text:'① 保護眼鏡をONにしてください【安全】' },
+  { key:'guard',   check:()=>!s2.isGuardOn,    text:'② 安全カバーをONにしてください【安全】' },
+  { key:'jig',     check:()=>s2.jig==='none',  text:'③ 安全ジグをつけてください【縦引き必須】' },
+  { key:'stick',   check:()=>s2.jig!=='both',  text:'④ 押し棒を使ってください【縦引き必須・キックバック防止】' },
+  { key:'vacuum',  check:()=>!s2.isVacuumOn,   text:'⑤ 集塵機をONにしてください' },
+  { key:'blade', check:()=>s2.bladeHeight<s2.woodThickness || s2.bladeHeight>s2.woodThickness+5, text:'⑥ 刃高を材料厚以上・材料厚＋5mm以内に調整してください' },
+  { key:'power',   check:()=>!s2.isPowerOn,    text:'⑦ 電源をONにしてください' },
+  { key:'feed',    check:()=>parseInt(document.getElementById('s2Feed').value)<10,
+                                                text:'⑧ 切断準備ができたら「板送り」のスライダーで板を送ってください' },
+  { key:'cut',     check:()=>!s2.isCut,        text:'⑨ そのまま板を送り続けて切断してください' },
+];
+function currentSteps(){ return s2.fenceType==='long' ? S2_NEXT_STEPS_RIP : S2_NEXT_STEPS_CROSS; }
+function s2UpdateNextBanner(){
+  const steps = currentSteps();
+  const step  = steps.find(s=>s.check());
+  const num   = document.getElementById('nextNum');
+  const txt   = document.getElementById('nextText');
+  const step2 = document.getElementById('simStep');
+  if(step){
+    const idx = steps.indexOf(step)+1;
+    num.textContent = idx;
+    const isSafety = step.text.includes('【安全】') || step.text.includes('【縦引き必須');
+    num.style.background = isSafety ? '#c62828' : '#2f6fd0';
+    txt.textContent = step.text.replace('【安全】','').replace('【縦引き必須】','').replace('【縦引き必須・キックバック防止】','');
+    step2.innerHTML = `<b>次の操作 ${idx}/${steps.length}：</b>${step.text}`;
+    step2.style.background = isSafety ? '#fff0f0' : '';
+    step2.style.borderColor = isSafety ? '#f44336' : '';
+    step2.style.color       = isSafety ? '#c62828' : '';
+  } else {
+    num.textContent = '✓'; num.style.background = '#2e7d32';
+    txt.textContent = s2.isCut ? '切断完了！電源をOFFにしてリセットできます。' : '板を送って切断しましょう。';
+    step2.innerHTML = ''; step2.style.cssText='';
+  }
+}
+
+// ── 危険実験（ロック解除後） ─────────────────────────────
+const S2_DANGER_EXPS = [
+  { label:'✋ 刃に手を近づけすぎる → 手が刃に当たって事故になる', type:'hand' },
+  { label:'🛡 安全カバーなしで切る', type:'guard' },
+  { label:'⏪ 切断後に板を逆戻しする', type:'reverse' },
+  { label:'💨 集塵機なしで切る',     type:'vacuum' },
+];
+function unlockDangerExperiments(){
+  const grid = document.getElementById('dangerExpGrid');
+  grid.innerHTML = '';
+  S2_DANGER_EXPS.forEach(d=>{
+    const b = document.createElement('button');
+    b.className = 'sim-btn trouble';
+    b.textContent = d.label;
+    b.addEventListener('click', ()=>{
+      if(d.type === 'hand'){
+        // 「手を刃に近づけすぎる」→ 手が刃と重なる位置に移動し、事故演出
+        s2.isPowerOn = true; s2Blade.classList.add('s2-spinning');
+        // 手を刃の上(x=250)に重ねる
+        s2RightHand.setAttribute('transform','translate(95, -33)'); // 刃に接触する位置
+        s2LeftHand.setAttribute('transform', 'translate(55, -33)');
+        s2Hands.setAttribute('opacity','1');
+        s2ShowDanger('contact');
+        return;
+      }
+      // 強制的に危険状態を起こす
+      s2.isGuardOn   = (d.type !== 'guard');
+      s2.isVacuumOn  = (d.type !== 'vacuum');
+      s2.isCut       = (d.type === 'reverse');
+      s2.isPowerOn   = true;
+      s2Blade.classList.add('s2-spinning');
+      document.getElementById('s2Feed').value = (d.type === 'reverse') ? '230' : '150';
+      s2.previousFeedY = 230;
+      if(d.type === 'reverse') document.getElementById('s2Feed').value = '100';
+      s2UpdateWoodSize(); s2UpdatePosition(); s2UpdateBladeHeight();
+      s2ShowDanger(d.type);
+    });
+    grid.appendChild(b);
+  });
+}
+
+// ── 高度モード解放 ────────────────────────────────────────
+function unlockAdvancedSimModes(){
+  $$('#simModebar .sim-mode-btn').forEach(b=>{
+    if(b.dataset.mode==='E' && (state.simCompleted||state.instructor||false)){
+      b.classList.remove('locked');
+      b.textContent = b.textContent.replace(' 🔒','');
+    }
+  });
+}
+
+// ── モード切替 ────────────────────────────────────────────
+$$('#simModebar .sim-mode-btn').forEach(b=>b.addEventListener('click',()=>{
+  if(b.classList.contains('locked')){alert('先に横引き操作を完了してください。');return;}
+  s2.mode = b.dataset.mode;
+  $$('#simModebar .sim-mode-btn').forEach(x=>x.classList.toggle('active',x===b));
+  if(s2.mode==='B'){
+    document.getElementById('s2FenceType').value='long';
+    document.getElementById('s2FenceType').dispatchEvent(new Event('change'));
+  } else if(s2.mode==='A'){
+    document.getElementById('s2FenceType').value='cross';
+    document.getElementById('s2FenceType').dispatchEvent(new Event('change'));
+  } else if(s2.mode==='E'){
+    document.getElementById('dangerLearn').open=true;
+    unlockDangerExperiments();
+  }
+  s2Reset();
+}));
+
+// ── 初期化 ───────────────────────────────────────────────
+function s2Init(){
+  s2UpdateWoodSize();
+  s2UpdatePosition();
+  // 縦スライダーの初期値を横スライダーと同期
+  const hval0=document.getElementById('s2Height').value;
+  const hv0=document.getElementById('s2HeightV');
+  if(hv0) hv0.value=hval0;
+  s2UpdateBladeHeight();
+  s2UpdateJig();
+  updateS2Badges();
+  s2UpdateNextBanner();
+  if(state.simCompleted){ unlockAdvancedSimModes(); unlockDangerExperiments(); }
+}
+
+
+/* =========================================================
+   PANEL 4: 確認クイズ
+   ========================================================= */
+const CAT_LABEL={cross:'横引き操作',device:'安全装置・機械点検',own:'自身の操作判断',compare:'縦引きとの比較',abnormal:'異常時・終了時'};
+// 10問構成：cross4, device2, teach2, compare1, abnormal1
+const QUIZ_PLAN_10=[['cross',4],['device',2],['own',2],['compare',1],['abnormal',1]];
+const QUIZ_PLAN_20=[['cross',7],['device',4],['own',5],['compare',2],['abnormal',2]];
+let quiz={list:[],idx:0,score:0,wrong:[],catScore:{}};
+
+function pick(cat,n){
+  const pool=QUIZ_BANK.filter(q=>q.cat===cat);
+  const arr=[...pool];for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr.slice(0,Math.min(n,arr.length));
+}
+function buildQuiz(){
+  const plan = state.quizMode===20?QUIZ_PLAN_20:QUIZ_PLAN_10;
+  let list=[];plan.forEach(([c,n])=>list.push(...pick(c,n)));
+  // シャッフル（カテゴリ混在）
+  for(let i=list.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[list[i],list[j]]=[list[j],list[i]];}
+  quiz={list,idx:0,score:0,wrong:[],catScore:{}};
+  Object.keys(CAT_LABEL).forEach(c=>quiz.catScore[c]={got:0,tot:0});
+  quiz.list.forEach(q=>quiz.catScore[q.cat].tot++);
+  renderQuiz();
+}
+function renderQuiz(){
+  const q=quiz.list[quiz.idx];
+  const n=quiz.list.length;
+  $('#quizProgress').textContent=`問題 ${quiz.idx+1} / ${n}`;
+  $('#quizScore').textContent=`得点 ${quiz.score} / ${quiz.idx}`;
+  $('#qbar').style.width=((quiz.idx)/n*100)+'%';
+  $('#quizCat').textContent=CAT_LABEL[q.cat];
+  $('#quizQ').textContent=q.q;
+  $('#quizResult').className='quiz-result';$('#quizResult').innerHTML='';
+  $('#quizNext').style.display='none';
+  $('#quizRetry').style.cssText='display:none!important';
+  quiz.answeredWrong=false; // この問題で一度でも誤答したか
+  const wrap=$('#quizChoices');wrap.innerHTML='';
+  q.c.forEach((c,i)=>{
+    const b=document.createElement('button');b.className='quiz-choice';b.textContent=c;
+    b.addEventListener('click',()=>answerQuiz(i,b));
+    wrap.appendChild(b);
+  });
+}
+function answerQuiz(i,btn){
+  const q=quiz.list[quiz.idx];
+  const correct = (i===q.a);
+  if(correct){
+    // 正解：一度も誤答していなければ得点
+    $$('#quizChoices .quiz-choice').forEach(x=>x.disabled=true);
+    btn.classList.add('correct');
+    if(!quiz.answeredWrong){quiz.score++;quiz.catScore[q.cat].got++;}
+    showQuizMsg('ok',(quiz.answeredWrong?'◯ 正解！（誤答があったため得点なし）':'◯ 正解！ ')+q.ex);
+    $('#quizScore').textContent=`得点 ${quiz.score} / ${quiz.idx+1}`;
+    $('#quizRetry').style.cssText='display:none!important';
+    if(quiz.idx<quiz.list.length-1)$('#quizNext').style.display='inline-block';
+    else showQuizFinal();
+  } else {
+    // 不正解：選んだボタンだけ×マークにし，全ボタン無効化。もう一度ボタンを表示。
+    $$('#quizChoices .quiz-choice').forEach(x=>x.disabled=true);
+    btn.classList.add('wrong');
+    if(!quiz.answeredWrong){quiz.wrong.push({q:q.q,your:q.c[i],ans:q.c[q.a],cat:q.cat});}
+    quiz.answeredWrong=true;
+    showQuizMsg('ng','✕ 不正解です。正しい答えをもう一度考えて回答してください。');
+    $('#quizScore').textContent=`得点 ${quiz.score} / ${quiz.idx+1}`;
+    $('#quizRetry').style.cssText='display:inline-flex!important';
+  }
+}
+function showQuizMsg(cls,txt){
+  const el=$('#quizResult');
+  el.className='quiz-result '+cls;
+  el.innerHTML=txt;
+}
+$('#quizRetry').addEventListener('click',()=>{
+  // 誤答ボタンはそのまま、それ以外を再び有効化（正解は見せない）
+  $$('#quizChoices .quiz-choice').forEach(x=>{
+    if(!x.classList.contains('wrong')){
+      x.disabled=false;
+      x.classList.remove('correct'); // 前の正解表示があれば消す
+    }
+  });
+  $('#quizResult').className='quiz-result';
+  $('#quizResult').innerHTML='';
+  $('#quizRetry').style.cssText='display:none!important';
+});
+$('#quizNext').addEventListener('click',()=>{if(quiz.idx<quiz.list.length-1){quiz.idx++;renderQuiz();}});
+$('#quizRestart').addEventListener('click',buildQuiz);
+function showQuizFinal(){
+  const n=quiz.list.length;
+  $('#qbar').style.width='100%';
+  state.quizScore=quiz.score;saveState();
+  let html=`<div style="font-size:1rem;font-weight:800;margin-bottom:6px">🎓 終了：${quiz.score} / ${n} 正解</div>`;
+  html+='<div class="quiz-cats">';
+  Object.keys(CAT_LABEL).forEach(c=>{const cs=quiz.catScore[c];if(cs.tot>0)html+=`<div class="quiz-cat-score">${CAT_LABEL[c]}<br>${cs.got} / ${cs.tot}</div>`;});
+  html+='</div>';
+  if(quiz.wrong.length){
+    html+='<div class="quiz-review">';
+    html+=quiz.wrong.map(w=>`<div class="quiz-review-item"><b>Q.</b> ${w.q}<br>あなたの回答：${w.your}<br><span class="ans">正解：${w.ans}</span></div>`).join('');
+    html+='</div>';
+  }else{
+    html+='<div style="margin-top:8px;background:#e6f4ea;border:1px solid #a5d6a7;border-radius:9px;padding:9px;color:#1b5e20;font-weight:700">全問正解です。横引き・縦引きの操作と安全を確認できました。</div>';
+  }
+  $('#quizResult').className='quiz-result fin';$('#quizResult').innerHTML=html;
+  $('#quizNext').style.display='none';
+}
+$$('.quiz-mode-btn').forEach(b=>b.addEventListener('click',()=>{
+  state.quizMode=+b.dataset.qmode;
+  $$('.quiz-mode-btn').forEach(x=>x.classList.toggle('active',x===b));
+  buildQuiz();
+}));
+
+/* =========================================================
+   初期化
+   ========================================================= */
+// instructor mode removed
+function init(){
+  loadState();
+  // parts
+  renderPartsView();updatePartsProgress();
+  // safety
+  safetyStage=0; renderSafetyStage();renderJudge();updateSafetyProgress();
+  // sim2 (参考ファイルベースの新シミュレータ)
+  s2Init();
+  // quiz
+  buildQuiz();
+  refreshTabLocks();
+}
+
+// (旧sim useJig listener removed)
+
+init();
+
+</script>
+</body>
+</html>

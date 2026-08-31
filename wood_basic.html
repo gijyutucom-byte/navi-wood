@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<!-- version: wood-basic-app-2026-04-18-01 -->
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>木材の基本</title>
+  <style>
+    :root {
+      --main: #6f4e37;
+      --main-2: #8b6b4c;
+      --sub: #8a6647;
+      --accent: #ead7bb;
+      --bg: #f7f4ef;
+      --panel: #fffdfa;
+      --line: #e5d8c7;
+      --text: #2f2a24;
+      --shadow: 0 10px 24px rgba(0,0,0,0.08);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+      background: linear-gradient(180deg, #faf7f2, #efe7dc);
+      color: var(--text);
+    }
+    body {
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+    header {
+      background: linear-gradient(135deg, var(--main), var(--main-2));
+      color: white;
+      padding: 12px 16px;
+      box-shadow: var(--shadow);
+    }
+    header h1 {
+      margin: 0;
+      font-size: clamp(1.08rem, 1.6vw, 1.38rem);
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    header p {
+      margin: 0;
+      font-size: clamp(0.72rem, 0.9vw, 0.84rem);
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0.96;
+    }
+    .container {
+      width: min(1280px, 100%);
+      margin: 0 auto;
+      padding: 12px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 10px;
+      min-height: 0;
+    }
+    .tabs {
+      display: grid;
+      grid-template-columns: auto repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .back-to-menu {
+      background: #5c4a35; color: #fff; border: none; border-radius: 10px;
+      padding: 0 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+      flex: 0 0 auto; white-space: nowrap; min-height: 44px;
+    }
+    .back-to-menu:hover { background: var(--main); }
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal-box {
+      background: #fff; max-width: 640px; width: 92%;
+      border-radius: 14px; padding: 20px 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      max-height: 88vh; overflow: auto;
+      font-size: 14px; line-height: 1.65; color: var(--text);
+    }
+    .modal-box h2 { margin: 0 0 10px; font-size: 18px; color: var(--main); }
+    .modal-box p  { margin: 6px 0; white-space: pre-wrap; }
+    .modal-box b  { color: var(--main); }
+    .modal-footer { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .modal-start-btn {
+      padding: 10px 22px; border: none; border-radius: 8px;
+      background: var(--main); color: #fff; font-weight: 700; cursor: pointer; font-size: 14px;
+    }
+    .modal-start-btn:hover { background: #8b6b4c; }
+    .modal-index-btn {
+      padding: 10px 16px; border: none; border-radius: 8px;
+      background: #888; color: #fff; font-weight: 700; cursor: pointer; font-size: 13px;
+    }
+    .modal-index-btn:hover { background: #555; }
+    .tab-btn, button, input[type="range"] {
+      font: inherit;
+    }
+    .tab-btn {
+      border: none;
+      background: #fff;
+      color: var(--main);
+      padding: 12px 10px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      min-height: 44px;
+    }
+    .tab-btn.active {
+      background: var(--main);
+      color: #fff;
+    }
+    .panel {
+      display: none;
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+    .panel.active { display: block; }
+    .section-title {
+      margin: 0 0 4px;
+      color: var(--main);
+      font-size: 1.05rem;
+    }
+    .section-lead {
+      margin: 0 0 10px;
+      font-size: 0.84rem;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card {
+      background: #fffaf4;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 12px;
+      align-items: start;
+    }
+    .grid-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+    .wood-diagram-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1.9 / 1;
+      background: linear-gradient(180deg, #fff7eb, #f2e6d6);
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+    .wood-log {
+      position: absolute;
+      left: 31%;
+      top: 7%;
+      width: 38%;
+      height: 80%;
+      border-radius: 22px;
+      background:
+        linear-gradient(90deg, #704524 0 9%, #d7a77a 9% 91%, #704524 91% 100%);
+      box-shadow: inset 0 0 0 2px rgba(70,40,20,0.12);
+    }
+    .wood-core {
+      position: absolute;
+      left: 40.5%;
+      top: 14%;
+      width: 19%;
+      height: 66%;
+      background: rgba(154, 83, 58, 0.28);
+      border-radius: 10px;
+    }
+    .wood-side {
+      position: absolute;
+      width: 16%;
+      height: 48%;
+      top: 18%;
+      border-radius: 12px;
+      border: 1px solid rgba(90,55,25,0.25);
+      background:
+        repeating-radial-gradient(circle at 40% 50%, rgba(140,86,44,0.14) 0 6px, transparent 6px 22px),
+        linear-gradient(135deg, #dfbc8f, #bf8653);
+    }
+    .wood-side.left { left: 2%; }
+    .wood-side.right { right: 2%; }
+    .wood-side.right { background:
+        repeating-linear-gradient(90deg, rgba(144,88,48,0.20) 0 3px, transparent 3px 16px),
+        linear-gradient(135deg, #d8af84, #b67947);
+    }
+    .rings {
+      position: absolute;
+      left: 34%;
+      top: 10%;
+      width: 32%;
+      height: 16%;
+      border-radius: 50% / 35%;
+      background:
+        repeating-radial-gradient(circle at 50% 50%, #f8e0c7 0 6px, #cc9273 6px 8px, #f8e0c7 8px 14px);
+      border: 1px solid rgba(90,55,25,0.18);
+    }
+    .rings.bottom {
+      top: auto;
+      bottom: 9%;
+    }
+    .fiber-arrow {
+      position: absolute;
+      left: 27.2%;
+      top: 31%;
+      width: 4px;
+      height: 33%;
+      background: #2f2a24;
+      border-radius: 4px;
+    }
+    .fiber-arrow::before,
+    .fiber-arrow::after {
+      content: "";
+      position: absolute;
+      left: -5px;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+    }
+    .fiber-arrow::before {
+      top: -8px;
+      border-bottom: 10px solid #2f2a24;
+    }
+    .fiber-arrow::after {
+      bottom: -8px;
+      border-top: 10px solid #2f2a24;
+    }
+    .label-btn {
+      position: absolute;
+      border: none;
+      background: rgba(255,255,255,0.95);
+      color: var(--main);
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 6px 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+    .label-btn.active {
+      background: var(--main);
+      color: #fff;
+    }
+    .label-line {
+      position: absolute;
+      background: rgba(90,55,25,0.45);
+      transform-origin: left center;
+      height: 2px;
+    }
+    .info-box {
+      min-height: 100px;
+    }
+    .info-box h3,
+    .zoom-card h3 {
+      margin: 0 0 8px;
+      font-size: 0.95rem;
+      color: var(--main);
+    }
+    .info-box p,
+    .zoom-card p,
+    .explain-box p {
+      margin: 0;
+      line-height: 1.55;
+      font-size: 0.86rem;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      margin-bottom: 8px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #5a3c25;
+    }
+    .ring-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: stretch;
+    }
+    .ring-summary .card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .ring-cause { flex: 1; }
+    .explain-box { display: flex; flex-direction: column; }
+    .explain-box ul { flex: 1; }
+    /* ── 年輪しくみCG：横長キャンバス＋スライダー ── */
+    .ring-cause {
+      position: relative;
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      overflow: visible;
+      background: #e8c89a;
+      padding: 4px 4px 0;
+    }
+    .ring-cause::before { content: none; }
+    .ring-cause::after  { content: none; }
+    #ringCanvas {
+      display: block;
+      width: 100%;
+      height: 110px;
+      border-radius: 8px;
+    }
+    .ring-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 2px 6px;
+    }
+    #ringSlider {
+      flex: 1;
+      accent-color: #2e7cac;
+      cursor: pointer;
+    }
+    .ring-slider-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--sub);
+      white-space: nowrap;
+    }
+    .season-note {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .season-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot.early { background: #efcf98; }
+    .dot.late { background: #9c5d42; }
+    .zoom-toolbar {
+      display: none;
+    }
+    .mini-btn {
+      border: 1px solid rgba(90,55,25,0.18);
+      background: #8b5cf6;
+      color: #fff;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-weight: 800;
+      cursor: pointer;
+      min-width: 64px;
+      font-size: 0.72rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    }
+    .mini-btn.minus {
+      background: #2563eb;
+    }
+    .zoom-value {
+      font-size: 0.78rem;
+      color: var(--sub);
+      font-weight: 700;
+    }
+    .zoom-stage {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: auto;
+      background: #f9f2e8;
+      height: 140px;
+      position: relative;
+    }
+    .zoom-scene {
+      transform-origin: top left;
+      transition: transform 0.18s ease;
+      width: 360px;
+      height: 150px;
+      position: relative;
+      margin: 0 auto;
+    }
+    .softwood-zoom,
+    .hardwood-zoom {
+      position: absolute;
+      inset: 10px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(90,55,25,0.18);
+    }
+    /* ── 針葉樹（スギ）：早材＋晩材の垂直帯 ── */
+    .softwood-zoom {
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(138,96,48,0.22) 0 1.5px,
+          transparent 1.5px 8px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          rgba(138,96,48,0.18) 0 1.5px,
+          transparent 1.5px 8px
+        ),
+        #e8c89a;
+    }
+    /* 晩材帯：垂直の暗い帯（斜めなし） */
+    .softwood-zoom::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          transparent 0px, transparent 56px,
+          #c07840 56px, #c07840 84px,
+          transparent 84px, transparent 140px,
+          #c07840 140px, #c07840 168px,
+          transparent 168px
+        );
+      opacity: 0.85;
+    }
+    /* 晩材帯の細かい細胞格子 */
+    .softwood-zoom::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          transparent 0px, transparent 56px,
+          rgba(192,144,96,0.4) 58px, rgba(192,144,96,0.4) 60px,
+          transparent 60px, transparent 63px,
+          rgba(192,144,96,0.4) 63px, rgba(192,144,96,0.4) 65px,
+          transparent 65px, transparent 82px,
+          rgba(192,144,96,0.4) 84px
+        );
+    }
+    /* ── 広葉樹（ラワン）：針葉樹と同じ色合い＋導管 ── */
+    .hardwood-zoom {
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(138,96,48,0.22) 0 1.5px,
+          transparent 1.5px 8px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          rgba(138,96,48,0.18) 0 1.5px,
+          transparent 1.5px 8px
+        ),
+        #e8c89a;
+    }
+    .hardwood-zoom::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          transparent 0px,  transparent 56px,
+          #c07840 56px, #c07840 84px,
+          transparent 84px, transparent 140px,
+          #c07840 140px, #c07840 168px,
+          transparent 168px
+        );
+      opacity: 0.85;
+    }
+    .hardwood-zoom::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 20px 25px at 12% 25%, #ececec 0 62%, #c07840 63% 78%, transparent 80%),
+        radial-gradient(ellipse 26px 22px at 36% 20%, #ececec 0 62%, #c07840 63% 78%, transparent 80%),
+        radial-gradient(ellipse 18px 23px at 60% 28%, #ececec 0 62%, #c07840 63% 78%, transparent 80%),
+        radial-gradient(ellipse 16px 20px at 82% 18%, #ececec 0 62%, #c07840 63% 78%, transparent 80%),
+        radial-gradient(ellipse 16px 20px at 8%  72%, #ececec 0 62%, #c07840 63% 78%, transparent 80%),
+        radial-gradient(ellipse 24px 28px at 32% 76%, #ececec 0 62%, #c07840 63% 78%, transparent 80%),
+        radial-gradient(ellipse 20px 16px at 58% 68%, #ececec 0 62%, #c07840 63% 78%, transparent 80%),
+        radial-gradient(ellipse 14px 18px at 80% 74%, #ececec 0 62%, #c07840 63% 78%, transparent 80%);
+    }
+    .zoom-label { display: none; }
+    .formula-box,
+    .explain-box {
+      background: #fffaf4;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .formula {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--main);
+      margin: 6px 0 10px;
+    }
+    /* ── 確認クイズ ─────────────────────────── */
+    .quiz-panel-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 680px;
+    }
+    .quiz-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--main);
+    }
+    .quiz-progress-bar-wrap {
+      width: 100%;
+      height: 7px;
+      background: var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .quiz-progress-bar {
+      height: 100%;
+      background: var(--main);
+      border-radius: 999px;
+      transition: width 0.35s;
+    }
+    .quiz-question {
+      font-size: clamp(0.88rem, 1.3vw, 1.0rem);
+      font-weight: 700;
+      line-height: 1.55;
+      color: var(--text);
+      background: #fffaf4;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .quiz-choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    @media (max-width: 500px) { .quiz-choices { grid-template-columns: 1fr; } }
+    .quiz-choice-btn {
+      border: 2px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      font-size: clamp(0.78rem, 1.1vw, 0.88rem);
+      line-height: 1.45;
+      transition: background 0.15s, border-color 0.15s;
+      min-height: 44px;
+    }
+    .quiz-choice-btn:hover:not(:disabled) { background: #f5ede3; border-color: var(--main-2); }
+    .quiz-choice-btn.correct { background: #e6f4ea; border-color: #2e7d32; color: #1b5e20; }
+    .quiz-choice-btn.wrong   { background: #fdecea; border-color: #c62828; color: #7f0000; }
+    .quiz-choice-btn:disabled { cursor: default; }
+    .quiz-result {
+      display: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: clamp(0.78rem, 1.1vw, 0.86rem);
+      line-height: 1.6;
+    }
+    .quiz-result.ok  { display: block; background: #e6f4ea; color: #1b5e20; border: 1px solid #a5d6a7; }
+    .quiz-result.ng  { display: block; background: #fdecea; color: #7f0000; border: 1px solid #ef9a9a; }
+    .quiz-result.fin { display: block; background: #fff8e1; color: #5d4037; border: 1px solid #ffe082; }
+    .quiz-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .quiz-action-btn {
+      padding: 9px 20px;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: clamp(0.78rem, 1.1vw, 0.86rem);
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--main);
+      color: #fff;
+      transition: background 0.15s;
+    }
+    .quiz-action-btn:hover { background: var(--main-2); }
+    .quiz-action-btn.secondary { background: #8b6b4c; }
+    .quiz-action-btn.secondary:hover { background: #6d5038; }
+
+    @media (max-width: 980px) {
+      .grid-2,
+      .logs-row {
+        grid-template-columns: 1fr;
+      }
+      .zoom-scene {
+        width: 320px;
+        height: 140px;
+      }
+      .zoom-stage {
+        height: 130px;
+      }
+    }
+  
+
+    /* ===== 優先度A：順番学習・GIGA端末・進捗表示 ===== */
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body { min-height: 0; grid-template-rows: 42px 1fr; }
+    header { height: 42px; padding: 7px 16px; display: flex; align-items: center; }
+    header .container { height: auto; padding: 0; display: block; }
+    header p { display: none; }
+    main.container {
+      width: min(1320px, 100%); height: calc(100vh - 42px);
+      padding: 7px 10px 9px; gap: 6px; overflow: hidden;
+      grid-template-rows: 48px minmax(0,1fr);
+    }
+    .tabs { gap: 7px; }
+    .tab-btn, .back-to-menu { min-height: 46px; padding: 7px 9px; font-size: clamp(.82rem,1.08vw,.98rem); }
+    .tab-btn.locked { background: #ddd; color: #777; cursor: not-allowed; box-shadow: none; }
+    .tab-btn.completed:not(.active) { background: #e7f5e9; color: #1b5e20; }
+    .panel { min-height: 0; height: 100%; overflow-x: hidden; overflow-y: auto; padding: 10px 12px; }
+    .panel.active { display: flex; flex-direction: column; }
+    .grid-2 { flex: 1 1 auto; min-height: 0; grid-template-columns: minmax(0,1fr) 310px; align-items: start; }
+    .wood-diagram-wrap { aspect-ratio: 420 / 310; max-height: calc(100vh - 155px); margin: 0 auto; }
+    .wood-diagram-wrap svg { preserve-aspect-ratio: xMidYMid meet; }
+    .label-btn.checked { background: #2e7d32; color: #fff; box-shadow: 0 0 0 2px rgba(46,125,50,.25); }
+    .label-btn.checked::before { content: '✓ '; font-weight: 900; }
+    .label-btn.active, .label-btn.checked.active { background: #c0622a; color: #fff; box-shadow: 0 0 0 3px rgba(192,98,42,.3); }
+    .learning-progress { margin-top: 12px; font-size: .84rem; font-weight: 800; color: #5a4a38; }
+    .completion-box { margin-top: 10px; border: 2px solid #72b47a; background: #e7f5e9; color: #1b5e20; border-radius: 10px; padding: 9px 11px; font-size: .84rem; font-weight: 800; line-height: 1.45; }
+    .completion-box.locked { border-color: #ccc; background: #f2f2f2; color: #777; }
+    .lock-hint { display: none; position: fixed; left: 50%; top: 98px; transform: translateX(-50%); z-index: 10000; background: #7a3a0a; color: #fff; border-radius: 10px; padding: 10px 16px; font-size: .92rem; font-weight: 800; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+    .lock-hint.show { display: block; }
+    .quiz-actions { display: grid; grid-template-columns: minmax(150px,auto) 1fr minmax(170px,auto); align-items: center; width: 100%; }
+    #quizRestartBtn { grid-column: 1; background: #fff; color: #66584c; border: 2px solid #a99c8e; }
+    #quizNextBtn { grid-column: 3; background: #1565c0; }
+    #quizNextBtn:disabled { background: #c5c9cc; cursor: not-allowed; }
+    .quiz-review { margin-top: 8px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; text-align: left; }
+    .quiz-review-title { grid-column: 1/-1; font-weight: 900; color: var(--main); }
+    .quiz-review-item { background: #fff; border: 1px solid #e6cfc7; border-left: 5px solid #c62828; border-radius: 9px; padding: 7px 9px; font-size: .78rem; line-height: 1.4; }
+    .quiz-review-answer { color: #1b5e20; font-weight: 800; }
+    .quiz-review-perfect { margin-top: 8px; padding: 9px 12px; border-radius: 9px; background: #e6f4ea; border: 1px solid #a5d6a7; color: #1b5e20; font-weight: 800; }
+    @media (max-width: 900px) { .grid-2 { grid-template-columns: minmax(0,1fr) 275px; } }
+    @media (max-width: 700px) { html, body { overflow: auto; } body { height: auto; } main.container { height: auto; min-height: calc(100vh - 42px); overflow: visible; } .panel { overflow: visible; } .grid-2 { grid-template-columns: 1fr; } .quiz-review { grid-template-columns: 1fr; } }
+    @media (max-height: 700px) { header { height: 36px; } body { grid-template-rows: 36px 1fr; } main.container { height: calc(100vh - 36px); padding: 5px 8px; grid-template-rows: 42px minmax(0,1fr); } .tab-btn,.back-to-menu { min-height: 40px; } .panel { padding: 7px 9px; } }
+
+
+    /* ===== 視認性・iPad・スマートフォン操作改善 ===== */
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    body { font-size: 17px; }
+    button, input, select { font-family: inherit; touch-action: manipulation; }
+    button { -webkit-tap-highlight-color: rgba(111,78,55,.18); }
+    button:focus-visible, input:focus-visible {
+      outline: 4px solid #1565c0;
+      outline-offset: 3px;
+    }
+
+    header h1 { font-size: clamp(1.2rem, 2vw, 1.55rem); }
+    .tab-btn, .back-to-menu {
+      min-height: 50px;
+      padding: 8px 12px;
+      font-size: clamp(.98rem, 1.25vw, 1.12rem);
+      line-height: 1.25;
+    }
+    .section-title { font-size: clamp(1.22rem, 1.75vw, 1.48rem); line-height: 1.35; }
+    .section-lead {
+      font-size: clamp(.94rem, 1.15vw, 1.08rem) !important;
+      line-height: 1.45;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+    }
+    .card { padding: 14px; }
+    .info-box h3, .zoom-card h3, .moisture-meta h3,
+    #rings .card h3 { font-size: clamp(1.08rem, 1.35vw, 1.25rem) !important; line-height: 1.35; }
+    .info-box p, .zoom-card p, .moisture-meta p, .explain-box p,
+    #rings .card p, #rings .card li {
+      font-size: clamp(.96rem, 1.12vw, 1.08rem) !important;
+      line-height: 1.65 !important;
+    }
+    .label-btn {
+      min-height: 38px;
+      padding: 7px 11px;
+      font-size: clamp(.82rem, 1.02vw, .98rem);
+      border: 2px solid rgba(111,78,55,.18);
+      touch-action: manipulation;
+    }
+    .learning-progress, .completion-box {
+      font-size: clamp(.96rem, 1.12vw, 1.08rem);
+      line-height: 1.5;
+    }
+    .season-chip { min-height: 40px; font-size: clamp(.9rem, 1vw, 1rem); }
+    .ring-slider-label { font-size: 1rem; }
+    #ringSlider { min-height: 38px; touch-action: pan-x; }
+    .mini-btn { min-height: 44px; min-width: 72px; font-size: .9rem; touch-action: manipulation; }
+
+    .quiz-panel-wrap { max-width: 860px; width: 100%; }
+    .quiz-meta-row { font-size: clamp(1rem, 1.18vw, 1.12rem); }
+    .quiz-question {
+      font-size: clamp(1.08rem, 1.42vw, 1.3rem);
+      line-height: 1.6;
+      padding: 14px 16px;
+    }
+    .quiz-choice-btn {
+      min-height: 58px;
+      padding: 12px 14px;
+      font-size: clamp(1rem, 1.2vw, 1.14rem);
+      line-height: 1.5;
+      touch-action: manipulation;
+    }
+    .quiz-result { font-size: clamp(.98rem, 1.15vw, 1.08rem); line-height: 1.6; }
+    .quiz-action-btn {
+      min-height: 50px;
+      padding: 10px 18px;
+      font-size: clamp(.98rem, 1.15vw, 1.08rem);
+      touch-action: manipulation;
+    }
+    .quiz-review-title { font-size: 1.08rem; }
+    .quiz-review-item { font-size: clamp(.9rem, 1vw, 1rem); line-height: 1.55; }
+    .modal-box { font-size: 16px; line-height: 1.75; }
+    .modal-box h2 { font-size: 1.35rem; }
+    .modal-start-btn, .modal-index-btn { min-height: 48px; font-size: 1rem; }
+    .lock-hint { font-size: 1rem; max-width: calc(100vw - 24px); text-align: center; }
+
+    /* iPad縦向き・小型タブレット：CGと解説を上下配置して幅を確保 */
+    @media (max-width: 900px) {
+      html, body { overflow: auto; }
+      body { height: auto; min-height: 100%; grid-template-rows: auto 1fr; }
+      header { height: auto; min-height: 46px; }
+      main.container {
+        height: auto;
+        min-height: calc(100vh - 46px);
+        overflow: visible;
+        grid-template-rows: auto auto;
+      }
+      .tabs { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .back-to-menu { grid-column: 1 / -1; }
+      .panel { height: auto; overflow: visible; }
+      .grid-2, .grid-compare, .ring-summary { grid-template-columns: 1fr; }
+      .wood-diagram-wrap { width: min(100%, 760px); max-height: none; }
+      .info-box { min-height: 150px; }
+      .quiz-review { grid-template-columns: 1fr; }
+    }
+
+    /* スマートフォン：名称CGは拡大状態を保ち、横方向に指で移動 */
+    @media (max-width: 600px) {
+      body { font-size: 16px; }
+      header { padding: 8px 10px; }
+      header h1 { font-size: 1.16rem; white-space: normal; }
+      header h1 span { display: none; }
+      main.container { padding: 7px 8px 12px; }
+      .tabs { gap: 6px; }
+      .tab-btn, .back-to-menu { min-height: 52px; padding: 8px 6px; font-size: .96rem; white-space: normal; }
+      .panel { padding: 10px 8px; }
+      .section-title { font-size: 1.2rem; }
+      .section-lead { display: block; margin: 4px 0 0 !important; font-size: .94rem !important; }
+      .grid-2 > .card:first-child {
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        padding: 8px;
+      }
+      .wood-diagram-wrap {
+        width: 680px;
+        min-width: 680px;
+        max-width: none;
+        margin: 0;
+      }
+      .label-btn { min-height: 42px; padding: 8px 12px; font-size: .9rem; }
+      .ring-slider-row { gap: 10px; }
+      #ringSlider { height: 44px; }
+      .zoom-stage { height: 180px; }
+      .zoom-scene { width: 420px; height: 170px; }
+      .quiz-choices { grid-template-columns: 1fr; }
+      .quiz-choice-btn { min-height: 60px; font-size: 1.02rem; }
+      .quiz-actions { grid-template-columns: 1fr 1fr; gap: 8px; }
+      #quizRestartBtn { grid-column: 1; }
+      #quizNextBtn { grid-column: 2; }
+      .modal-box { width: 94%; padding: 18px 16px; font-size: 1rem; }
+    }
+
+    /* iPhone等の安全領域 */
+    @supports (padding: max(0px)) {
+      header { padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(10px, env(safe-area-inset-right)); }
+      main.container { padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>木材の基本　<span style="font-size:0.72em;font-weight:400;">木材の各部の名称、年輪をCGで学べるWebアプリです。</span></h1>
+    </div>
+  </header>
+
+  <!-- 起動時モーダル -->
+  <div id="startupModal" class="modal-overlay">
+    <div class="modal-box">
+      <h2>📖 使い方ガイド</h2>
+      <p>このアプリは、<b>木材の基本</b>について学ぶアプリです。
+<b>木材各部の名称</b>、<b>年輪</b>、<b>確認クイズ</b>について学べます。
+
+<b>■ 操作</b>
+・「<b>木材各部の名称</b>」では、各部名称のラベルをクリックすると、説明が表示されます。
+・「<b>年輪について</b>」では、年輪ができる仕組みや針葉樹と広葉樹の年輪の違いについて学べます。
+・年輪ができる仕組みでは、<b>成長のスライダー</b>を動かすと年輪ができる様子が表示されます。
+・針葉樹および広葉樹の年輪拡大CGでは、「<b>Zoom</b>」ボタンで図を拡大したり縮小したりできます。
+・「<b>確認クイズ</b>」では、木材の各部の名称や年輪について、10問のクイズで理解度を確認できます。</p>
+      <div class="modal-footer">
+        <button class="modal-start-btn" onclick="closeModal()">はじめる</button>
+        <button class="modal-index-btn" onclick="location.href='index.html'">🏠 メニューに戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <div class="tabs">
+      <button class="back-to-menu" type="button" onclick="location.href='index.html'">🏠 メニュー</button>
+      <button class="tab-btn active" data-panel="parts" type="button">木材の各部と木取り</button>
+      <button class="tab-btn" data-panel="rings" type="button">年輪と木材の組織</button>
+      <button class="tab-btn" data-panel="quiz" type="button">🎯 確認クイズ</button>
+    </div>
+
+    <section id="parts" class="panel active">
+      <h2 class="section-title" style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+        木材の各部と木取り
+        <span class="section-lead" style="font-size:0.74rem;font-weight:400;color:var(--sub);">木材各部の名称をCGで表しています。ラベルを押すと説明が表示されます。</span>
+      </h2>
+      <div class="grid-2">
+        <div class="card">
+          <div class="wood-diagram-wrap" id="woodDiagram">
+            <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 420 310" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <!-- 矢印マーカー（orient=auto-start-reverse で始端・終端自動反転） -->
+                <marker id="arrHead" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse">
+                  <polygon points="0,0 7,3.5 0,7" fill="#2f2a24"/>
+                </marker>
+                <!-- 赤矢印 -->
+                <marker id="arrRed" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                  <polygon points="0,0 7,3.5 0,7" fill="#cc0000"/>
+                </marker>
+                <pattern id="sapwood-grain" x="0" y="0" width="4" height="8" patternUnits="userSpaceOnUse">
+                  <rect width="4" height="8" fill="#e8c89a"/>
+                  <line x1="1" y1="0" x2="1" y2="8" stroke="#c0905a" stroke-width="0.5" opacity="0.45"/>
+                  <line x1="3" y1="0" x2="3" y2="8" stroke="#c0905a" stroke-width="0.3" opacity="0.3"/>
+                </pattern>
+                <pattern id="heartwood-grain" x="0" y="0" width="4" height="8" patternUnits="userSpaceOnUse">
+                  <rect width="4" height="8" fill="#a04820"/>
+                  <line x1="1" y1="0" x2="1" y2="8" stroke="#6a2808" stroke-width="0.6" opacity="0.5"/>
+                  <line x1="3" y1="0" x2="3" y2="8" stroke="#6a2808" stroke-width="0.3" opacity="0.35"/>
+                </pattern>
+                <pattern id="masa-grain" x="0" y="0" width="7" height="16" patternUnits="userSpaceOnUse">
+                  <rect width="7" height="16" fill="#d4a06a"/>
+                  <line x1="2" y1="0" x2="2" y2="16" stroke="#9a5828" stroke-width="0.8" opacity="0.5"/>
+                  <line x1="5" y1="0" x2="5" y2="16" stroke="#9a5828" stroke-width="0.5" opacity="0.3"/>
+                </pattern>
+                <pattern id="bark-tex" x="0" y="0" width="8" height="12" patternUnits="userSpaceOnUse">
+                  <rect width="8" height="12" fill="#5a2a0a"/>
+                  <rect x="0" y="2" width="8" height="2.5" fill="#6a3410" opacity="0.7"/>
+                  <rect x="0" y="7" width="8" height="2.5" fill="#451808" opacity="0.6"/>
+                </pattern>
+                <clipPath id="ita-clip"><rect x="2" y="10" width="72" height="120"/></clipPath>
+                <clipPath id="log-side"><rect x="155" y="106" width="110" height="194"/></clipPath>
+              </defs>
+
+              <!-- 丸太: cx=210, r=55, 境界y=105, 下端y=300 -->
+              <path d="M155,105 A55,55 0 0 1 265,105 L265,284 Q265,300 210,300 Q155,300 155,284 Z" fill="url(#bark-tex)" stroke="#3a1608" stroke-width="2.5"/>
+              <path d="M161,105 A49,49 0 0 1 259,105 L259,280 Q259,294 210,294 Q161,294 161,280 Z" fill="url(#sapwood-grain)"/>
+              <path d="M186,105 A24,24 0 0 1 234,105 L234,280 Q234,286 210,286 Q186,286 186,280 Z" fill="url(#heartwood-grain)"/>
+              <g clip-path="url(#log-side)" opacity="0.28" stroke="#a06030" stroke-width="0.6" fill="none">
+                <line x1="167" y1="105" x2="167" y2="290"/>
+                <line x1="173" y1="105" x2="173" y2="290"/>
+                <line x1="179" y1="105" x2="179" y2="290"/>
+                <line x1="241" y1="105" x2="241" y2="290"/>
+                <line x1="247" y1="105" x2="247" y2="290"/>
+                <line x1="253" y1="105" x2="253" y2="290"/>
+              </g>
+              <path d="M161,105 A49,49 0 0 1 259,105 Z" fill="url(#sapwood-grain)"/>
+              <path d="M186,105 A24,24 0 0 1 234,105 Z" fill="url(#heartwood-grain)"/>
+              <path d="M162,105 A48,48 0 0 1 258,105" fill="none" stroke="#c07840" stroke-width="1" opacity="0.65"/>
+              <path d="M167,105 A43,43 0 0 1 253,105" fill="none" stroke="#c07840" stroke-width="1" opacity="0.65"/>
+              <path d="M173,105 A37,37 0 0 1 247,105" fill="none" stroke="#c07840" stroke-width="1" opacity="0.65"/>
+              <path d="M179,105 A31,31 0 0 1 241,105" fill="none" stroke="#c07840" stroke-width="1" opacity="0.65"/>
+              <path d="M186,105 A24,24 0 0 1 234,105" fill="none" stroke="#c07840" stroke-width="0.9" opacity="0.6"/>
+              <path d="M194,105 A16,16 0 0 1 226,105" fill="none" stroke="#c07840" stroke-width="0.8" opacity="0.55"/>
+              <line x1="155" y1="105" x2="265" y2="105" stroke="#3a1608" stroke-width="1.5"/>
+              <path d="M155,105 A55,55 0 0 1 265,105" fill="none" stroke="#3a1608" stroke-width="2.5"/>
+              <!-- 繊維の方向：上下矢印 -->
+              <line x1="140" y1="185" x2="140" y2="142" stroke="#2f2a24" stroke-width="2.5" marker-end="url(#arrHead)"/>
+              <line x1="140" y1="185" x2="140" y2="228" stroke="#2f2a24" stroke-width="2.5" marker-end="url(#arrHead)"/>
+
+              <!-- 赤枠2（下・境界線y=105の縦中央）x=168-252, y=97-113 -->
+              <rect x="168" y="97" width="84" height="16" fill="none" stroke="#cc0000" stroke-width="1.8"/>
+              <!-- 赤枠1（上・半円内、下枠の少し上）x=168-252, y=77-93 -->
+              <rect x="168" y="77" width="84" height="16" fill="none" stroke="#cc0000" stroke-width="1.8"/>
+
+              <!-- 赤矢印1：上枠の左端 → 板目材ラベル右端（left:17%→x=71, top:23%→y=71） -->
+              <line x1="166" y1="85" x2="76" y2="71" stroke="#cc0000" stroke-width="1.8" marker-end="url(#arrRed)"/>
+              <!-- 赤矢印2：下枠の右端 → まさ目材ラベル左端（right:15%→x=357, top:23%→y=71） -->
+              <line x1="254" y1="105" x2="352" y2="71" stroke="#cc0000" stroke-width="1.8" marker-end="url(#arrRed)"/>
+              <!-- 赤矢印3：辺材上部の年輪部分 → 年輪CG左端 -->
+              <line x1="248" y1="148" x2="290" y2="170" stroke="#cc0000" stroke-width="1.8" marker-end="url(#arrRed)"/>
+
+              <!-- 左：板目材（丸太の後に描画） -->
+              <rect x="2" y="10" width="72" height="120" rx="2" fill="#d4a06a" stroke="#7a4820" stroke-width="1.5"/>
+              <g clip-path="url(#ita-clip)" fill="none" stroke="#8a4818" stroke-width="1.1">
+                <path d="M2,130 Q38,94  74,130" opacity="0.5"/>
+                <path d="M2,114 Q38,72  74,114" opacity="0.5"/>
+                <path d="M2,98  Q38,50  74,98"  opacity="0.47"/>
+                <path d="M2,82  Q38,30  74,82"  opacity="0.44"/>
+                <path d="M2,66  Q38,14  74,66"  opacity="0.4"/>
+                <path d="M14,130 Q38,106 62,130" opacity="0.55"/>
+                <path d="M14,114 Q38,88  62,114" opacity="0.55"/>
+                <path d="M14,98  Q38,70  62,98"  opacity="0.52"/>
+                <path d="M14,82  Q38,50  62,82"  opacity="0.48"/>
+                <path d="M18,66  Q38,34  58,66"  opacity="0.44"/>
+              </g>
+              <!-- 上面：手前y=10、奥y=2 -->
+              <polygon points="2,10 74,10 84,2 12,2" fill="#c08850" stroke="#7a4820" stroke-width="1"/>
+              <!-- 右側面：上y=2→10、下y=2+120+8=130 → 奥上y=2,奥下y=122, 手前上y=10,手前下y=130 -->
+              <polygon points="74,10 84,2 84,122 74,130" fill="#b07040" stroke="#7a4820" stroke-width="1"/>
+
+              <!-- 右上：まさ目材（丸太の後に描画） -->
+              <rect x="322" y="10" width="72" height="120" rx="2" fill="url(#masa-grain)" stroke="#7a4820" stroke-width="1.5"/>
+              <polygon points="322,10 394,10 404,2 332,2" fill="#c08850" stroke="#7a4820" stroke-width="1"/>
+              <polygon points="394,10 404,2 404,122 394,130" fill="#b07040" stroke="#7a4820" stroke-width="1"/>
+
+              <!-- 右下：年輪拡大 x=292,y=162,w=116,h=68 -->
+              <rect x="292" y="162" width="116" height="68" rx="4" fill="#e8c89a" stroke="#7a4820" stroke-width="1.5"/>
+              <!-- 晩材帯 x=322-344, x=364-386 -->
+              <rect x="322" y="162" width="22" height="68" fill="#c07840"/>
+              <rect x="364" y="162" width="22" height="68" fill="#c07840"/>
+              <g stroke="rgba(130,88,38,0.22)" stroke-width="0.7" fill="none">
+                <line x1="292" y1="171" x2="408" y2="171"/><line x1="292" y1="179" x2="408" y2="179"/>
+                <line x1="292" y1="187" x2="408" y2="187"/><line x1="292" y1="195" x2="408" y2="195"/>
+                <line x1="292" y1="203" x2="408" y2="203"/><line x1="292" y1="211" x2="408" y2="211"/>
+                <line x1="300" y1="162" x2="300" y2="230"/><line x1="308" y1="162" x2="308" y2="230"/>
+                <line x1="314" y1="162" x2="314" y2="230"/><line x1="346" y1="162" x2="346" y2="230"/>
+                <line x1="352" y1="162" x2="352" y2="230"/><line x1="388" y1="162" x2="388" y2="230"/>
+                <line x1="394" y1="162" x2="394" y2="230"/>
+              </g>
+              <!-- 早材ブレース：x=292-320（早材帯）、y=234-238 -->
+              <path d="M292,234 L292,238 L320,238 L320,234" fill="none" stroke="#3a1608" stroke-width="1.2"/>
+              <!-- 晩材ブレース：x=322-344（晩材帯1）、y=234-238 -->
+              <path d="M322,234 L322,238 L344,238 L344,234" fill="none" stroke="#3a1608" stroke-width="1.2"/>
+            </svg>
+
+            <!-- ラベルボタン（SVG座標→%変換、preserveAspectRatio=none） -->
+            <button class="label-btn" data-part="omote"    style="left:1%;top:1%;">木表</button>
+            <button class="label-btn" data-part="ita"      style="left:17%;top:23%;">板目材</button>
+            <button class="label-btn" data-part="ura"      style="left:1%;top:43%;">木裏</button>
+            <button class="label-btn" data-part="sue"      style="left:50%;top:16%;transform:translateX(-50%);">すえ</button>
+            <button class="label-btn" data-part="seni"     style="left:28%;top:56%;">繊維の方向</button>
+            <button class="label-btn" data-part="henzai-l" style="left:38%;top:53%;">辺材</button>
+            <button class="label-btn" data-part="shinzai"  style="left:50%;top:62%;transform:translateX(-50%);">心材</button>
+            <button class="label-btn" data-part="henzai-r" style="left:56%;top:53%;">辺材</button>
+            <button class="label-btn" data-part="moto"     style="left:50%;top:92%;transform:translateX(-50%);">もと</button>
+            <button class="label-btn" data-part="juhik"    style="left:60%;top:63%;">樹皮</button>
+            <button class="label-btn" data-part="koguchi"  style="right:15%;top:1%;">こぐち</button>
+            <button class="label-btn" data-part="masa"     style="right:15%;top:23%;">まさ目材</button>
+            <button class="label-btn" data-part="koba"     style="right:4%;top:23%;">こば</button>
+            <button class="label-btn" data-part="nenrin"   style="right:17%;top:53%;">年輪</button>
+            <button class="label-btn" data-part="souzai"   style="left:69%;top:79%;">早材</button>
+            <button class="label-btn" data-part="banzai"   style="left:77%;top:79%;">晩材</button>
+          </div>
+        </div>
+        <div class="card info-box">
+          <h3 id="partTitle">木材の各部を選んでください</h3>
+          <p id="partText">図のラベルを押すと、その部分の名前と役割がここに表示されます。</p>
+          <div class="learning-progress" id="partsProgress">確認済み 0 / 15</div>
+          <div class="completion-box locked" id="partsCompletionBox">
+            <span>すべての名称を確認すると、次の学習へ進めます。</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="rings" class="panel">
+      <h2 class="section-title">年輪について　<span class="section-lead">年輪は早材（春材）と晩材（秋材）の成長度合いで、1年毎に年輪が刻まれます。</span></h2>
+
+      <div class="ring-summary">
+        <div class="card">
+          <h3 style="margin:0 0 8px;color:var(--main);font-size:0.95rem;">年輪ができるしくみ</h3>
+          <div class="ring-cause">
+            <canvas id="ringCanvas"></canvas>
+            <div class="ring-slider-row">
+              <span class="ring-slider-label">成長→</span>
+              <input id="ringSlider" type="range" min="0" max="100" value="35" step="1"/>
+            </div>
+          </div>
+          <div class="season-note">
+            <div class="season-chip"><span class="dot early"></span>早材: 春〜初夏にできる、明るく広い部分</div>
+            <div class="season-chip"><span class="dot late"></span>晩材: 秋にできる、濃くて狭い部分</div>
+          </div>
+        </div>
+        <div class="card explain-box">
+          <h3 style="margin:0 0 8px;color:var(--main);font-size:0.95rem;">年輪はなぜできるの？</h3>
+          <ul style="margin:0;padding-left:1.2em;line-height:1.6;font-size:0.86rem;">
+            <li>木は1年中ずっと同じ速さで成長するわけではありません。</li>
+            <li>春〜初夏は成長が速く、明るく見える<strong>早材</strong>ができます。</li>
+            <li>秋は成長がゆるやかになり、濃く見える<strong>晩材</strong>ができます。</li>
+            <li>この早材＋晩材で1つの輪（年輪）になります。</li>
+            <li><strong>温帯（日本など）</strong>：季節差が大きく、年輪がはっきり見える</li>
+            <li><strong>熱帯</strong>：一年中成長し、年輪が不明瞭なことが多い</li>
+            <li><strong>寒冷地</strong>：成長が遅く、年輪が細かく密になる</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid-compare">
+        <div class="card zoom-card">
+          <h3>針葉樹の年輪拡大CG（スギ）</h3>
+          <div class="zoom-toolbar">
+            <button class="mini-btn" type="button" data-zoom-target="soft" data-action="plus">Zoom＋</button>
+            <button class="mini-btn" type="button" data-zoom-target="soft" data-action="minus">Zoom-</button>
+            <span class="zoom-value" id="softZoomValue" style="display:none;">100%</span>
+          </div>
+          <div class="zoom-stage" style="position:relative;">
+            <button class="mini-btn" type="button" data-zoom-target="soft" data-action="plus" style="position:absolute;left:8px;top:8px;z-index:3;">Zoom＋</button>
+            <button class="mini-btn minus" type="button" data-zoom-target="soft" data-action="minus" style="position:absolute;left:82px;top:8px;z-index:3;">Zoom－</button>
+            <div class="zoom-scene" id="softScene">
+              <div class="softwood-zoom"></div>
+              
+            </div>
+          </div>
+          <p style="margin-top:8px;font-size:0.84rem;line-height:1.5;">針葉樹は細長い細胞が比較的そろって並び、早材の部分は明るく広く、晩材の部分は暗く密に見えます。</p>
+        </div>
+        <div class="card zoom-card">
+          <h3>広葉樹の年輪拡大CG（ラワン）</h3>
+          <div class="zoom-toolbar">
+            <button class="mini-btn" type="button" data-zoom-target="hard" data-action="plus">Zoom＋</button>
+            <button class="mini-btn" type="button" data-zoom-target="hard" data-action="minus">Zoom-</button>
+            <span class="zoom-value" id="hardZoomValue" style="display:none;">100%</span>
+          </div>
+          <div class="zoom-stage" style="position:relative;">
+            <button class="mini-btn" type="button" data-zoom-target="hard" data-action="plus" style="position:absolute;left:8px;top:8px;z-index:3;">Zoom＋</button>
+            <button class="mini-btn minus" type="button" data-zoom-target="hard" data-action="minus" style="position:absolute;left:82px;top:8px;z-index:3;">Zoom－</button>
+            <div class="zoom-scene" id="hardScene">
+              <div class="hardwood-zoom"></div>
+              
+            </div>
+          </div>
+          <p style="margin-top:8px;font-size:0.84rem;line-height:1.5;">広葉樹は大きな導管が点々と見え、針葉樹よりも穴のような構造が目立ちます。</p>
+        </div>
+      </div>
+      <div class="completion-box locked" id="ringsCompletionBox">
+        <span id="ringsCompletionText">成長スライダーを最後まで動かすと、確認クイズへ進めます。</span>
+      </div>
+    </section>
+
+    <section id="quiz" class="panel">
+      <h2 class="section-title" style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+        確認クイズ
+        <span class="section-lead" style="font-size:0.74rem;font-weight:400;color:var(--sub);">木材の各部の名称・年輪について10問で確認しましょう。</span>
+      </h2>
+      <div class="quiz-panel-wrap">
+        <div class="quiz-meta-row">
+          <span id="quizProgress">問題 1 / 10</span>
+          <span id="quizScore">得点 0 / 0</span>
+        </div>
+        <div class="quiz-progress-bar-wrap">
+          <div class="quiz-progress-bar" id="quizProgressBar" style="width:10%"></div>
+        </div>
+        <div class="quiz-question" id="quizQuestion"></div>
+        <div class="quiz-choices"  id="quizChoices"></div>
+        <div class="quiz-result"   id="quizResult"></div>
+        <div class="quiz-actions">
+          <button class="quiz-action-btn secondary" id="quizRestartBtn" type="button">↺ 最初から</button>
+          <button class="quiz-action-btn" id="quizNextBtn" type="button" disabled>次の問題へ →</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div id="lockHint" class="lock-hint">前の学習を完了してから進んでください。</div>
+
+  <script>
+    function closeModal() {
+      document.getElementById('startupModal').classList.add('hidden');
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      const tabs = document.querySelectorAll('.tab-btn');
+      const panels = document.querySelectorAll('.panel');
+      const tabByPanel = Object.fromEntries([...tabs].map(btn => [btn.dataset.panel, btn]));
+      const learningState = { partsComplete: false, ringsComplete: false };
+      const lockHint = document.getElementById('lockHint');
+      function refreshLocks() {
+        tabByPanel.rings?.classList.toggle('locked', !learningState.partsComplete);
+        tabByPanel.quiz?.classList.toggle('locked', !learningState.ringsComplete);
+        tabByPanel.parts?.classList.toggle('completed', learningState.partsComplete);
+        tabByPanel.rings?.classList.toggle('completed', learningState.ringsComplete);
+        tabByPanel.rings?.setAttribute('aria-disabled', String(!learningState.partsComplete));
+        tabByPanel.quiz?.setAttribute('aria-disabled', String(!learningState.ringsComplete));
+      }
+      function showLockHint() {
+        lockHint?.classList.add('show');
+        window.clearTimeout(showLockHint.timer);
+        showLockHint.timer = window.setTimeout(() => lockHint?.classList.remove('show'), 1800);
+      }
+      function openPanel(panelId) {
+        tabs.forEach(b => b.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        tabByPanel[panelId]?.classList.add('active');
+        document.getElementById(panelId)?.classList.add('active');
+      }
+      tabs.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.panel;
+          if ((target === 'rings' && !learningState.partsComplete) || (target === 'quiz' && !learningState.ringsComplete)) {
+            showLockHint(); return;
+          }
+          openPanel(target);
+        });
+      });
+      refreshLocks();
+
+      // ── 年輪しくみ Canvas（スライダーで連続的に成長） ──
+      const ringCanvas = document.getElementById('ringCanvas');
+      const ringSlider = document.getElementById('ringSlider');
+      function drawRings() {
+        if (!ringCanvas) return;
+        const W = ringCanvas.offsetWidth || 600;
+        const H = 110;
+        ringCanvas.width  = W * window.devicePixelRatio;
+        ringCanvas.height = H * window.devicePixelRatio;
+        const cx = ringCanvas.getContext('2d');
+        cx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+        const pct = Number(ringSlider ? ringSlider.value : 50) / 100;
+        const MAX_YEARS = 6;                           // 6年に変更
+        const CELL = Math.floor(W / MAX_YEARS);        // 1年分の幅（より大きく）
+        const earlyW = Math.round(CELL * 0.68);
+        const lateW  = CELL - earlyW;
+        const growW  = Math.round(W * pct);
+        const topY   = 22;
+        const boardH = H - topY;
+
+        // 背景（未成長）= 白
+        cx.fillStyle = '#ffffff';
+        cx.fillRect(0, topY, W, boardH);
+        // ラベル行背景
+        cx.fillStyle = '#f5f0e8';
+        cx.fillRect(0, 0, W, topY);
+
+        // 年輪帯を growW まで描画
+        let x = 0;
+        let year = 1;
+        while (x < growW && year <= MAX_YEARS) {
+          const ew = Math.min(earlyW, growW - x);
+          // 早材
+          cx.fillStyle = '#e8c89a';
+          cx.fillRect(x, topY, ew, boardH);
+          cx.strokeStyle = 'rgba(138,96,48,0.20)';
+          cx.lineWidth = 0.8;
+          for (let gx = x; gx < x + ew; gx += 8) {
+            cx.beginPath(); cx.moveTo(gx, topY); cx.lineTo(gx, topY + boardH); cx.stroke();
+          }
+          for (let gy = topY; gy < topY + boardH; gy += 8) {
+            cx.beginPath(); cx.moveTo(x, gy); cx.lineTo(x + ew, gy); cx.stroke();
+          }
+          x += ew;
+          if (x >= growW) break;
+          // 晩材
+          const lw = Math.min(lateW, growW - x);
+          cx.fillStyle = '#c07840';
+          cx.globalAlpha = 0.88;
+          cx.fillRect(x, topY, lw, boardH);
+          cx.globalAlpha = 1;
+          x += lw;
+
+          // 年境界縦線＋ラベル
+          const tickX = year * CELL;
+          if (tickX <= growW) {
+            cx.strokeStyle = '#5a3010';
+            cx.lineWidth = 1.5;
+            cx.beginPath(); cx.moveTo(tickX, 0); cx.lineTo(tickX, topY); cx.stroke();
+            cx.fillStyle = '#2f2a24';
+            cx.font = 'bold 13px sans-serif';
+            cx.textAlign = 'center';
+            cx.fillText(`${year}年`, tickX - CELL / 2, 15);
+          }
+          year++;
+        }
+        // 1年未満のラベル
+        if (growW > 0 && growW < CELL) {
+          cx.fillStyle = '#2f2a24';
+          cx.font = 'bold 13px sans-serif';
+          cx.textAlign = 'center';
+          cx.fillText('1年', Math.min(growW / 2, CELL / 2), 15);
+        }
+
+        // 成長先端の縦線（濃い茶色・樹皮のイメージ）
+        if (growW > 0 && growW < W) {
+          cx.strokeStyle = '#3a1200';
+          cx.lineWidth = 4;
+          cx.setLineDash([]);
+          cx.beginPath(); cx.moveTo(growW, 0); cx.lineTo(growW, topY + boardH); cx.stroke();
+        }
+      }
+      if (ringCanvas) {
+        drawRings();
+        if (ringSlider) ringSlider.addEventListener('input', () => {
+          drawRings();
+          if (Number(ringSlider.value) >= 95 && !learningState.ringsComplete) {
+            learningState.ringsComplete = true;
+            const box = document.getElementById('ringsCompletionBox');
+            box?.classList.remove('locked');
+            const text = document.getElementById('ringsCompletionText');
+            if (text) text.textContent = '年輪のでき方を確認しました。確認クイズへ進めます。';
+            refreshLocks();
+          }
+        });
+        window.addEventListener('resize', drawRings);
+      }
+
+      const partData = {
+        omote: { badge: '木表', title: '木表（きおもて）', text: '木の樹皮側の面です。板目材では外側の年輪に近い面で、乾燥や反りの見え方を考えるときにも重要です。' },
+        ura: { badge: '木裏', title: '木裏（きうら）', text: '木の中心側の面です。木表と反対側で、木取りや反りの向きを考えるときに区別します。' },
+        sue: { badge: 'すえ', title: 'すえ', text: 'こずえに近い側を表します。木材の向きを表すときの呼び方です。' },
+        koguchi: { badge: 'こぐち', title: '木口（こぐち）', text: '繊維の方向を切った面です。年輪や導管の様子が見えやすく、断面観察に向いています。' },
+        masa: { badge: 'まさ目材', title: '柾目材（まさめざい）', text: '年輪に対してほぼ直角に切った材で、まっすぐで整った木目が出やすい切り方です。' },
+        ita: { badge: '板目材', title: '板目材（いためざい）', text: '年輪に接するように切った材で、山形や波形の木目が現れやすい切り方です。' },
+        henzai: { badge: '辺材', title: '辺材（へんざい）', text: '心材の外側にある部分です。樹木の成長や水分・養分の通り道としてはたらいていた部分に近い領域です。' },
+        shinzai: { badge: '心材', title: '心材（しんざい）', text: '木の中心に近い部分です。色が濃く見えることが多く、辺材と見た目の違いが表れやすい部分です。' },
+        juhik: { badge: '樹皮', title: '樹皮（じゅひ）', text: '木の外側をおおう部分です。内部を保護する役割をもっています。' },
+        seni: { badge: '繊維の方向', title: '繊維の方向', text: '木材は繊維がたて方向にそろった材料です。強さや割れやすさ、木口・板目・柾目の違いを考える基本になります。' },
+        nenrin: { badge: '年輪', title: '年輪', text: '早材と晩材が1組になって輪のように見える部分です。木が1年ごとに成長した記録として見られます。' },
+        koba: { badge: 'こば', title: 'こば（木端）', text: '木材の長さ方向に対して側面にあたる面です。木口・木表・木裏と並んで木材の向きを表すときに使います。' },
+        moto: { badge: 'もと', title: 'もと（元）', text: '根本に近い方です。木材の方向を表すときに使います。' },
+        'henzai-l': { badge: '辺材', title: '辺材（へんざい）', text: '心材の外側にある部分です。樹木の成長や水分・養分の通り道としてはたらいていた部分に近い領域です。' },
+        'henzai-r': { badge: '辺材', title: '辺材（へんざい）', text: '心材の外側にある部分です。樹木の成長や水分・養分の通り道としてはたらいていた部分に近い領域です。' },
+        souzai: { badge: '早材', title: '早材（そうざい）', text: '春〜初夏にかけて成長が速い時期にできる、明るく広い部分です。春材ともいいます。' },
+        banzai: { badge: '晩材', title: '晩材（ばんざい）', text: '秋にかけて成長がゆるやかになる時期にできる、濃くて狭い部分です。秋材ともいいます。' }
+      };
+
+      const partButtons = document.querySelectorAll('.label-btn');
+      const partTitle = document.getElementById('partTitle');
+      const partText = document.getElementById('partText');
+      const partsProgress = document.getElementById('partsProgress');
+      const partsCompletionBox = document.getElementById('partsCompletionBox');
+      const conceptKey = key => key.startsWith('henzai-') ? 'henzai' : key;
+      const requiredConcepts = new Set([...partButtons].map(btn => conceptKey(btn.dataset.part)));
+      const checkedConcepts = new Set();
+      function refreshPartsProgress() {
+        if (partsProgress) partsProgress.textContent = `確認済み ${checkedConcepts.size} / ${requiredConcepts.size}`;
+        if (checkedConcepts.size === requiredConcepts.size && !learningState.partsComplete) {
+          learningState.partsComplete = true;
+          partsCompletionBox?.classList.remove('locked');
+          if (partsCompletionBox) partsCompletionBox.innerHTML = '<span>すべての名称を確認しました。「年輪と木材の組織」へ進めます。</span>';
+          refreshLocks();
+        }
+      }
+      function selectPart(key) {
+        const data = partData[key];
+        if (!data) return;
+        const concept = conceptKey(key);
+        checkedConcepts.add(concept);
+        partButtons.forEach(btn => {
+          const sameConcept = conceptKey(btn.dataset.part) === concept;
+          btn.classList.toggle('active', btn.dataset.part === key);
+          if (sameConcept) btn.classList.add('checked');
+        });
+        partTitle.textContent = data.title;
+        partText.textContent = data.text;
+        refreshPartsProgress();
+      }
+      partButtons.forEach(btn => btn.addEventListener('click', () => selectPart(btn.dataset.part)));
+      refreshPartsProgress();
+
+      const zoomState = { soft: 1, hard: 1 };
+      const zoomTargets = {
+        soft: { scene: document.getElementById('softScene'), value: document.getElementById('softZoomValue') },
+        hard: { scene: document.getElementById('hardScene'), value: document.getElementById('hardZoomValue') }
+      };
+      function renderZoom(target) {
+        const entry = zoomTargets[target];
+        if (!entry) return;
+        entry.scene.style.transform = `scale(${zoomState[target]})`;
+        entry.value.textContent = `${Math.round(zoomState[target] * 100)}%`;
+      }
+      document.querySelectorAll('[data-zoom-target]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.zoomTarget;
+          const action = btn.dataset.action;
+          const next = action === 'plus' ? zoomState[target] + 0.25 : zoomState[target] - 0.25;
+          zoomState[target] = Math.max(0.75, Math.min(2.5, next));
+          renderZoom(target);
+        });
+      });
+      renderZoom('soft');
+      renderZoom('hard');
+
+      /* ── 確認クイズ ─────────────────────────── */
+      const QUIZ_DATA = [
+        {
+          q: '木材を丸太から製材するとき、年輪の接線方向に切り出した板を何といいますか？',
+          choices: ['柾目（まさめ）', '板目（いため）', '木口（こぐち）', '心材（しんざい）'],
+          answer: '板目（いため）',
+          exp: '年輪の接線方向（年輪に沿うように）切り出した板が板目材です。山形・波形の木目が現れます。'
+        },
+        {
+          q: '木材の年輪で、春〜初夏にできる明るく広い部分を何といいますか？',
+          choices: ['晩材（ばんざい）', '早材（そうざい）', '心材（しんざい）', '辺材（へんざい）'],
+          answer: '早材（そうざい）',
+          exp: '春〜初夏は成長が速く、明るく広い「早材（春材）」ができます。秋にできる濃くて狭い部分が晩材です。'
+        },
+        {
+          q: '木の外側（樹皮側）の面を何といいますか？',
+          choices: ['木裏（きうら）', '木口（こぐち）', '木表（きおもて）', 'こば（木端）'],
+          answer: '木表（きおもて）',
+          exp: '木の樹皮側の面が「木表（きおもて）」です。反対の芯側の面が「木裏（きうら）」です。'
+        },
+        {
+          q: '木材の断面で、繊維を横断するように切った面を何といいますか？',
+          choices: ['板目面', '柾目面', '木表', '木口（こぐち）'],
+          answer: '木口（こぐち）',
+          exp: '繊維の方向を横断した切断面を「木口（こぐち）」といいます。年輪の様子が見えやすい面です。'
+        },
+        {
+          q: '年輪の直径方向（年輪に直交する方向）に切り出した板を何といいますか？',
+          choices: ['板目（いため）', '木口（こぐち）', '柾目（まさめ）', 'こば（木端）'],
+          answer: '柾目（まさめ）',
+          exp: '年輪の半径・直径方向に切り出した板が柾目材です。まっすぐな木目が現れ、反りが少ない高品質な材です。'
+        },
+        {
+          q: '木の中心に近い、色の濃い部分を何といいますか？',
+          choices: ['辺材（へんざい）', '早材（そうざい）', '晩材（ばんざい）', '心材（しんざい）'],
+          answer: '心材（しんざい）',
+          exp: '木の中心に近い濃い部分が「心材（しんざい）」です。外側の明るい部分が「辺材（へんざい）」です。'
+        },
+        {
+          q: '木材の長さ方向に対して側面にあたる面を何といいますか？',
+          choices: ['木口（こぐち）', '木表（きおもて）', 'こば（木端）', '木裏（きうら）'],
+          answer: 'こば（木端）',
+          exp: '木材の長さ方向に対する側面が「こば（木端）」です。木口・木表・木裏とともに木材の向きを表します。'
+        },
+        {
+          q: '柾目材が板目材より反りにくい理由として正しいのはどれですか？',
+          choices: [
+            '柾目は樹皮側から切り出すから',
+            '柾目は木表と木裏の収縮率がほぼ同じになるから',
+            '柾目は含水率が低いから',
+            '柾目は年輪が多いから'
+          ],
+          answer: '柾目は木表と木裏の収縮率がほぼ同じになるから',
+          exp: '柾目材は表も裏も放射方向が揃っているため収縮率の差がほぼなく、反りが生じにくくなります。'
+        },
+        {
+          q: '温帯（日本など）の木が年輪をはっきり形成する主な理由はどれですか？',
+          choices: [
+            '一年中成長が速いから',
+            '季節による成長速度の差（春夏と秋の差）が大きいから',
+            '雨が多いから',
+            '木が固いから'
+          ],
+          answer: '季節による成長速度の差（春夏と秋の差）が大きいから',
+          exp: '温帯では春〜夏の早材（明）と秋の晩材（暗）の成長差が大きく、年輪がはっきり見えます。熱帯では年輪が不明瞭なことが多いです。'
+        },
+        {
+          q: '木材の繊維（長さ）方向の特徴として正しいのはどれですか？',
+          choices: [
+            '接線方向と同じくらい縮む',
+            '最も縮みが大きい方向である',
+            '収縮がほとんどなく、強度が高い方向である',
+            '割れやすい方向である'
+          ],
+          answer: '収縮がほとんどなく、強度が高い方向である',
+          exp: '繊維（長さ）方向の収縮率は非常に小さく（接線方向の約1/10）、またこの方向は強度が最も高い方向です。'
+        }
+      ];
+
+      let qIdx = 0, qScore = 0, qAnswered = false, qMistakes = [];
+
+      const qEl     = document.getElementById('quizQuestion');
+      const cEl     = document.getElementById('quizChoices');
+      const rEl     = document.getElementById('quizResult');
+      const progEl  = document.getElementById('quizProgress');
+      const scoreEl = document.getElementById('quizScore');
+      const barEl   = document.getElementById('quizProgressBar');
+      const nextBtn = document.getElementById('quizNextBtn');
+      const restBtn = document.getElementById('quizRestartBtn');
+
+      function shuffleArr(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+
+      function renderQuiz() {
+        if (!qEl) return;
+        const q = QUIZ_DATA[qIdx];
+        qAnswered = false;
+        nextBtn.disabled = true;
+        progEl.textContent  = `問題 ${qIdx + 1} / ${QUIZ_DATA.length}`;
+        scoreEl.textContent = `得点 ${qScore} / ${qIdx}`;
+        barEl.style.width   = `${((qIdx + 1) / QUIZ_DATA.length) * 100}%`;
+        qEl.textContent     = q.q;
+        rEl.className       = 'quiz-result';
+        rEl.textContent     = '';
+        cEl.innerHTML       = '';
+        shuffleArr(q.choices).forEach(c => {
+          const btn = document.createElement('button');
+          btn.className   = 'quiz-choice-btn';
+          btn.type        = 'button';
+          btn.textContent = c;
+          btn.addEventListener('click', () => {
+            if (qAnswered) return;
+            qAnswered = true;
+            const ok = c === q.answer;
+            if (ok) qScore++;
+            else qMistakes.push({ question: q.q, selected: c, answer: q.answer, explanation: q.exp });
+            scoreEl.textContent = `得点 ${qScore} / ${qIdx + 1}`;
+            cEl.querySelectorAll('.quiz-choice-btn').forEach(b => {
+              b.disabled = true;
+              if (b.textContent === q.answer) b.classList.add('correct');
+              else if (b === btn && !ok)       b.classList.add('wrong');
+            });
+            rEl.className = `quiz-result ${ok ? 'ok' : 'ng'}`;
+            rEl.innerHTML = `${ok ? '✅ 正解！' : `❌ 不正解。正解は「${q.answer}」`}<br><span style="font-weight:normal">${q.exp}</span>`;
+            nextBtn.disabled = false;
+          });
+          cEl.appendChild(btn);
+        });
+      }
+
+      if (nextBtn) nextBtn.addEventListener('click', () => {
+        if (!qAnswered) return;
+        if (qIdx < QUIZ_DATA.length - 1) {
+          qIdx++;
+          renderQuiz();
+        } else {
+          const pct = Math.round(qScore / QUIZ_DATA.length * 100);
+          const review = qMistakes.length ? `<div class="quiz-review"><div class="quiz-review-title">間違えた問題と正解</div>${qMistakes.map((m,i)=>`<div class="quiz-review-item"><b>${i+1}. ${m.question}</b><br>あなたの回答：${m.selected}<br><span class="quiz-review-answer">正しい答え：${m.answer}</span><br>${m.explanation}</div>`).join('')}</div>` : '<div class="quiz-review-perfect">全問正解です。間違えた問題はありません。</div>';
+          rEl.className = 'quiz-result fin';
+          rEl.innerHTML = `🎉 クイズ終了！<br>得点：<b>${qScore} / ${QUIZ_DATA.length} 点（${pct}%）</b><br>${
+            pct >= 80 ? '素晴らしい！木材の基本をよく理解できています。'
+            : pct >= 60 ? 'もう少しです。各部の名称や年輪をもう一度確認しましょう。'
+            : '各部の名称・年輪をしっかり復習してから再挑戦しましょう。'}${review}`;
+          cEl.innerHTML = '';
+          nextBtn.disabled = true;
+        }
+      });
+
+      if (restBtn) restBtn.addEventListener('click', () => {
+        qIdx = 0; qScore = 0; qMistakes = [];
+        renderQuiz();
+      });
+
+      // クイズタブ表示時に初期化
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (btn.dataset.panel === 'quiz' && learningState.ringsComplete && !qEl.textContent) { renderQuiz(); }
+        });
+      });
+
+    });
+  </script>
+</body>
+</html>

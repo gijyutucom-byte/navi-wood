@@ -1,0 +1,2229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自動鉋盤の基本―技術科教員向け安全操作学習</title>
+  <style>
+    :root {
+      --main:    #6f4e37;
+      --main-2:  #8b6b4c;
+      --sub:     #8a6647;
+      --accent:  #ead7bb;
+      --bg:      #f7f4ef;
+      --panel:   #fffdfa;
+      --line:    #e5d8c7;
+      --text:    #2f2a24;
+      --shadow:  0 10px 24px rgba(0,0,0,0.08);
+      --radius:  16px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%;
+      height: 100%;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      background: linear-gradient(180deg, #faf7f2, #efe7dc);
+      color: var(--text);
+      overflow-y: auto;   /* 他タブでスクロールが必要な場合は許可 */
+    }
+
+    /* ── Header ─────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, var(--main), var(--main-2));
+      color: white;
+      padding: 7px 16px;
+      box-shadow: var(--shadow);
+    }
+    header h1 {
+      font-size: clamp(0.88rem, 1.8vw, 1.1rem);
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    header p { display: none; }
+
+    /* ── Main layout ─────────────────────────── */
+    .container {
+      width: min(1280px, 100%);
+      margin: 0 auto;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-sizing: border-box;
+    }
+
+    /* ── Tab row ─────────────────────────────── */
+    .tabs {
+      display: grid;
+      grid-template-columns: auto repeat(4, 1fr);
+      gap: 8px;
+    }
+    .tab-btn {
+      border: none;
+      background: #fff;
+      color: var(--main);
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      font-family: inherit;
+      font-size: clamp(0.75rem, 1.2vw, 0.88rem);
+      min-height: 44px;
+      transition: background 0.18s, color 0.18s;
+    }
+    .tab-btn.active { background: var(--main); color: #fff; }
+
+    /* ── Panel ───────────────────────────────── */
+    .panel {
+      display: none;
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+    .panel.active { display: block; }
+    .section-title {
+      color: var(--main);
+      font-size: clamp(0.88rem, 1.4vw, 1.0rem);
+      font-weight: 700;
+      display: inline;
+    }
+    .section-lead {
+      font-size: clamp(0.70rem, 1.0vw, 0.80rem);
+      color: #5a4a38;
+      display: inline;
+      margin-left: 0.5em;
+    }
+    .section-line {
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    /* ── 図解エリア ──────────────────────────── */
+    .diagram-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    @media (min-width: 700px) {
+      .diagram-layout {
+        grid-template-columns: 1fr 280px;
+        align-items: start;
+      }
+    }
+
+    /* Canvas wrap – responsive with fixed aspect ratio */
+    .canvas-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1200 / 900;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .canvas-wrap canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ラベルオーバーレイ */
+    .label-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    /* 各ラベルボタン */
+    .plabel {
+      position: absolute;
+      pointer-events: all;
+      background: rgba(111,78,55,0.88);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 3px 7px;
+      font-size: clamp(0.58rem, 1.2vw, 0.72rem);
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+      line-height: 1.3;
+      transition: background 0.15s, transform 0.1s;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+    .plabel:hover   { background: rgba(88,58,35,1); transform: translate(-50%,-50%) scale(1.08); }
+    .plabel.active  { background: #c0622a; box-shadow: 0 0 0 3px rgba(192,98,42,0.38); }
+
+    /* リード線 */
+    .lead-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: visible;
+    }
+    .lead-line {
+      stroke: rgba(111,78,55,0.55);
+      stroke-width: 1.5;
+      fill: none;
+      stroke-dasharray: 4 3;
+    }
+    .lead-line.active { stroke: rgba(192,98,42,0.9); }
+
+    /* ── 解説パネル ──────────────────────────── */
+    .info-card {
+      background: #fffaf4;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      min-height: 160px;
+    }
+    .info-badge {
+      display: inline-block;
+      background: var(--main);
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border-radius: 6px;
+      padding: 2px 10px;
+      margin-bottom: 8px;
+    }
+    .info-title {
+      font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+      font-weight: 700;
+      color: var(--main);
+      margin-bottom: 6px;
+    }
+    .info-text {
+      font-size: clamp(0.76rem, 1.2vw, 0.86rem);
+      line-height: 1.75;
+      color: var(--text);
+    }
+    .info-hint {
+      font-size: clamp(0.7rem, 1.0vw, 0.78rem);
+      color: #9a7a5a;
+      margin-top: 10px;
+    }
+
+    /* ── 安全パネル ──────────────────────────── */
+    .safety-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .safety-card {
+      background: #fffaf4;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .safety-card h3 {
+      font-size: 0.84rem;
+      color: var(--main);
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .safety-card h3 .ico { font-size: 1.1rem; }
+    .safety-card ul {
+      list-style: none;
+      padding: 0;
+    }
+    .safety-card ul li {
+      font-size: 0.78rem;
+      line-height: 1.6;
+      padding-left: 14px;
+      position: relative;
+      color: var(--text);
+    }
+    .safety-card ul li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: var(--main-2);
+    }
+
+    /* ── しくみパネル ────────────────────────── */
+    .mechanism-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .mech-row {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 10px;
+      align-items: center;
+      background: #fffaf4;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .mech-label {
+      background: var(--main);
+      color: #fff;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-align: center;
+      border-radius: 6px;
+      padding: 4px 4px;
+      line-height: 1.3;
+    }
+    .mech-desc { font-size: 0.78rem; line-height: 1.65; }
+
+    /* モバイル時 diagram-layout 縦並び */
+    @media (max-width: 699px) {
+      .info-card { min-height: 120px; }
+    }
+
+    /* ── シミュレータパネル ───────────────────── */
+
+    #panel-mechanism {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+    }
+    #panel-mechanism.active {
+      display: flex;
+    }
+
+    /* 各部名称と同じ diagram-layout を流用 */
+    .sim-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    @media (min-width: 700px) {
+      .sim-layout {
+        grid-template-columns: 1fr 220px;
+        align-items: start;
+      }
+    }
+
+    /* canvas を aspect-ratio コンテナに収める（各部名称と同方式） */
+    .sim-canvas-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 900 / 690;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    #machineCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 14px;
+    }
+
+    /* スライダーラッパー：canvas の右に縦スライダーを配置 */
+    .sim-slider-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .sim-slider-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--main);
+      text-align: center;
+      white-space: nowrap;
+      line-height: 1.3;
+    }
+    .vertical-slider {
+      writing-mode: vertical-lr;
+      direction: rtl;
+      appearance: slider-vertical;
+      -webkit-appearance: slider-vertical;
+      width: 32px;
+      height: 260px;
+      accent-color: var(--main);
+      cursor: pointer;
+    }
+
+    /* コントロールカード（各部名称の info-card と同格） */
+    .sim-ctrl-card {
+      background: #fffaf4;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sim-ctrl-title {
+      font-size: 0.80rem;
+      font-weight: 700;
+      color: var(--main);
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 6px;
+      margin-bottom: 2px;
+    }
+
+    /* ボタン・セレクト */
+    .sim-btn {
+      padding: 8px 14px;
+      font-size: clamp(0.74rem, 1.1vw, 0.84rem);
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      min-height: 36px;
+      width: 100%;
+      text-align: left;
+      white-space: nowrap;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+    .sim-btn.btn-off     { background: #c0392b; color: #fff; }
+    .sim-btn.btn-on      { background: #2e7d32; color: #fff; box-shadow: 0 0 8px rgba(46,125,50,.5); }
+    .sim-btn.btn-reset   { background: #607d8b; color: #fff; }
+    .sim-btn.btn-feed    { background: #1565c0; color: #fff; }
+    .sim-btn.btn-feed:disabled { background: #b0bec5; color: #fff; cursor: not-allowed; box-shadow: none; }
+    .sim-btn.btn-feeding { background: #0d47a1; color: #fff; box-shadow: 0 0 8px rgba(13,71,161,.6); }
+    .sim-btn.btn-col-off { background: #555;    color: #fff; }
+    .sim-btn.btn-col-on  { background: #2e7d32; color: #fff; box-shadow: 0 0 8px rgba(46,125,50,.5); }
+    .sim-select-label {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--main);
+    }
+    .sim-select {
+      padding: 7px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      font-family: inherit;
+      font-size: clamp(0.70rem, 1.0vw, 0.80rem);
+      font-weight: 700;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      width: 100%;
+    }
+    #simStatus {
+      font-size: clamp(0.68rem, 1.0vw, 0.78rem);
+      color: #5a4a38;
+      padding: 5px 8px;
+      background: rgba(111,78,55,0.07);
+      border-radius: 6px;
+      border-left: 3px solid var(--main-2);
+      line-height: 1.4;
+    }
+    /* モバイル時 */
+    @media (max-width: 699px) {
+      .vertical-slider { height: 160px; }
+      .sim-ctrl-card { flex-direction: row; flex-wrap: wrap; }
+    }
+
+    /* ── 危険オーバーレイ ────────────────────── */
+    .sim-danger-overlay {
+      position: absolute;
+      left: 5%;
+      bottom: 10%;
+      width: 60%;
+      height: 28%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(200,0,0,0.92);
+      color: #fff;
+      font-size: clamp(14px, 3.5vw, 30px);
+      font-weight: 900;
+      line-height: 1.3;
+      z-index: 20;
+      pointer-events: none;
+      border-radius: 8px;
+      border: 3px solid #8b0000;
+      letter-spacing: 0.04em;
+    }
+    .sim-danger-overlay.show { display: flex; }
+
+    /* 操作パネルカードの危険メッセージ表示 */
+    .sim-ctrl-card.danger {
+      border-color: #d32f2f;
+      background: #fff0f0;
+    }
+    .sim-danger-msg {
+      display: none;
+      font-size: clamp(0.68rem, 1.0vw, 0.78rem);
+      font-weight: 700;
+      color: #b00000;
+      line-height: 1.7;
+      padding: 8px 10px;
+      background: #fff0f0;
+      border: 1px solid #d32f2f;
+      border-radius: 8px;
+      border-left: 4px solid #d32f2f;
+      white-space: pre-wrap;
+    }
+    .sim-danger-msg.show { display: block; }
+
+    /* ── 確認クイズ ────────────────────────── */
+    .quiz-panel-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 680px;
+    }
+    .quiz-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--main);
+    }
+    .quiz-progress-bar-wrap {
+      width: 100%;
+      height: 7px;
+      background: var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .quiz-progress-bar {
+      height: 100%;
+      background: var(--main);
+      border-radius: 999px;
+      transition: width 0.35s;
+    }
+    .quiz-question {
+      font-size: clamp(0.86rem, 1.3vw, 1.0rem);
+      font-weight: 700;
+      line-height: 1.55;
+      color: var(--text);
+      background: #fffaf4;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .quiz-choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    @media (max-width: 500px) { .quiz-choices { grid-template-columns: 1fr; } }
+    .quiz-choice-btn {
+      border: 2px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      font-size: clamp(0.76rem, 1.1vw, 0.86rem);
+      line-height: 1.4;
+      transition: background 0.15s, border-color 0.15s;
+      min-height: 44px;
+    }
+    .quiz-choice-btn:hover:not(:disabled) { background: #f5ede3; border-color: var(--main-2); }
+    .quiz-choice-btn.correct  { background: #e6f4ea; border-color: #2e7d32; color: #1b5e20; }
+    .quiz-choice-btn.wrong    { background: #fdecea; border-color: #c62828; color: #7f0000; }
+    .quiz-choice-btn:disabled { cursor: default; }
+    .quiz-result {
+      display: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: clamp(0.76rem, 1.1vw, 0.84rem);
+      line-height: 1.6;
+    }
+    .quiz-result.ok { display: block; background: #e6f4ea; color: #1b5e20; border: 1px solid #a5d6a7; }
+    .quiz-result.ng { display: block; background: #fdecea; color: #7f0000; border: 1px solid #ef9a9a; }
+    .quiz-result.fin { display: block; background: #fff8e1; color: #5d4037; border: 1px solid #ffe082; }
+    .quiz-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .quiz-action-btn {
+      padding: 9px 20px;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: clamp(0.76rem, 1.1vw, 0.84rem);
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--main);
+      color: #fff;
+      transition: background 0.15s;
+    }
+    .quiz-action-btn:hover { background: var(--main-2); }
+    .quiz-action-btn.secondary { background: #8b6b4c; }
+    .quiz-action-btn.secondary:hover { background: #6d5038; }
+    /* ── 起動時モーダル ────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal-box {
+      background: #fff; max-width: 580px; width: 92%;
+      border-radius: 14px; padding: 20px 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      max-height: 88vh; overflow: auto;
+      font-size: 14px; line-height: 1.65; color: var(--text);
+    }
+    .modal-box h2 { margin: 0 0 10px; font-size: 17px; color: var(--main); }
+    .modal-box p  { margin: 6px 0; white-space: pre-wrap; }
+    .modal-box b  { color: var(--main); }
+    .modal-footer { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .modal-start-btn {
+      padding: 10px 22px; border: none; border-radius: 8px;
+      background: var(--main); color: #fff; font-weight: 700;
+      cursor: pointer; font-size: 14px; font-family: inherit;
+    }
+    .modal-start-btn:hover { background: var(--main-2); }
+    .modal-index-btn {
+      padding: 10px 16px; border: none; border-radius: 8px;
+      background: #888; color: #fff; font-weight: 700;
+      cursor: pointer; font-size: 13px; font-family: inherit;
+    }
+    .modal-index-btn:hover { background: #555; }
+    /* メニューボタン */
+    .back-to-menu {
+      background: #5c4a35; color: #fff; border: none; border-radius: 10px;
+      padding: 0 12px; font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; white-space: nowrap; min-height: 36px;
+      font-family: inherit;
+    }
+    .back-to-menu:hover { background: var(--main); }
+  
+    /* ===== 教員向け改訂・順番学習・大文字表示 ===== */
+    html,body{font-size:16px;}
+    header h1{font-size:clamp(1.05rem,2vw,1.35rem);}
+    .tabs{grid-template-columns:auto repeat(5,minmax(0,1fr));}
+    .tab-btn,.back-to-menu{font-size:16px;min-height:48px;padding:10px 8px;}
+    .tab-btn.locked{background:#e6e6e6;color:#777;box-shadow:none;cursor:not-allowed;}
+    .tab-btn.completed{background:#e6f4ea;color:#1b5e20;border:2px solid #66bb6a;}
+    .panel{font-size:16px;overflow:auto;padding-bottom:28px;}
+    .section-title{font-size:20px;}.section-lead{font-size:16px;}
+    .step-header{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#f1e7da;border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:16px;color:var(--main);}
+    .next-instruction{background:#eaf3ff;border:2px solid #4d8fd6;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:18px;font-weight:700;color:#163b68;}
+    .completion-message{margin-top:12px;padding:12px 14px;border-radius:10px;background:#fff8e1;border:1px solid #f0c75e;font-size:16px;font-weight:700;line-height:1.55;}
+    .completion-message.done{background:#e6f4ea;border-color:#66bb6a;color:#1b5e20;}
+    .plabel{font-size:clamp(12px,1.3vw,16px);min-height:32px;padding:5px 9px;}
+    .plabel.checked{background:#2e7d32;box-shadow:0 0 0 2px rgba(46,125,50,.25);}
+    .info-title{font-size:20px}.info-text{font-size:16px}.info-hint{font-size:15px}.info-badge{font-size:15px}
+    .teacher-confirm{display:flex;gap:8px;align-items:flex-start;background:#fff8e1;border:1px solid #e0b64c;border-radius:8px;padding:10px;font-size:15px;}
+    .teacher-confirm input{width:22px;height:22px;flex:0 0 auto;}
+    .modal-box{font-size:16px}.modal-box h2{font-size:21px}.modal-start-btn,.modal-index-btn{font-size:16px;min-height:46px}.modal-start-btn:disabled{opacity:.45;cursor:not-allowed;}
+    .safety-accordion{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+    .safety-topic{display:flex;justify-content:space-between;align-items:center;min-height:50px;padding:10px 14px;border:2px solid var(--line);border-radius:10px;background:#fff;color:var(--main);font-size:17px;font-weight:700;cursor:pointer;text-align:left;}
+    .safety-topic.checked{background:#e6f4ea;border-color:#66bb6a}.safety-topic.checked b{color:#1b5e20}
+    .safety-detail{display:none;background:#fffaf4;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:16px;line-height:1.65;grid-column:1/-1}.safety-detail.open{display:block}.safety-detail ul{padding-left:1.3em}
+    .safety-judgement{margin-top:12px;background:#f7f4ef;border:1px solid var(--line);border-radius:12px;padding:12px}.safety-judgement h3{font-size:18px;color:var(--main);margin-bottom:8px}.judge-item{display:grid;grid-template-columns:1fr 52px 52px minmax(80px,auto);gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.judge-item p{font-size:16px}.judge-item button{min-height:44px;font-size:18px;font-weight:700;border:2px solid var(--line);border-radius:8px;background:#fff}.judge-item.correct span{color:#1b5e20;font-weight:700}.judge-item.wrong span{color:#b00020;font-weight:700}
+    .sim-check-grid{display:grid;gap:6px}.sim-check-grid label,.sim-final-check{display:flex;gap:8px;align-items:center;font-size:16px;font-weight:700;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px}.sim-check-grid input,.sim-final-check input{width:22px;height:22px}.thickness-box{display:grid;gap:4px;background:#eef6ff;border:1px solid #8ab7e8;border-radius:8px;padding:8px;font-size:16px}.thickness-box .safe{color:#1b5e20}.thickness-box .danger{color:#b00020}
+    .sim-btn,.sim-select{font-size:16px;min-height:48px}.sim-select-label,#simStatus{font-size:15px}.sim-ctrl-title{font-size:17px}.vertical-slider{width:42px;}
+    .danger-note{background:#fff3e0;border:2px solid #f29c38;border-radius:10px;padding:10px 14px;font-size:17px;font-weight:700;margin-bottom:10px}.danger-case-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.danger-case{min-height:92px;border:2px solid #e0c7ac;border-radius:12px;background:#fff;padding:12px;text-align:left;cursor:pointer}.danger-case b{display:block;font-size:18px;color:#8b2d20;margin-bottom:6px}.danger-case span{font-size:15px;line-height:1.4}.danger-case.checked{background:#fdecea;border-color:#d32f2f}.danger-explain{margin-top:12px;border-left:6px solid #c62828;background:#fff4f3;border-radius:8px;padding:14px;font-size:16px;line-height:1.65}.danger-explain h3{font-size:20px;color:#a01818;margin-bottom:6px}
+    .quiz-panel-wrap{max-width:900px}.quiz-question{font-size:18px}.quiz-choice-btn{font-size:16px;min-height:52px}.quiz-result{font-size:16px}.quiz-action-btn{font-size:16px;min-height:48px}.quiz-action-btn:disabled{background:#b7b7b7;cursor:not-allowed}.quiz-actions-spread{justify-content:space-between}
+    button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #1565c0;outline-offset:3px}
+    @media(max-width:960px){
+      body{overflow:auto}.container{padding:6px}.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.back-to-menu{grid-column:1/-1}.diagram-layout,.sim-layout{grid-template-columns:1fr}.panel{overflow:visible}.safety-accordion{grid-template-columns:1fr}.danger-case-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sim-layout>div:first-child{flex-direction:column}.sim-slider-wrap{width:100%;height:auto!important;align-items:stretch}.vertical-slider{writing-mode:horizontal-tb;direction:ltr;appearance:auto;-webkit-appearance:none;width:100%;height:36px!important}.canvas-wrap,.sim-canvas-wrap{width:100%;max-width:100%}.plabel{font-size:14px}.section-lead{display:block;margin:4px 0 0}.judge-item{grid-template-columns:1fr 48px 48px}.judge-item span{grid-column:1/-1}.quiz-choices{grid-template-columns:1fr}}
+    .quiz-review{margin-top:12px;padding:14px;border:1px solid #e0c26a;background:#fffdf2;border-radius:10px;font-size:16px;line-height:1.6}.quiz-review>div{padding:10px 0;border-top:1px solid #e8ddd0}
+    @media(max-width:560px){.danger-case-grid{grid-template-columns:1fr}.step-header{align-items:flex-start;flex-direction:column}.next-instruction{font-size:17px}.tabs{gap:5px}.tab-btn,.back-to-menu{font-size:15px}.plabel{font-size:12px;padding:4px 6px}.modal-box{width:96%;padding:16px}.quiz-actions{flex-wrap:nowrap}.quiz-action-btn{flex:1}}
+
+  
+    /* 2026-07-31 操作整理 */
+    .tabs{grid-template-columns:repeat(5,minmax(0,1fr));}
+    .safety-accordion{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;}
+    .safety-detail{grid-column:1/-1;max-height:240px;overflow:auto;}
+    .safety-judgement{max-width:760px;margin:12px auto 0;}
+    #safetyQuestionText{font-size:17px;line-height:1.6;font-weight:700;background:#fff;padding:12px;border:1px solid var(--line);border-radius:10px;}
+    .safety-answer-buttons{display:flex;justify-content:center;gap:18px;margin-top:12px;}
+    .safety-answer-buttons[hidden]{display:none;}
+    .safety-answer-buttons button{min-width:110px;min-height:48px;border:2px solid var(--main);border-radius:10px;background:#fff;color:var(--main);font-size:22px;font-weight:800;cursor:pointer;}
+    .safety-answer-buttons button:hover{background:#f4ede4;}
+    .safety-answer-result{min-height:28px;margin-top:10px;text-align:center;font-size:16px;font-weight:700;}
+    .safety-answer-result.ok{color:#1b5e20}.safety-answer-result.ng{color:#b00020}
+    #simWoodSelect{display:block!important;position:relative;z-index:50;pointer-events:auto!important;opacity:1!important;min-height:48px;font-size:16px;background:#fff;}
+    .sim-ctrl-card>div:has(#simWoodSelect){position:relative;z-index:50;}
+    @media(max-width:960px){.tabs{grid-template-columns:repeat(2,minmax(0,1fr));}.safety-accordion{grid-template-columns:1fr;}}
+
+
+    /* 2026-08-01 GIGA端末向けシミュレータ圧縮配置 */
+    .sim-visual-column{
+      display:flex;
+      gap:8px;
+      align-items:flex-start;
+      justify-content:center;
+      min-width:0;
+    }
+    @media (min-width:1100px) and (min-height:700px){
+      body{overflow:hidden;}
+      .container{padding:6px 10px;gap:5px;}
+      #panel-mechanism.active{
+        height:calc(100vh - 112px);
+        min-height:0;
+        overflow:hidden;
+        padding:9px 10px 10px;
+        gap:4px;
+      }
+      #panel-mechanism .step-header{
+        padding:5px 10px;
+        margin-bottom:4px;
+        min-height:34px;
+      }
+      #panel-mechanism .next-instruction{
+        padding:6px 10px;
+        margin-bottom:4px;
+        font-size:16px;
+        min-height:36px;
+      }
+      #panel-mechanism .section-line{
+        margin-bottom:4px;
+        line-height:1.25;
+      }
+      #panel-mechanism .section-title{font-size:18px;}
+      #panel-mechanism .section-lead{font-size:14px;}
+      #panel-mechanism .sim-layout{
+        grid-template-columns:minmax(0,1.08fr) minmax(500px,.92fr);
+        gap:10px;
+        align-items:start;
+        min-height:0;
+      }
+      #panel-mechanism .sim-visual-column{
+        align-items:center;
+        max-height:460px;
+      }
+      #panel-mechanism .sim-canvas-wrap{
+        width:min(100%,600px);
+        max-height:455px;
+        aspect-ratio:900/690;
+        flex:1 1 auto;
+      }
+      #panel-mechanism .sim-slider-wrap{
+        height:445px!important;
+        flex:0 0 46px;
+      }
+      #panel-mechanism .vertical-slider{
+        height:350px!important;
+      }
+      #panel-mechanism .sim-ctrl-card{
+        display:grid;
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+        gap:6px 8px;
+        padding:8px 10px;
+        align-content:start;
+        max-height:460px;
+        overflow:hidden;
+      }
+      #panel-mechanism .sim-ctrl-title,
+      #panel-mechanism .sim-ctrl-card>div:has(#simWoodSelect),
+      #panel-mechanism .sim-danger-msg,
+      #panel-mechanism #simStatus{
+        grid-column:1/-1;
+      }
+      #panel-mechanism .sim-ctrl-title{
+        padding-bottom:4px;
+        margin-bottom:0;
+        font-size:16px;
+      }
+      #panel-mechanism .sim-check-grid{
+        grid-column:1;
+        gap:4px;
+      }
+      #panel-mechanism .thickness-box{
+        grid-column:2;
+        gap:2px;
+        padding:6px 8px;
+        font-size:14px;
+        align-self:stretch;
+      }
+      #panel-mechanism .sim-check-grid label,
+      #panel-mechanism .sim-final-check{
+        min-height:36px;
+        padding:5px 7px;
+        font-size:14px;
+      }
+      #panel-mechanism .sim-check-grid input,
+      #panel-mechanism .sim-final-check input{
+        width:18px;height:18px;
+      }
+      #panel-mechanism .sim-btn,
+      #panel-mechanism .sim-select{
+        min-height:40px;
+        font-size:14px;
+        padding:6px 9px;
+      }
+      #panel-mechanism .sim-select-label{font-size:14px;}
+      #panel-mechanism #simStatus{
+        padding:5px 7px;
+        font-size:14px;
+        line-height:1.3;
+        min-height:38px;
+      }
+      #panel-mechanism .sim-danger-msg{
+        max-height:76px;
+        overflow:auto;
+        font-size:13px;
+        line-height:1.35;
+        padding:6px 8px;
+      }
+      #panel-mechanism .completion-message{
+        margin-top:5px;
+        padding:7px 10px;
+        font-size:14px;
+        line-height:1.35;
+        min-height:36px;
+      }
+    }
+    @media (max-width:1099px), (max-height:699px){
+      .sim-visual-column{display:flex;gap:8px;align-items:flex-start;}
+    }
+
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚙️ 自動鉋盤（じどうかんなばん）の基本　―　技術科教員向け安全操作学習</h1>
+</header>
+
+<!-- 起動時モーダル -->
+<div id="startupModal" class="modal-overlay">
+  <div class="modal-box">
+    <h2>📖 教員向け使い方ガイド</h2>
+    <p>このアプリは、<b>自動鉋盤を操作する技術科教員向け</b>の事前学習・研修教材です。
+
+① 各部の名称と役割を確認します。
+② 使用前点検と安全な操作方法を確認します。
+③ 加工シミュレータで標準的な操作手順を体験します。
+④ 危険事例から、事故の原因と対応を確認します。
+⑤ 最後に確認クイズへ取り組みます。
+
+<b>実際の操作では、使用機種の取扱説明書、メーカーの指示、学校の安全基準を必ず優先してください。</b></p>
+    <label class="teacher-confirm"><input type="checkbox" id="teacherConfirm"> 本アプリが教員向けの事前学習教材であり、実機研修の代わりではないことを確認しました。</label>
+    <div class="modal-footer">
+      <button class="modal-start-btn" id="modalStartBtn" disabled>確認してはじめる</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- タブ -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-names" data-panel="panel-names">① 各部の名称</button>
+    <button class="tab-btn locked" id="tab-safety" data-panel="panel-safety" aria-disabled="true">🔒 ② 安全な使い方</button>
+    <button class="tab-btn locked" id="tab-mechanism" data-panel="panel-mechanism" aria-disabled="true">🔒 ③ 加工シミュレータ</button>
+    <button class="tab-btn locked" id="tab-danger" data-panel="panel-danger" aria-disabled="true">🔒 ④ 危険事例</button>
+    <button class="tab-btn locked" id="tab-quiz" data-panel="panel-quiz" aria-disabled="true">🔒 ⑤ 確認クイズ</button>
+  </div>
+
+  <!-- ====== パネル1: 各部の名称 ====== -->
+  <div class="panel active" id="panel-names">
+    <div class="step-header"><span>1／5　各部の名称</span><strong id="namesProgress">確認済み 0／11</strong></div>
+    <div class="next-instruction" id="namesInstruction">次の操作：機械上の名称ラベルを押してください。</div>
+    <div class="section-line"><p class="section-title">各部の名称をクリックして確認しよう</p><p class="section-lead">ラベルをタップ・クリックすると、その部位の名称と解説が表示されます。</p></div>
+
+    <div class="diagram-layout">
+      <!-- CG図＋ラベルオーバーレイ -->
+      <div class="canvas-wrap" id="cgWrap">
+        <canvas id="planer"></canvas>
+
+        <!-- リード線SVG -->
+        <svg class="lead-svg" id="leadSvg" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid meet"></svg>
+
+        <!-- ラベルボタン（座標は1200x900基準の%で指定） -->
+        <div class="label-overlay" id="labelOverlay">
+          <!-- left side -->
+          <button class="plabel" data-part="switch"          style="left:11%;  top:42%">電源スイッチ</button>
+          <button class="plabel" data-part="clutch"          style="left:20%;  top:32%">クラッチレバー</button>
+          <!-- top rails -->
+          <button class="plabel" data-part="topbar"          style="left:55%;  top:15%">返送ローラー</button>
+          <!-- feed opening -->
+          <button class="plabel" data-part="feed_in"         style="left:40%;  top:43%">送り込み口</button>
+          <button class="plabel" data-part="blade_drum"      style="left:55%;  top:40%">かんな胴（刃）</button>
+          <button class="plabel" data-part="feed_roller"     style="left:66%;  top:47%">送りローラー</button>
+          <!-- gauge / side -->
+          <button class="plabel" data-part="gauge"           style="left:25%;  top:60%">目盛り</button>
+          <button class="plabel" data-part="table"           style="left:55%;  top:52%">テーブル</button>
+          <!-- right -->
+          <button class="plabel" data-part="motor"           style="left:93%;  top:42%">モーター部</button>
+          <button class="plabel" data-part="handwheel"       style="left:90%;  top:32%">昇降ハンドル</button>
+          <button class="plabel" data-part="base"            style="left:55%;  top:92%">ベース（機台）</button>
+        </div>
+      </div>
+
+      <!-- 解説カード -->
+      <div class="info-card">
+        <div class="info-badge" id="infoBadge">‥</div>
+        <div class="info-title" id="infoTitle">ラベルをクリックしてください</div>
+        <div class="info-text"  id="infoText">自動鉋盤の各部位の名称と役割が、ここに表示されます。ラベルをクリックまたはタップして確認しましょう。<br>※なお，機種によりスイッチやハンドルの位置が異なる場合もあります。</div>
+        <div class="info-hint" id="infoHint"></div>
+      </div>
+    </div>
+    <div class="completion-message" id="namesComplete">すべての名称を確認すると、次の学習へ進めます。</div>
+  </div>
+
+  <!-- ====== パネル2: 加工シミュレータ ====== -->
+  <div class="panel" id="panel-mechanism">
+    <div class="step-header"><span>3／5　加工シミュレータ</span><strong id="simStepText">標準操作</strong></div>
+    <div class="next-instruction" id="simInstruction">次の操作：使用前点検済みにチェックしてください。</div>
+    <div class="section-line"><p class="section-title">加工シミュレータ</p><p class="section-lead">材料・テーブル高さを設定して、加工の流れを確認しよう。</p></div>
+
+    <div class="sim-layout">
+
+      <!-- 左：canvas（aspect-ratio で自動リサイズ） ＋ スライダー を横並び -->
+      <div class="sim-visual-column">
+        <div class="sim-canvas-wrap" id="simCanvasWrap">
+          <canvas id="machineCanvas" width="900" height="690"></canvas>
+          <!-- 危険オーバーレイ -->
+          <div class="sim-danger-overlay" id="simDangerOverlay">
+            <span>危険！<br>緊急停止</span>
+          </div>
+        </div>
+        <div class="sim-slider-wrap" id="simSliderArea">
+          <span class="sim-slider-label">テーブル<br>高さ</span>
+          <input type="range" id="simTableSlider" class="vertical-slider"
+                 min="0" max="60" value="54" orient="vertical">
+        </div>
+      </div>
+
+      <!-- 右：コントロールカード（info-card と同格） -->
+      <div class="sim-ctrl-card" id="simCtrlCard">
+        <div class="sim-ctrl-title">操作パネル</div>
+        <div>
+          <div class="sim-select-label" style="margin-bottom:4px;">材料選択</div>
+          <select id="simWoodSelect" class="sim-select">
+            <option value="">材料を選んでください</option>
+            <option value="100x400x4">幅100×長400×厚4 mm</option>
+            <option value="200x200x10">幅200×長200×厚10 mm</option>
+            <option value="100x400x15">幅100×長400×厚15 mm</option>
+            <option value="200x400x15">幅200×長400×厚15 mm</option>
+            <option value="400x100x15">幅400×長100×厚15 mm</option>
+            <option value="400x200x15">幅400×長200×厚15 mm</option>
+            <option value="100x400x30">幅100×長400×厚30 mm</option>
+            <option value="200x400x30">幅200×長400×厚30 mm</option>
+          </select>
+        </div>
+        <div class="sim-check-grid">
+          <label><input type="checkbox" id="simPrecheck"> 使用前点検済み</label>
+          <label><input type="checkbox" id="simGlasses"> 保護眼鏡</label>
+          <label><input type="checkbox" id="simMask"> 防塵マスク</label>
+        </div>
+        <div class="thickness-box">
+          <div>加工前板厚：<strong id="beforeThickness">―</strong></div>
+          <div>仕上がり厚さ：<strong id="finishThickness">―</strong></div>
+          <div>切込み量：<strong id="cutAmount">―</strong></div>
+        </div>
+        <button id="simCollectorBtn" class="sim-btn btn-col-off">🌀 集塵機 OFF</button>
+        <button id="simPowerBtn"     class="sim-btn btn-off">⚡ 電源 ON</button>
+        <button id="simFeedBtn"      class="sim-btn btn-feed" disabled>▶ 材料を送る</button>
+        <button id="simResetBtn" class="sim-btn btn-reset">↺ 最初からやり直す</button>
+        <label class="sim-final-check"><input type="checkbox" id="simFullStop"> 完全停止を確認</label>
+        <label class="sim-final-check"><input type="checkbox" id="simAfterCheck"> 使用後確認</label>
+
+        <!-- 危険メッセージ -->
+        <div class="sim-danger-msg" id="simDangerMsg"></div>
+        <div id="simStatus">材料を選択してから電源を入れてください</div>
+      </div>
+
+    </div>
+    <div class="completion-message" id="simComplete">標準操作を最後まで安全に完了すると、危険事例へ進めます。</div>
+  </div>
+
+  <!-- ====== パネル3: 安全 ====== -->
+  <div class="panel" id="panel-safety">
+    <div class="step-header"><span>2／5　安全な使い方</span><strong id="safetyProgress">確認済み 0／7</strong></div>
+    <div class="next-instruction" id="safetyInstruction">次の操作：「使用前の機械点検」から順に確認してください。</div>
+    <div class="section-line"><p class="section-title">安全な使い方</p><p class="section-lead">各項目を開き、教員自身が行う確認と操作を確かめます。</p></div>
+    <div class="safety-accordion" id="safetyAccordion">
+      <button class="safety-topic" data-topic="pre"><span>使用前の機械点検</span><b>未確認</b></button>
+      <div class="safety-detail" data-detail="pre"><ul><li>機械周囲、電源コード、スイッチ、非常停止装置を確認する</li><li>かんな刃、送りローラー、固定部、テーブル上の異物を確認する</li><li>集塵装置、昇降機構、目盛りを確認する</li><li>試運転で異音・異常振動がないか確認する</li></ul></div>
+      <button class="safety-topic" data-topic="material"><span>材料の確認</span><b>未確認</b></button>
+      <div class="safety-detail" data-detail="material"><ul><li>長さ、幅、厚さ、反り、割れ、大きな節を確認する</li><li>釘、ねじ、金属片、接着剤、塗膜、表面異物を確認する</li><li>アプリ内の基準例：長さ300mmを超える、厚さ5mmを超える、切込み量1mm以下</li><li>実際には使用機種の取扱説明書を優先する</li></ul></div>
+      <button class="safety-topic" data-topic="ppe"><span>服装と保護具</span><b>未確認</b></button>
+      <div class="safety-detail" data-detail="ppe"><ul><li>保護眼鏡、防塵マスクを着用する</li><li>袖口を閉じ、長い髪を束ねる</li><li>手袋を着用しない</li></ul></div>
+      <button class="safety-topic" data-topic="start"><span>加工開始前</span><b>未確認</b></button>
+      <div class="safety-detail" data-detail="start"><ul><li>材料寸法、仕上がり厚さ、切込み量を確認する</li><li>集塵機をONにしてから電源を入れる</li><li>回転が安定し、異音や異常振動がないことを確認する</li></ul></div>
+      <button class="safety-topic" data-topic="during"><span>加工中</span><b>未確認</b></button>
+      <div class="safety-detail" data-detail="during"><ul><li>材料を水平に送り、ローラーに保持されたら無理に押し続けない</li><li>内部をのぞかず、送り出し方向の正面に立たない</li><li>加工中に高さを変更せず、材料を途中で引き戻さない</li></ul></div>
+      <button class="safety-topic" data-topic="abnormal"><span>異常時</span><b>未確認</b></button>
+      <div class="safety-detail" data-detail="abnormal"><ul><li>送りと電源を停止し、完全停止を待つ</li><li>主電源を遮断し、詰まりや異物を素手で取り除かない</li><li>原因不明の場合は使用を中止し、必要に応じて点検を依頼する</li></ul></div>
+      <button class="safety-topic" data-topic="finish"><span>使用後</span><b>未確認</b></button>
+      <div class="safety-detail" data-detail="finish"><ul><li>材料通過後に電源をOFFにする</li><li>完全停止後に集塵機をOFFにする</li><li>主電源を切り、清掃と異常確認を行う</li></ul></div>
+    </div>
+    <div class="safety-judgement" id="safetyQuestionBox">
+      <h3 id="safetyQuestionTitle">安全確認問題</h3>
+      <p id="safetyQuestionText">上の項目を1つ選ぶと、その内容に関する問題が1問表示されます。</p>
+      <div class="safety-answer-buttons" id="safetyAnswerButtons" hidden>
+        <button type="button" data-value="true">○</button>
+        <button type="button" data-value="false">×</button>
+      </div>
+      <div class="safety-answer-result" id="safetyAnswerResult"></div>
+    </div>
+    <div class="completion-message" id="safetyComplete">7分類と安全判断を完了すると、加工シミュレータへ進めます。</div>
+  </div>
+
+  <!-- ====== パネル4: 危険事例 ====== -->
+  <div class="panel" id="panel-danger">
+    <div class="step-header"><span>4／5　危険事例</span><strong id="dangerProgress">確認済み 0／3以上</strong></div>
+    <div class="next-instruction">次の操作：危険事例を3種類以上確認してください。</div>
+    <div class="danger-note">以下はCG上で危険を確認するための実験です。実機では行いません。</div>
+    <div class="danger-case-grid" id="dangerCases">
+      <button class="danger-case" data-case="deep"><b>切込み量過大</b><span>反発・過負荷・加工面の荒れ</span></button>
+      <button class="danger-case" data-case="short"><b>短すぎる材料</b><span>保持不足・キックバック</span></button>
+      <button class="danger-case" data-case="early"><b>回転安定前の送り</b><span>不安定な切削・材料飛散</span></button>
+      <button class="danger-case" data-case="dust"><b>集塵機OFF</b><span>詰まり・粉塵・火災</span></button>
+      <button class="danger-case" data-case="metal"><b>金属異物</b><span>刃の損傷・飛散</span></button>
+      <button class="danger-case" data-case="adjust"><b>回転中の高さ調整</b><span>機械損傷・事故</span></button>
+    </div>
+    <div class="danger-explain" id="dangerExplain"><h3>危険事例を選択してください</h3><p>原因、起こり得ること、正しい対応を表示します。</p></div>
+    <div class="completion-message" id="dangerComplete">3種類以上確認すると、確認クイズへ進めます。</div>
+  </div>
+
+  <!-- ====== パネル5: 確認クイズ ====== -->
+  <div class="panel" id="panel-quiz">
+    <div class="step-header"><span>5／5　確認クイズ</span><strong>全10問</strong></div>
+    <div class="section-line"><p class="section-title">確認クイズ</p><p class="section-lead">自動鉋盤の安全な使い方について、10問で確認しましょう。</p></div>
+    <div class="quiz-panel-wrap">
+      <div class="quiz-meta-row">
+        <span id="quizProgress">問題 1 / 10</span>
+        <span id="quizScore">得点 0 / 0</span>
+      </div>
+      <div class="quiz-progress-bar-wrap">
+        <div class="quiz-progress-bar" id="quizProgressBar" style="width:10%"></div>
+      </div>
+      <div class="quiz-question" id="quizQuestion"></div>
+      <div class="quiz-choices" id="quizChoices"></div>
+      <div class="quiz-result" id="quizResult"></div>
+      <div class="quiz-actions quiz-actions-spread">
+        <button class="quiz-action-btn secondary" id="quizRestartBtn" type="button">最初から</button>
+        <button class="quiz-action-btn" id="quizNextBtn" type="button" disabled>次の問題へ</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+/* =============================================
+   PART DATA
+   anchor: [x%, y%] in 1200×900 canvas coords
+   target: [x%, y%] where label button sits
+============================================= */
+const PARTS = {
+  switch: {
+    badge: '電源スイッチ',
+    title: '電源スイッチ（起動スイッチ）',
+    text:  '機械の電源を入れたり切ったりするスイッチです。始動・停止は必ず作業者本人が行います。また、周囲の人に合図してから操作します。緑が起動、赤が停止ボタンです。',
+    hint:  '⚠️ スイッチのON/OFFは作業者本人が行うこと',
+    anchor: [116, 380],
+    target: [11, 42],
+  },
+  clutch: {
+    badge: 'クラッチレバー',
+    title: 'クラッチレバー',
+    text:  '送りローラーの動力を切断・接続するレバーです。材料が動き出したら手を離し、クラッチが直ちに操作できる位置に立ちます。異常が起きたときにすぐに送りを止めるために使います。',
+    hint:  '⚠️ 材料が動き出したら手を離してクラッチ操作できる位置に',
+    anchor: [232, 445],
+    target: [20, 32],
+  },
+  motor: {
+    badge: 'モーター部',
+    title: 'モーター部（電動機）',
+    text:  '機械全体を動かす電動機（モーター）が内蔵されています。かんな胴を高速で回転させる動力源です。機械右側の筐体部分がモーター部にあたります。',
+    hint:  '',
+    anchor: [1050, 420],
+    target: [93, 42],
+  },
+  topbar: {
+    badge: '返送ローラー',
+    title: '返送ローラー（上部ローラー）',
+    text:  '削った材料を送り側に返す際に使うローラーです。',
+    hint:  '',
+    anchor: [590, 125],
+    target: [55, 15],
+  },
+  feed_in: {
+    badge: '送り込み口',
+    title: '送り込み口（材料投入口）',
+    text:  '材料をここから水平に差し込みます。前おさえローラーが材料を引き込んでかんな刃まで送ります。材料は必ず水平に、かんな刃の切削方向に対して「習い目方向」で入れます。',
+    hint:  '⚠️ 正面（送り出し側）に立って作業しないこと',
+    anchor: [420, 360],
+    target: [40, 43],
+  },
+  blade_drum: {
+    badge: 'かんな胴（刃）',
+    title: 'かんな胴（刃胴・カッターヘッド）',
+    text:  '２枚ないし３枚のかんな刃（刃）を取り付けた円筒形の回転体です。高速で回転することで材料の表面を削り、厚さを一定にします。刃は材料の送り方向と逆方向に回転します。',
+    hint:  '⚠️ 始動時・回転中は機械内部を覗き込まないこと',
+    anchor: [590, 360],
+    target: [55, 40],
+  },
+  feed_roller: {
+    badge: '送りローラー',
+    title: '送りローラー（送り込みローラー・送り出しローラー）',
+    text:  '材料を前方へ送るゴム製のローラーです。送り込み側（前おさえ）と送り出し側（後おさえ）の2組あります。材料が自動的に前進するしくみです。',
+    hint:  '',
+    anchor: [730, 390],
+    target: [66, 47],
+  },
+  gauge: {
+    badge: '目盛り',
+    title: '目盛り（深さゲージ）',
+    text:  'テーブルの高さ（つまり削り取る量）を数値で読み取るための目盛りです。切込み量を1㎜以内に調節するときに確認します。',
+    hint:  '',
+    anchor: [302, 510],
+    target: [25, 60],
+  },
+  table: {
+    badge: 'テーブル',
+    title: 'テーブル（作業台・送り台）',
+    text:  '材料が乗って通過する平らな台です。上下に昇降でき、テーブルとかんな刃の間隔で仕上げの厚みが決まります。材料はテーブル上を水平に滑りながら通過します。',
+    hint:  '',
+    anchor: [590, 155],
+    target: [55, 52],
+  },
+  handwheel: {
+    badge: '昇降ハンドル',
+    title: '昇降ハンドル（右側ハンドル）',
+    text:  '機械右側にある大きなハンドルホイールです。回転させることでテーブルを上下させ、切込み量を調節します。テーブルの高さ調整に使います。',
+    hint:  '⚠️ 昇降は機械が完全に停止してから行うこと',
+    anchor: [1070, 250],
+    target: [90, 32],
+  },
+  base: {
+    badge: 'ベース',
+    title: 'ベース（機台・フレーム）',
+    text:  '機械全体を支える土台（機台）です。鋳鉄製で重く、振動を抑えて安定した切削ができるようにしています。床面への固定も機台を通して行います。',
+    hint:  '',
+    anchor: [650, 815],
+    target: [55, 92],
+  },
+};
+
+/* ---- Canvas CG ---- */
+const canvas = document.getElementById('planer');
+const ctx    = canvas.getContext('2d');
+const CWIDTH = 1200, CHEIGHT = 900;
+canvas.width  = CWIDTH;
+canvas.height = CHEIGHT;
+
+const C = {
+  outline: "#1d211d", green: "#789272", greenDark: "#536d53",
+  greenMid: "#6f8768", greenLight: "#9eb79a",
+  metal: "#b7b5aa", metalDark: "#77776d", steel: "#d8d8d3",
+  black: "#202121", dark: "#343936", red: "#d94232",
+  greenButton: "#3aa75e", shadow: "rgba(0,0,0,0.16)", white: "#fff"
+};
+
+function roundRect(x,y,w,h,r,fill,stroke=C.outline,lw=2){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+  if(fill){ctx.fillStyle=fill;ctx.fill();}
+  if(stroke){ctx.lineWidth=lw;ctx.strokeStyle=stroke;ctx.stroke();}
+}
+function line(x1,y1,x2,y2,color=C.outline,lw=2){
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+  ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.lineCap="round";ctx.stroke();
+}
+function ellipse(x,y,rx,ry,fill,stroke=C.outline,lw=2){
+  ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);
+  if(fill){ctx.fillStyle=fill;ctx.fill();}
+  if(stroke){ctx.lineWidth=lw;ctx.strokeStyle=stroke;ctx.stroke();}
+}
+function circle(x,y,r,fill,stroke=C.outline,lw=2){ellipse(x,y,r,r,fill,stroke,lw);}
+function bolt(x,y,r=8){
+  circle(x,y,r,C.metal,C.outline,1.5);
+  line(x-r*.55,y,x+r*.55,y,C.dark,1.2);
+}
+function knob(x,y,r=15){
+  const g=ctx.createRadialGradient(x-5,y-6,2,x,y,r);
+  g.addColorStop(0,"#595a58");g.addColorStop(1,"#111");
+  circle(x,y,r,g,C.outline,2);
+  circle(x-4,y-4,r*.45,"rgba(255,255,255,0.16)",null);
+}
+function metalRod(x1,y1,x2,y2,width=8){
+  ctx.lineCap="round";
+  line(x1,y1,x2,y2,"#535650",width+4);
+  line(x1,y1,x2,y2,"#d7d7d0",width);
+  line(x1,y1-2,x2,y2-2,"#ffffff",1.4);
+}
+function drawControlBox(){
+  roundRect(78,380,72,132,7,"#d3d1c6",C.outline,2);
+  circle(114,426,15,C.greenButton,C.outline,2);
+  circle(114,472,15,C.red,C.outline,2);
+  roundRect(103,510,25,36,8,C.black,C.outline,2);
+  line(116,545,116,642,C.black,15);
+}
+function drawLeftMotor(){
+  roundRect(65,245,140,580,18,C.greenDark,C.outline,2);
+  drawControlBox();
+  roundRect(170,530,38,230,12,C.greenLight,C.outline,2);
+}
+function drawBase(){
+  roundRect(190,775,870,85,13,C.green,C.outline,2);
+  ctx.fillStyle="rgba(255,255,255,0.16)";ctx.fillRect(210,790,820,10);
+  roundRect(185,845,110,25,9,C.green,C.outline,0);
+  roundRect(935,845,110,25,9,C.green,C.outline,0);
+  bolt(300,792,12);bolt(958,792,12);
+}
+function drawMainBody(){
+  roundRect(210,170,850,630,28,C.green,C.outline,2.5);
+  roundRect(240,195,790,130,10,C.greenLight,null,0);
+  ctx.globalAlpha=.28;ctx.fillStyle="#ffffff";ctx.fillRect(260,220,720,10);ctx.globalAlpha=1;
+  roundRect(270,555,610,245,3,C.greenMid,C.outline,2);
+  line(272,665,878,665,C.outline,1.5);
+  line(880,430,880,800,"rgba(0,0,0,0.18)",10);
+}
+function drawTopRails(){
+  metalRod(330,125,890,125,9);
+  /* 左支柱：棒の左端(x=330)に接するよう x を右にずらす */
+  roundRect(321,118,18,50,5,C.greenLight,C.outline,2);
+  roundRect(304,163,45,20,3,C.green,C.outline,2);
+  /* 右支柱：元の位置 */
+  roundRect(891,118,18,50,5,C.greenLight,C.outline,2);
+  roundRect(874,163,45,20,3,C.green,C.outline,2);
+}
+function drawFeedOpening(){
+  roundRect(350,315,540,90,10,C.green,C.outline,2.2);
+  ctx.clearRect(350,355,540,58);
+  ctx.fillStyle=C.white;ctx.fillRect(352,355,536,58);
+  ctx.strokeStyle=C.outline;ctx.lineWidth=2.2;ctx.strokeRect(350,315,540,98);
+  for(let x=360;x<=870;x+=23){roundRect(x,356,10,15,1,C.dark,C.outline,1);}
+  roundRect(352,380,532,125,5,C.green,C.outline,2);
+  const g=ctx.createLinearGradient(390,385,390,475);
+  g.addColorStop(0,"#71716d");g.addColorStop(1,"#b8b8b2");
+  ctx.fillStyle=g;ctx.beginPath();
+  ctx.moveTo(370,382);ctx.lineTo(865,382);ctx.lineTo(884,470);ctx.lineTo(350,470);
+  ctx.closePath();ctx.fill();ctx.strokeStyle=C.outline;ctx.stroke();
+}
+function drawGauge(){
+  roundRect(270,380,56,180,5,"#2b3030",C.outline,2);
+  ctx.fillStyle=C.white;ctx.font="10px sans-serif";
+  const labels=["150","120","90","60","0","60","40","-40"];
+  labels.forEach((t,i)=>ctx.fillText(t,286,405+i*20));
+  for(let y=392;y<548;y+=8)line(308,y,318,y,C.white,1);
+  line(278,487,323,487,C.red,3);
+  roundRect(258,335,55,46,6,C.greenLight,C.outline,2);
+  bolt(315,374,10);
+  circle(329,420,9,C.metal,C.outline,2);
+  circle(322,490,13,C.metal,C.outline,2);
+  line(333,490,358,490,C.metalDark,6);
+}
+function drawSideLevers(){
+  roundRect(220,310,25,85,5,C.metal,C.outline,2);
+  line(232,357,232,465,C.metal,8);
+  roundRect(217,445,30,95,14,C.black,C.outline,2);
+}
+function drawCenterCrank(){
+  roundRect(640,506,34,140,8,C.metalDark,C.outline,2);
+  roundRect(614,620,115,45,7,C.metal,C.outline,2);
+  circle(620,642,20,C.steel,C.outline,2);
+  circle(700,642,20,C.steel,C.outline,2);
+  line(682,628,723,675,C.dark,12);
+  knob(734,688,15);
+}
+function drawRightHandwheel(){
+  roundRect(1000,330,80,250,4,C.greenMid,C.outline,2);
+  roundRect(955,368,100,72,8,C.metal,C.outline,2);
+  circle(1025,235,80,"rgba(0,0,0,0)",C.outline,10);
+  circle(1025,235,24,C.metal,C.outline,2);
+  for(const a of[0,120,240]){
+    const rad=a*Math.PI/180;
+    line(1025,235,1025+Math.cos(rad)*62,235+Math.sin(rad)*62,C.metal,12);
+  }
+  circle(1025,235,8,C.steel,C.outline,2);
+  line(1087,270,1135,300,C.dark,14);
+  knob(1150,308,18);
+  line(1002,330,1002,430,C.dark,8);
+}
+function drawDetails(){
+  metalRod(372,285,372,330,10);
+  bolt(255,432,9);
+}
+function draw(){
+  ctx.clearRect(0,0,CWIDTH,CHEIGHT);
+  ctx.fillStyle=C.white;ctx.fillRect(0,0,CWIDTH,CHEIGHT);
+  ctx.save();ctx.translate(40,10);
+  drawLeftMotor();drawBase();drawMainBody();drawTopRails();
+  drawFeedOpening();drawGauge();drawSideLevers();
+  drawCenterCrank();drawRightHandwheel();drawDetails();
+  ctx.restore();
+}
+draw();
+
+/* ---- リード線SVG ---- */
+const svg = document.getElementById('leadSvg');
+
+function clearLeadLines(){
+  svg.querySelectorAll('line').forEach(el=>el.remove());
+}
+function drawLeadLine(key, active){
+  const old = svg.querySelector(`[data-lead="${key}"]`);
+  if(old) old.remove();
+  const p = PARTS[key];
+  if(!p) return;
+  const [ax, ay] = p.anchor;   // canvas px coords (1200×900)
+  // button position in % → convert to same 1200×900 viewBox
+  const [tx_pct, ty_pct] = p.target;
+  const tx = tx_pct / 100 * 1200;
+  const ty = ty_pct / 100 * 900;
+  const el = document.createElementNS('http://www.w3.org/2000/svg','line');
+  el.setAttribute('x1', tx); el.setAttribute('y1', ty);
+  el.setAttribute('x2', ax); el.setAttribute('y2', ay);
+  el.setAttribute('class', 'lead-line' + (active ? ' active' : ''));
+  el.setAttribute('data-lead', key);
+  svg.appendChild(el);
+}
+
+/* ---- ラベルボタン インタラクション ---- */
+let activeKey = null;
+
+document.querySelectorAll('.plabel').forEach(btn => {
+  const key = btn.dataset.part;
+  // 初期リード線（薄い）
+  drawLeadLine(key, false);
+
+  btn.addEventListener('click', () => {
+    const p = PARTS[key];
+    if(!p) return;
+
+    // toggle
+    if(activeKey === key){
+      btn.classList.remove('active');
+      const old = svg.querySelector(`[data-lead="${key}"]`);
+      if(old){ old.classList.remove('active'); old.classList.add('inactive'); }
+      document.getElementById('infoBadge').textContent = '‥';
+      document.getElementById('infoTitle').textContent = 'ラベルをクリックしてください';
+      document.getElementById('infoText').textContent  = '自動鉋盤の各部位の名称と役割が、ここに表示されます。ラベルをクリックまたはタップして確認しましょう。';
+      document.getElementById('infoHint').textContent  = '';
+      activeKey = null;
+      return;
+    }
+
+    // deactivate previous
+    if(activeKey){
+      document.querySelector(`.plabel[data-part="${activeKey}"]`)?.classList.remove('active');
+      const oldLine = svg.querySelector(`[data-lead="${activeKey}"]`);
+      if(oldLine){ oldLine.classList.remove('active'); }
+    }
+
+    activeKey = key;
+    btn.classList.add('active');
+    const newLine = svg.querySelector(`[data-lead="${key}"]`);
+    if(newLine) newLine.classList.add('active');
+
+    document.getElementById('infoBadge').textContent = p.badge;
+    document.getElementById('infoTitle').textContent = p.title;
+    document.getElementById('infoText').textContent  = p.text;
+    document.getElementById('infoHint').textContent  = p.hint;
+  });
+});
+
+/* タブ切替は統合制御スクリプトで管理 */
+
+/* =============================================
+   確認クイズ JS（安全な使い方 10問）
+============================================= */
+(function(){
+  const QUIZ_SET = [
+    {
+      q: '自動鉋盤を使う前に、最初に確認すること（行う操作）はどれですか？',
+      choices: ['集塵機を入れる', '電源を入れる', '材料を差し込む', 'テーブルを最大まで上げる'],
+      answer: '集塵機を入れる',
+      exp: '加工前には必ず集塵機を先に起動します。電源を入れてすぐに材料を送ると切削屑が詰まり、故障やキックバックの原因になります。'
+    },
+    {
+      q: '電源を入れた直後に材料を送り込んではいけないのはなぜですか？',
+      choices: ['ローラーや刃の回転が安定していないから', '集塵機が止まるから', 'テーブルが動くから', '材料が重いから'],
+      answer: 'ローラーや刃の回転が安定していないから',
+      exp: '電源を入れてすぐは回転が不安定です。回転が一定になってから材料を入れましょう。'
+    },
+    {
+      q: '自動鉋盤で削れる材料の長さの下限（最低限必要な長さ）はどれですか？',
+      choices: ['300mm以上', '100mm以上', '500mm以上', '50mm以上'],
+      answer: '300mm以上',
+      exp: '長さ300mm以下の材料は送りローラーに同時に保持されず、不安定になりキックバックの危険があります。'
+    },
+    {
+      q: '自動鉋盤で削れる材料の厚さの下限（最低限必要な厚さ）はどれですか？',
+      choices: ['5mm以上', '1mm以上', '10mm以上', '15mm以上'],
+      answer: '5mm以上',
+      exp: '5mm以下の薄い材料はローラー圧でたわんだり、機械内部に巻き込まれたりする危険があります。'
+    },
+    {
+      q: '1回で削る切込み量（削り量）の上限は何mmですか？',
+      choices: ['1mm以下', '3mm以下', '5mm以下', '10mm以下'],
+      answer: '1mm以下',
+      exp: '1回の切込み量が多いと刃物への抵抗が急増し、キックバックや機械の過負荷につながります。1mm以下を守りましょう。'
+    },
+    {
+      q: '材料を送り込んで機械が動き出したとき、どこに立って操作しますか？',
+      choices: ['機械の正面（送り出し側）を避けた位置', '機械の真正面', '材料の送り込み側の真後ろ', '機械の上'],
+      answer: '機械の正面（送り出し側）を避けた位置',
+      exp: '材料やキックバックが正面に飛んでくる危険があります。常に機械の正面を避けた位置に立ちましょう。'
+    },
+    {
+      q: '作業中に手袋をしてはいけない理由はどれですか？',
+      choices: ['ローラーや機械に巻き込まれる危険があるから', '手が滑るから', '材料を傷つけるから', 'ゴムが燃えるから'],
+      answer: 'ローラーや機械に巻き込まれる危険があるから',
+      exp: '手袋は回転しているローラーや刃に巻き込まれる危険があります。自動鉋盤では必ず手袋を外して作業します。'
+    },
+    {
+      q: 'テーブルの昇降（高さ調整）はいつ行いますか？',
+      choices: ['機械が完全に停止してから', '回転中でも構わない', '材料を送り込みながら', '電源を入れる前だけ'],
+      answer: '機械が完全に停止してから',
+      exp: 'テーブルの昇降は、機械が完全に停止した状態で行います。回転中に調整すると事故につながります。'
+    },
+    {
+      q: '自動鉋盤を使うときの服装として正しいものはどれですか？',
+      choices: ['袖口を閉め、長い髪を束ね、手袋はしない', '手袋をして、袖は気にしない', 'ゆったりした服で、髪はそのままでよい', '素手で、袖をまくって作業する'],
+      answer: '袖口を閉め、長い髪を束ね、手袋はしない',
+      exp: '袖口が開いていると巻き込まれる危険があります。長い髪も束ねます。手袋はローラーや刃に巻き込まれる危険があるため使用しません。'
+    },
+    {
+      q: '自動鉋盤の刃の調整・研磨はいつ行いますか？',
+      choices: ['電源を切った状態で行う', '低速回転中に行う', '材料を送らずに電源ONのままで行う', '集塵機を動かしながら行う'],
+      answer: '電源を切った状態で行う',
+      exp: '刃の調整・研磨は必ず電源を切り、完全に停止した状態で行います。回転中の刃への接近は重大事故につながります。'
+    }
+  ];
+
+  let qIdx = 0, score = 0, answered = false;
+
+  const qEl      = document.getElementById('quizQuestion');
+  const cEl      = document.getElementById('quizChoices');
+  const rEl      = document.getElementById('quizResult');
+  const progEl   = document.getElementById('quizProgress');
+  const scoreEl  = document.getElementById('quizScore');
+  const barEl    = document.getElementById('quizProgressBar');
+  const nextBtn  = document.getElementById('quizNextBtn');
+  const restBtn  = document.getElementById('quizRestartBtn');
+
+  function shuffle(arr){
+    const a = [...arr];
+    for(let i=a.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  }
+
+  function renderQuiz(){
+    if(!qEl) return;
+    const q = QUIZ_SET[qIdx];
+    answered = false;
+    progEl.textContent  = `問題 ${qIdx+1} / ${QUIZ_SET.length}`;
+    scoreEl.textContent = `得点 ${score} / ${qIdx}`;
+    barEl.style.width   = `${((qIdx+1)/QUIZ_SET.length)*100}%`;
+    qEl.textContent     = q.q;
+    rEl.className       = 'quiz-result';
+    rEl.textContent     = '';
+    cEl.innerHTML       = '';
+    shuffle(q.choices).forEach(c => {
+      const btn = document.createElement('button');
+      btn.className   = 'quiz-choice-btn';
+      btn.type        = 'button';
+      btn.textContent = c;
+      btn.addEventListener('click', () => {
+        if(answered) return;
+        answered = true;
+        const ok = c === q.answer;
+        if(ok) score++;
+        scoreEl.textContent = `得点 ${score} / ${qIdx+1}`;
+        cEl.querySelectorAll('.quiz-choice-btn').forEach(b => {
+          b.disabled = true;
+          if(b.textContent === q.answer) b.classList.add('correct');
+          else if(b === btn && !ok)      b.classList.add('wrong');
+        });
+        rEl.className   = `quiz-result ${ok ? 'ok' : 'ng'}`;
+        rEl.innerHTML   = `${ok ? '✅ 正解！' : `❌ 不正解。正解は「${q.answer}」`}<br><span style="font-weight:normal">${q.exp}</span>`;
+      });
+      cEl.appendChild(btn);
+    });
+  }
+
+  if(nextBtn) nextBtn.addEventListener('click', () => {
+    if(qIdx < QUIZ_SET.length - 1){
+      qIdx++;
+      renderQuiz();
+    } else {
+      const pct = Math.round(score / QUIZ_SET.length * 100);
+      rEl.className = 'quiz-result fin';
+      rEl.innerHTML = `🎉 クイズ終了！<br>得点：<b>${score} / ${QUIZ_SET.length} 点（${pct}%）</b><br>${pct >= 80 ? '素晴らしい！安全の基本をよく理解しています。' : pct >= 60 ? 'もう少しです。安全な使い方をもう一度確認しましょう。' : '安全な使い方をしっかり復習しましょう。'}`;
+      cEl.innerHTML = '';
+    }
+  });
+
+  if(restBtn) restBtn.addEventListener('click', () => {
+    qIdx = 0; score = 0;
+    renderQuiz();
+  });
+
+  renderQuiz();
+})();
+/* =============================================
+   シミュレータ JS（kannaban.htm を統合・改変）
+============================================= */
+(function(){
+  const simCanvas      = document.getElementById('machineCanvas');
+  const simCtx         = simCanvas.getContext('2d');
+  const simPowerBtn    = document.getElementById('simPowerBtn');
+  const simResetBtn    = document.getElementById('simResetBtn');
+  const simFeedBtn     = document.getElementById('simFeedBtn');
+  const simCollectorBtn= document.getElementById('simCollectorBtn');
+  const simTableSlider = document.getElementById('simTableSlider');
+  const simWoodSelect  = document.getElementById('simWoodSelect');
+  const simStatus      = document.getElementById('simStatus');
+
+  /* パネル切替時にアニメを開始／停止 */
+  let simActive = false;
+  let simRafId  = null;
+
+  let powerOn   = false;
+  let isFeedOn  = false;   /* 材料送りフラグ */
+  let powerOnTime = 0;     /* 電源ONにした時刻(ms) */
+  let collectorOn = false;
+  let isDangerStop = false;   /* 緊急停止中フラグ */
+  let tableHeight = Number(simTableSlider.value);
+  let t = 0;
+  let woodProgress = 0;
+  let hasWood = false;
+  let woodLengthPx = 260;
+  let originalLengthMm  = 400;   /* 材料の長さ(mm) */
+  let originalThicknessMm = 15;
+  let finishedThicknessMm = null;
+  let cantCut = false;   /* テーブル高さ >= 板厚 で削れない場合 true */
+
+  const PX_PER_MM = 0.7;
+
+  const SC = {
+    body:"#86a985", body2:"#789a76", body3:"#668866", edge:"#39483b",
+    dark:"#202020", metal:"#b9c0b7", metal2:"#767c74", panel:"#cfd4cd",
+    red:"#b82124", green:"#148b38", pipe:"#7f7f7f", chip:"#c28a3c",
+    wood:"#d7a35a", woodCut:"#c98a3a", blade:"#d9dddd", roller:"#3a3a3a"
+  };
+
+  const chips = Array.from({length:90},()=>({
+    a:Math.random(), b:Math.random(),
+    s:1+Math.random()*2.2, size:2+Math.random()*3, off:Math.random()*300
+  }));
+
+  function getHeightMm(){ return Math.round((60 - tableHeight) * (50/60)); }
+
+  function updateWoodSize(){
+    if(!simWoodSelect.value){ hasWood=false; woodProgress=0; finishedThicknessMm=null; cantCut=false; return; }
+    const [,length,thickness] = simWoodSelect.value.split('x').map(Number);
+    hasWood = true;
+    originalLengthMm  = length;
+    woodLengthPx = Math.max(100, length * 0.65);
+    originalThicknessMm = thickness;
+    woodProgress = 0;
+    finishedThicknessMm = null;
+    cantCut = false;
+  }
+
+  /* ─ 描画ユーティリティ ─ */
+  function srr(x,y,w,h,r,fill,stroke=true){
+    simCtx.beginPath();
+    simCtx.moveTo(x+r,y); simCtx.lineTo(x+w-r,y);
+    simCtx.quadraticCurveTo(x+w,y,x+w,y+r);
+    simCtx.lineTo(x+w,y+h-r);
+    simCtx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    simCtx.lineTo(x+r,y+h);
+    simCtx.quadraticCurveTo(x,y+h,x,y+h-r);
+    simCtx.lineTo(x,y+r);
+    simCtx.quadraticCurveTo(x,y,x+r,y);
+    simCtx.closePath();
+    simCtx.fillStyle=fill; simCtx.fill();
+    if(stroke){ simCtx.strokeStyle=SC.edge; simCtx.lineWidth=2; simCtx.stroke(); }
+  }
+  function scircle(x,y,r,fill,stroke=true){
+    simCtx.beginPath(); simCtx.arc(x,y,r,0,Math.PI*2);
+    simCtx.fillStyle=fill; simCtx.fill();
+    if(stroke){ simCtx.strokeStyle=SC.edge; simCtx.lineWidth=2; simCtx.stroke(); }
+  }
+  function sline(x1,y1,x2,y2,w,color){
+    simCtx.beginPath(); simCtx.moveTo(x1,y1); simCtx.lineTo(x2,y2);
+    simCtx.lineWidth=w; simCtx.lineCap='round'; simCtx.strokeStyle=color; simCtx.stroke();
+  }
+
+  function drawPipe(){
+    srr(80,205,120,55,5,'#9a9a9a');
+    srr(190,205,210,55,4,SC.pipe);
+  }
+  function drawTopRollers(){
+    srr(320,118,300,14,7,SC.metal);
+    srr(335,130,45,60,6,SC.body2);
+    srr(560,130,45,60,6,SC.body2);
+    scircle(357,136,12,SC.metal);
+    scircle(582,136,12,SC.metal);
+    sline(345,118,595,118,4,'#e2e2e2');
+  }
+  function drawRotatingRoller(x,y,r,clockwise){
+    const angle = powerOn ? t*0.18*(clockwise?1:-1) : 0;
+    scircle(x,y,r,SC.roller);
+    scircle(x,y,r-6,'#4d4d4d',false);
+    scircle(x,y,5,SC.metal);
+    simCtx.save(); simCtx.translate(x,y); simCtx.rotate(angle);
+    simCtx.strokeStyle='#cfcfcf'; simCtx.lineWidth=3;
+    for(let i=0;i<8;i++){
+      simCtx.rotate(Math.PI/4);
+      simCtx.beginPath(); simCtx.moveTo(-r+5,0); simCtx.lineTo(r-5,0); simCtx.stroke();
+    }
+    simCtx.restore();
+  }
+  function drawCutterHead(x,y,r){
+    const angle = powerOn ? -t*0.22 : 0;
+    scircle(x,y,r,SC.blade); scircle(x,y,8,SC.metal);
+    simCtx.save(); simCtx.translate(x,y); simCtx.rotate(angle);
+    for(let i=0;i<2;i++){
+      simCtx.rotate(Math.PI);
+      simCtx.fillStyle='#f2f2f2'; simCtx.strokeStyle='#333'; simCtx.lineWidth=2;
+      simCtx.beginPath();
+      simCtx.moveTo(5,-8); simCtx.lineTo(r+6,-8); simCtx.lineTo(r+3,7); simCtx.lineTo(7,8);
+      simCtx.closePath(); simCtx.fill(); simCtx.stroke();
+    }
+    simCtx.restore();
+  }
+  function drawChips(){
+    if(!collectorOn) return;
+    simCtx.save();
+    chips.forEach((p,i)=>{
+      const prog = ((t*p.s + p.off) % 300) / 300;
+      const startX=435+p.a*18, startY=312+p.b*14;
+      const inletX=400,inletY=232,pipeX=250,pipeY=232,endX=95,endY=232;
+      let x,y;
+      if(prog<.38){ const q=prog/.38; x=startX+(inletX-startX)*q+Math.sin(t*.1+i)*5; y=startY+(inletY-startY)*q+Math.cos(t*.08+i)*5; }
+      else if(prog<.72){ const q=(prog-.38)/.34; x=inletX+(pipeX-inletX)*q; y=inletY; }
+      else { const q=(prog-.72)/.28; x=pipeX+(endX-pipeX)*q; y=pipeY; }
+      simCtx.globalAlpha=.95-prog*.5;
+      simCtx.fillStyle=SC.chip;
+      simCtx.beginPath(); simCtx.ellipse(x,y,p.size,p.size*.55,t*.05+i,0,Math.PI*2); simCtx.fill();
+    });
+    simCtx.restore();
+  }
+  function drawWoodSegment(x,y,w,h,color){
+    if(w<=0||h<=0) return;
+    srr(x,y,w,h,3,color);
+    simCtx.strokeStyle='#8a5a25'; simCtx.lineWidth=2; simCtx.strokeRect(x,y,w,h);
+  }
+  function drawInternalMechanism(tableY){
+    srr(285,255,300,230,12,'rgba(245,245,245,.88)');
+    simCtx.strokeStyle='#333'; simCtx.lineWidth=2; simCtx.strokeRect(295,265,280,210);
+    const upperRollerR=18, upperRollerY=300, cutterR=27, cutterY=295;
+    const originalThicknessPx=Math.max(6,originalThicknessMm*PX_PER_MM);
+    const currentHeightMm=getHeightMm();
+
+    const woodStartX=570, woodEndRightX=300;
+    const woodEndX=woodEndRightX-woodLengthPx;
+    const woodX=woodStartX+(woodEndX-woodStartX)*woodProgress;
+    const woodRight=woodX+woodLengthPx;
+    const cutterX=440;
+
+    /*
+     * 結果確定タイミング：
+     *   削れる場合   → 板の後端（woodRight）が刃（cutterX）を通過した瞬間
+     *   削れない場合 → 板の前端（woodX）が画面左端（0）を超えた瞬間（完全通過）
+     * どちらも finishedThicknessMm===null のときのみ1回だけ確定する
+     */
+    if(hasWood && finishedThicknessMm===null){
+      const wouldCantCut = (currentHeightMm >= originalThicknessMm);
+      if(!wouldCantCut && woodRight < cutterX){
+        /* 削れる：後端が刃を通過 → 確定 */
+        cantCut = false;
+        finishedThicknessMm = currentHeightMm;
+      } else if(wouldCantCut && woodX < 0){
+        /* 削れない：板が完全に左へ消えた → 確定 */
+        cantCut = true;
+        finishedThicknessMm = originalThicknessMm;
+      }
+    }
+
+    srr(300,tableY,270,48,4,SC.body2);
+    const lowerRollerR=18, lowerRollerY=tableY+lowerRollerR;
+    drawRotatingRoller(355,lowerRollerY,lowerRollerR,false);
+    drawRotatingRoller(520,lowerRollerY,lowerRollerR,false);
+
+    if(hasWood){
+      const uncutY=tableY-originalThicknessPx;
+
+      /* 現在フレームでテーブル高さが板厚以上かどうかをリアルタイム判定 */
+      const nowCantCut = (finishedThicknessMm !== null)
+        ? cantCut
+        : (currentHeightMm >= originalThicknessMm);
+
+      if(nowCantCut){
+        /* 削れない：板が画面内にある間は常に全体を元の色で描く */
+        const visW = woodRight - woodX;
+        if(visW > 0 && finishedThicknessMm === null){
+          drawWoodSegment(woodX, uncutY, visW, originalThicknessPx, SC.wood);
+        }
+
+        /* 通過確定後は板CGなし・ラベルのみ固定表示 */
+        if(finishedThicknessMm !== null){
+          const labelX = 40;
+          simCtx.font='bold 15px sans-serif';
+          const line1 = '削れませんでした';
+          const line2 = `（テーブル高さ ${currentHeightMm}mm >= 板厚 ${originalThicknessMm}mm）`;
+          const tw  = Math.max(simCtx.measureText(line1).width, simCtx.measureText(line2).width);
+          const lineH = 20;
+          const bgY   = uncutY - 8 - lineH * 2 - 4;
+          simCtx.fillStyle='rgba(255,255,255,0.90)';
+          simCtx.fillRect(labelX-2, bgY, tw+10, lineH*2+6);
+          simCtx.fillStyle = SC.red;
+          simCtx.fillText(line1, labelX, bgY + lineH - 2);
+          simCtx.fillText(line2, labelX, bgY + lineH*2 + 2);
+        }
+      } else {
+        /* 削れる：刃通過済み部分は切削後の厚さ・色、未通過は元の厚さ */
+        const activeFinishedMm  = finishedThicknessMm ?? currentHeightMm;
+        const finishedThicknessPx = Math.max(3, activeFinishedMm * PX_PER_MM);
+        const cutY   = tableY - finishedThicknessPx;
+        const cutLeftW = Math.max(0, Math.min(woodRight, cutterX) - woodX);
+        const uncutX   = Math.max(woodX, cutterX);
+        const uncutW   = Math.max(0, woodRight - uncutX);
+        drawWoodSegment(woodX,  cutY,   cutLeftW, finishedThicknessPx, SC.woodCut);
+        drawWoodSegment(uncutX, uncutY, uncutW,   originalThicknessPx, SC.wood);
+
+        /* 通過確定後のみ「板の厚さ〇〇mm」ラベルを表示 */
+        if(finishedThicknessMm!==null){
+          const topY   = Math.min(cutY, uncutY);
+          const labelY = topY - 8;
+          const labelX = Math.max(10, Math.min(woodX + 4, 660));
+          simCtx.font='bold 15px sans-serif';
+          const txt = `板の厚さ ${finishedThicknessMm}mm`;
+          const tw  = simCtx.measureText(txt).width;
+          simCtx.fillStyle='rgba(255,255,255,0.88)';
+          simCtx.fillRect(labelX-2, labelY-14, tw+8, 20);
+          simCtx.fillStyle = SC.red;
+          simCtx.fillText(txt, labelX, labelY);
+        }
+      }
+    }
+
+    drawRotatingRoller(355,upperRollerY,upperRollerR,true);
+    drawRotatingRoller(520,upperRollerY,upperRollerR,true);
+    drawCutterHead(440,cutterY,cutterR);
+  }
+  function drawHeightScale(){
+    srr(710,385,42,185,5,'#20231f');
+    simCtx.fillStyle='#d8d8d8'; simCtx.font='10px sans-serif';
+    for(let i=0;i<=10;i++){
+      const y=400+i*15;
+      sline(716,y,745,y,1,'#cfcfcf');
+      if(i%2===0) simCtx.fillText(String(i*12),724,y+4);
+    }
+    const heightMm=getHeightMm();
+    const needleY=400+(heightMm/120)*150;
+    simCtx.fillStyle=SC.red; simCtx.fillRect(705,needleY,55,4);
+    /* 高さ表示：スケールパネル右側に余白を取って表示 */
+    simCtx.fillStyle=SC.red; simCtx.font='bold 13px sans-serif';
+    simCtx.fillText(`高さ ${heightMm} mm`, 762, 592);
+  }
+  function drawHeightHandle(){
+    const cx=735, cy=225, angle=tableHeight*0.16;
+    srr(685,210,28,30,5,SC.metal2);
+    sline(705,225,710,225,8,SC.metal2);
+    simCtx.save(); simCtx.translate(cx,cy); simCtx.rotate(angle);
+    /* ハンドルホイール：半径 32→50 */
+    simCtx.beginPath(); simCtx.arc(0,0,50,0,Math.PI*2);
+    simCtx.strokeStyle=SC.dark; simCtx.lineWidth=7; simCtx.stroke();
+    scircle(0,0,11,SC.metal);
+    /* スポーク3本：長さも 32→50 に合わせる */
+    sline(0,0,0,-50,6,SC.dark);
+    sline(0,0,43,25,6,SC.dark);
+    sline(0,0,-43,25,6,SC.dark);
+    /* グリップ玉：位置・サイズも拡大 */
+    scircle(0,-58,9,'#111');
+    simCtx.restore();
+  }
+  function drawMachine(){
+    simCtx.clearRect(0,0,900,690);
+    const heightMm=getHeightMm();
+    const tableY=328+heightMm*PX_PER_MM;
+    const shake=powerOn?Math.sin(t*.55)*1.1:0;
+    /* 上部余白を削減：全体を90px上にシフト */
+    simCtx.save(); simCtx.translate(shake,-90);
+    drawPipe();
+    srr(70,tableY,190,48,4,SC.body2); srr(640,tableY,190,48,4,SC.body2);
+    srr(80,tableY+4,170,38,3,'rgba(134,169,133,.75)',false);
+    srr(650,tableY+4,170,38,3,'rgba(134,169,133,.75)',false);
+    srr(200,715,500,58,8,SC.body2); srr(225,693,450,30,5,SC.body);
+    srr(215,693,25,32,3,SC.metal); srr(660,693,25,32,3,SC.metal);
+    srr(230,170,440,545,34,SC.body);
+    simCtx.fillStyle=SC.body3;
+    simCtx.beginPath();
+    simCtx.moveTo(650,190); simCtx.quadraticCurveTo(700,205,700,245);
+    simCtx.lineTo(700,680); simCtx.quadraticCurveTo(700,710,670,715);
+    simCtx.lineTo(650,715); simCtx.closePath(); simCtx.fill();
+    simCtx.strokeStyle=SC.edge; simCtx.lineWidth=2; simCtx.stroke();
+    srr(245,190,410,500,26,'rgba(255,255,255,.03)');
+    srr(255,205,390,475,22,'rgba(255,255,255,.02)');
+    drawTopRollers();
+    simCtx.fillStyle=SC.body;
+    simCtx.beginPath();
+    simCtx.moveTo(370,250); simCtx.bezierCurveTo(455,215,565,255,570,360);
+    simCtx.bezierCurveTo(572,400,590,425,620,433);
+    simCtx.quadraticCurveTo(635,437,635,453); simCtx.lineTo(635,615);
+    simCtx.quadraticCurveTo(635,648,600,648); simCtx.lineTo(365,648);
+    simCtx.quadraticCurveTo(330,648,330,613); simCtx.lineTo(330,340);
+    simCtx.bezierCurveTo(330,295,345,265,370,250);
+    simCtx.closePath(); simCtx.fill();
+    simCtx.strokeStyle=SC.edge; simCtx.lineWidth=2.5; simCtx.stroke();
+    drawInternalMechanism(tableY);
+    drawChips();
+    scircle(555,445,38,SC.body2); scircle(555,445,29,SC.body);
+    srr(615,425,72,150,8,SC.panel);
+    scircle(651,475,11,powerOn?SC.green:'#777');
+    scircle(651,525,11,!powerOn?SC.red:'#777');
+    simCtx.beginPath(); simCtx.moveTo(651,575); simCtx.lineTo(651,600);
+    simCtx.bezierCurveTo(650,690,555,690,555,645);
+    simCtx.lineWidth=13; simCtx.lineCap='round'; simCtx.strokeStyle=SC.dark; simCtx.stroke();
+    drawHeightScale(); drawHeightHandle();
+    simCtx.strokeStyle='rgba(255,255,255,.3)'; simCtx.lineWidth=5;
+    simCtx.beginPath(); simCtx.moveTo(260,205);
+    simCtx.quadraticCurveTo(250,195,270,190); simCtx.lineTo(630,190); simCtx.stroke();
+    srr(215,693,25,32,3,SC.metal); srr(660,693,25,32,3,SC.metal);
+    srr(250,610,12,25,3,SC.metal); srr(665,610,12,25,3,SC.metal);
+    simCtx.restore();
+  }
+
+  function simAnimate(){
+    if(!simActive){ simRafId=null; return; }
+    if(powerOn||collectorOn||isFeedOn) t++;
+    if(isFeedOn&&hasWood){
+      /* cantCut確定前、または削れる場合は progress=1 で止める
+         cantCut進行中（未確定）は板が画面外（woodX<0）になるまで進める */
+      const woodStartX=570, woodEndRightX=300;
+      const woodEndX=woodEndRightX-woodLengthPx;
+      const woodX=woodStartX+(woodEndX-woodStartX)*woodProgress;
+      const nowCantCut_anim = (finishedThicknessMm !== null)
+        ? cantCut
+        : (getHeightMm() >= originalThicknessMm);
+      if(nowCantCut_anim){
+        if(finishedThicknessMm === null) woodProgress += 0.003;
+      } else {
+        woodProgress += 0.003;
+        if(woodProgress > 1) woodProgress = 1;
+      }
+    }
+    drawMachine();
+    simRafId = requestAnimationFrame(simAnimate);
+  }
+  function startSim(){
+    if(simRafId) return;
+    simActive=true;
+    simRafId=requestAnimationFrame(simAnimate);
+  }
+  function stopSim(){
+    simActive=false;
+    if(simRafId){ cancelAnimationFrame(simRafId); simRafId=null; }
+  }
+
+  /* ─ スライダー高さを canvas の表示高さに連動させる ─ */
+  const simSliderArea = document.getElementById('simSliderArea');
+  const simSlider     = document.getElementById('simTableSlider');
+  const simCanvasWrap = document.getElementById('simCanvasWrap');
+  const simDangerOverlay = document.getElementById('simDangerOverlay');
+  const simDangerMsg     = document.getElementById('simDangerMsg');
+  const simCtrlCard      = document.getElementById('simCtrlCard');
+
+  /* 警告メッセージ定義 */
+  const SIM_WARNINGS = {
+    collector:
+`集塵機がOFFです
+■切りくず堆積による事故
+　材料が急に止まる・引っかかる
+　キックバック（跳ね返り）発生
+■ 粉塵での視界不良による操作ミス
+■ 木粉は非常に燃えやすく火災・発火の危険
+■ 粉じん吸入による健康被害
+■ 木くずによる床面の滑りでの転倒の危険
+「切りくずを残さない」ことが安全確保の基本`,
+
+    shortLength:
+`■ 長さ300㎜以下の材料は削らない
+自動鉋盤は「前後の送りローラー」で材料を送ります
+短すぎる材料は
+・ローラーに同時にしっかり保持されない
+・途中で浮いたり傾いたりする
+→ 刃物に引っかかって跳ね返る（キックバック）の危険
+→ 手を巻き込むリスク`,
+
+    thinBoard:
+`■ 厚さ5㎜以下の材料は削らない
+薄い材料は，ローラー圧でたわむ・反る。刃物の力で割れる・弾かれる
+また、薄すぎると機械内部に吸い込まれる・巻き込まれる
+→ 飛散・キックバック・破損による事故につながる`,
+
+    deepCut:
+`■ 1回で削る量は1㎜以下にする
+負荷が大きくなり、反発や機械トラブルの原因になる
+・刃物にかかる抵抗が急増する
+・材料が急激に引っ張られる
+→ キックバック（材料の跳ね返り）が起きやすい
+→ モーターや刃物に過負荷がかかる
+→ 表面も荒れて仕上がりが悪くなる`,
+
+    notReady:
+`■ 回転が一定になるまで材料を入れない
+電源を入れてすぐは，まだローラーや刃の回転が安定しません。
+回転が安定してから材料を入れましょう`
+  };
+
+  function showSimDanger(type){
+    isDangerStop = true;
+    powerOn = false;
+    isFeedOn = false;
+    simPowerBtn.textContent='⚡ 電源 ON'; simPowerBtn.className='sim-btn btn-off';
+    simFeedBtn.textContent='▶ 材料を送る'; simFeedBtn.className='sim-btn btn-feed';
+    simFeedBtn.disabled = true;
+    simDangerOverlay.classList.add('show');
+    simDangerMsg.textContent = SIM_WARNINGS[type] || '';
+    simDangerMsg.classList.add('show');
+    simCtrlCard.classList.add('danger');
+    simStatus.textContent = '危険な操作のため緊急停止しました。';
+  }
+
+  function clearSimDanger(){
+    isDangerStop = false;
+    simDangerOverlay.classList.remove('show');
+    simDangerMsg.classList.remove('show');
+    simCtrlCard.classList.remove('danger');
+  }
+
+  function syncSliderHeight(){
+    const panel = document.getElementById('panel-mechanism');
+    if(!panel.classList.contains('active')) return;
+    const h = simCanvasWrap.getBoundingClientRect().height;
+    if(h <= 0) return;
+    simSliderArea.style.height = h + 'px';
+    const trackH = Math.max(60, Math.round(h * 0.78));
+    simSlider.style.height = trackH + 'px';
+  }
+
+  /* パネル切替でアニメ制御 */
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(btn.dataset.panel==='panel-mechanism'){
+        requestAnimationFrame(()=>{ syncSliderHeight(); drawMachine(); startSim(); });
+      } else {
+        stopSim();
+      }
+    });
+  });
+
+  /* ウィンドウリサイズ時も追従 */
+  window.addEventListener('resize', ()=>{
+    const panel = document.getElementById('panel-mechanism');
+    if(panel.classList.contains('active')) syncSliderHeight();
+  });
+
+  let dangerTimer = null;   /* 遅延アラート用タイマー */
+
+  /* ─ コントロールイベント ─ */
+  simPowerBtn.addEventListener('click',()=>{
+    /* 緊急停止中は解除のみ */
+    if(isDangerStop){ clearSimDanger(); simStatus.textContent='停止しました。リセットして最初から操作してください。'; return; }
+
+    if(!hasWood&&!powerOn){ simStatus.textContent='先に材料を選択してください。'; return; }
+
+    if(dangerTimer){ clearTimeout(dangerTimer); dangerTimer=null; }
+
+    powerOn=!powerOn;
+    if(powerOn){
+      powerOnTime = Date.now();
+      simPowerBtn.textContent='⚡ 電源 OFF'; simPowerBtn.className='sim-btn btn-on';
+      simFeedBtn.disabled = false;
+      simStatus.textContent='電源ON。回転が安定したら「材料を送る」を押してください。';
+    }else{
+      isFeedOn = false;
+      simPowerBtn.textContent='⚡ 電源 ON'; simPowerBtn.className='sim-btn btn-off';
+      simFeedBtn.textContent='▶ 材料を送る'; simFeedBtn.className='sim-btn btn-feed';
+      simFeedBtn.disabled = true;
+      simStatus.textContent='停止しました。';
+    }
+  });
+
+  /* 材料を送るボタン */
+  simFeedBtn.addEventListener('click',()=>{
+    if(isDangerStop){ clearSimDanger(); simStatus.textContent='停止しました。リセットして最初から操作してください。'; return; }
+    if(!powerOn){ simStatus.textContent='先に電源を入れてください。'; return; }
+
+    /* 危険条件を危険度の高い順にチェック */
+    let dangerType = null;
+    /* ① 削り量1mm超（最優先） */
+    if(originalThicknessMm - getHeightMm() > 1)      dangerType = 'deepCut';
+    /* ② 長さ300mm未満 */
+    else if(originalLengthMm < 300)                   dangerType = 'shortLength';
+    /* ③ 厚さ5mm未満 */
+    else if(originalThicknessMm < 5)                  dangerType = 'thinBoard';
+    /* ④ 電源ONから2秒未満 */
+    else if(Date.now() - powerOnTime < 2000)           dangerType = 'notReady';
+    /* ⑤ 集塵機OFF */
+    else if(!collectorOn)                              dangerType = 'collector';
+
+    if(dangerType){
+      /* 材料を送り出してから1.5秒後にアラート */
+      isFeedOn = true;
+      simFeedBtn.textContent='▶ 材料送出中'; simFeedBtn.className='sim-btn btn-feeding';
+      simStatus.textContent='⚠ 材料を送っています...';
+      dangerTimer = setTimeout(()=>{ showSimDanger(dangerType); }, 1500);
+      return;
+    }
+
+    /* 危険なし：正常に材料を送り出す */
+    isFeedOn = !isFeedOn;
+    if(isFeedOn){
+      simFeedBtn.textContent='▶ 材料送出中'; simFeedBtn.className='sim-btn btn-feeding';
+      simStatus.textContent='⚠ 自動カンナ盤が稼働中です。板が送られています。';
+    }else{
+      simFeedBtn.textContent='▶ 材料を送る'; simFeedBtn.className='sim-btn btn-feed';
+      simStatus.textContent='材料の送りを止めました。';
+    }
+  });
+
+  simCollectorBtn.addEventListener('click',()=>{
+    collectorOn=!collectorOn;
+    if(collectorOn){
+      simCollectorBtn.textContent='🌀 集塵機 ON'; simCollectorBtn.className='sim-btn btn-col-on';
+      simStatus.textContent='集塵機が作動中です。木くずを吸引しています。';
+    }else{
+      simCollectorBtn.textContent='🌀 集塵機 OFF'; simCollectorBtn.className='sim-btn btn-col-off';
+      simStatus.textContent='集塵機を停止しました。';
+    }
+  });
+
+  simResetBtn.addEventListener('click',()=>{
+    if(dangerTimer){ clearTimeout(dangerTimer); dangerTimer=null; }
+    powerOn=false; isFeedOn=false; powerOnTime=0;
+    collectorOn=false; isDangerStop=false; tableHeight=54;
+    simTableSlider.value=54; woodProgress=0; finishedThicknessMm=null; cantCut=false;
+    simWoodSelect.value=''; updateWoodSize();
+    simPowerBtn.textContent='⚡ 電源 ON'; simPowerBtn.className='sim-btn btn-off';
+    simFeedBtn.textContent='▶ 材料を送る'; simFeedBtn.className='sim-btn btn-feed';
+    simFeedBtn.disabled = true;
+    simCollectorBtn.textContent='🌀 集塵機 OFF'; simCollectorBtn.className='sim-btn btn-col-off';
+    clearSimDanger();
+    simStatus.textContent='材料を選択してから電源を入れてください';
+    drawMachine();
+  });
+
+  simTableSlider.addEventListener('input',e=>{ tableHeight=Number(e.target.value); });
+
+  simWoodSelect.addEventListener('change',()=>{
+    updateWoodSize();
+    simStatus.textContent=hasWood?'安全を確認して電源を入れてください':'材料を選択してください';
+  });
+
+  /* 初期描画（静止状態） */
+  updateWoodSize();
+  drawMachine();
+})();
+</script>
+
+<script>
+/* ===== 教員向け学習進行の統合制御 ===== */
+(() => {
+  const state = {
+    names:new Set(), safety:new Set(), safetyJudged:new Set(),
+    namesDone:false,safetyDone:false,simDone:false,dangerDone:false,
+    danger:new Set(), quizErrors:[]
+  };
+  const tabOrder=['panel-names','panel-safety','panel-mechanism','panel-danger','panel-quiz'];
+  const unlock={
+    'panel-names':()=>true,
+    'panel-safety':()=>state.namesDone,
+    'panel-mechanism':()=>state.safetyDone,
+    'panel-danger':()=>state.simDone,
+    'panel-quiz':()=>state.dangerDone
+  };
+  const labels={
+    'panel-names':'① 各部の名称','panel-safety':'② 安全な使い方','panel-mechanism':'③ 加工シミュレータ','panel-danger':'④ 危険事例','panel-quiz':'⑤ 確認クイズ'
+  };
+  function refreshTabs(){
+    document.querySelectorAll('.tab-btn').forEach(btn=>{
+      const id=btn.dataset.panel, ok=unlock[id]?.();
+      btn.classList.toggle('locked',!ok); btn.setAttribute('aria-disabled',String(!ok));
+      const completed=(id==='panel-names'&&state.namesDone)||(id==='panel-safety'&&state.safetyDone)||(id==='panel-mechanism'&&state.simDone)||(id==='panel-danger'&&state.dangerDone);
+      btn.classList.toggle('completed',completed);
+      btn.textContent=(ok?'':'🔒 ')+(completed?'✓ ':'')+labels[id];
+    });
+  }
+  function showPanel(id){
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById(id)?.classList.add('active');
+    document.querySelector(`.tab-btn[data-panel="${id}"]`)?.classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+    window.dispatchEvent(new Event('resize'));
+  }
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',e=>{
+    const id=btn.dataset.panel;
+    if(!unlock[id]()){e.preventDefault();e.stopImmediatePropagation();alert('前の学習を完了してから進んでください。');return;}
+    showPanel(id);
+  },true));
+
+  // startup confirmation
+  const confirm=document.getElementById('teacherConfirm'), start=document.getElementById('modalStartBtn');
+  confirm?.addEventListener('change',()=>start.disabled=!confirm.checked);
+  start?.addEventListener('click',()=>document.getElementById('startupModal').classList.add('hidden'));
+
+  // names
+  document.querySelectorAll('.plabel').forEach(btn=>btn.addEventListener('click',()=>{
+    state.names.add(btn.dataset.part); btn.classList.add('checked');
+    if(!btn.textContent.trim().startsWith('✓')) btn.textContent='✓ '+btn.textContent.trim();
+    document.getElementById('namesProgress').textContent=`確認済み ${state.names.size}／11`;
+    document.getElementById('namesInstruction').textContent=state.names.size<11?`次の操作：未確認の名称を押してください。あと${11-state.names.size}項目です。`:'すべての名称を確認しました。';
+    if(state.names.size>=11&&!state.namesDone){state.namesDone=true;const el=document.getElementById('namesComplete');el.classList.add('done');el.textContent='✓ 主要部位と役割を確認しました。「安全な使い方」へ進んでください。';refreshTabs();}
+  }));
+
+  // safety: each topic shows only one detail and one question
+  const SAFETY_QUESTIONS = {
+    pre:{q:'試運転で異音や異常振動があっても、短時間なら使用してよい。',answer:false},
+    material:{q:'釘やねじなどの金属異物がある可能性のある材料は加工しない。',answer:true},
+    ppe:{q:'自動鉋盤の操作では、巻き込まれ防止のため手袋を着用しない。',answer:true},
+    start:{q:'電源を入れた直後ではなく、回転が安定してから材料を送る。',answer:true},
+    during:{q:'加工中に仕上がり厚さを変えたい場合、そのままテーブル高さを調整してよい。',answer:false},
+    abnormal:{q:'材料送りが止まった場合は、電源を切って完全停止を待つ。',answer:true},
+    finish:{q:'材料通過後は電源を切り、完全停止を確認してから集塵機を停止する。',answer:true}
+  };
+  let currentSafetyTopic = null;
+  const sqText=document.getElementById('safetyQuestionText');
+  const sqButtons=document.getElementById('safetyAnswerButtons');
+  const sqResult=document.getElementById('safetyAnswerResult');
+  document.querySelectorAll('.safety-topic').forEach(btn=>btn.addEventListener('click',()=>{
+    const k=btn.dataset.topic; currentSafetyTopic=k;
+    document.querySelectorAll('.safety-detail').forEach(d=>d.classList.remove('open'));
+    document.querySelector(`[data-detail="${k}"]`)?.classList.add('open');
+    document.querySelectorAll('.safety-topic').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    sqText.textContent=SAFETY_QUESTIONS[k].q;
+    sqButtons.hidden=false; sqResult.textContent=''; sqResult.className='safety-answer-result';
+    document.getElementById('safetyInstruction').textContent='次の操作：説明を確認し、○か×で回答してください。';
+  }));
+  sqButtons?.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{
+    if(!currentSafetyTopic)return;
+    const ok=(btn.dataset.value==='true')===SAFETY_QUESTIONS[currentSafetyTopic].answer;
+    if(!ok){
+      sqResult.textContent='不正解です。説明を確認して、もう一度回答してください。';
+      sqResult.className='safety-answer-result ng';
+      return;
+    }
+    const topicBtn=document.querySelector(`.safety-topic[data-topic="${currentSafetyTopic}"]`);
+    state.safety.add(currentSafetyTopic);
+    topicBtn.classList.add('checked'); topicBtn.querySelector('b').textContent='✓ 正解・確認済み';
+    sqResult.textContent='✓ 正解です。次の項目を確認してください。';
+    sqResult.className='safety-answer-result ok';
+    document.getElementById('safetyProgress').textContent=`確認済み ${state.safety.size}／7`;
+    checkSafety();
+  }));
+  function checkSafety(){
+    const done=state.safety.size>=7;
+    document.getElementById('safetyInstruction').textContent=done?'安全な使い方を確認しました。':`次の操作：未確認の項目を選び、1問に正解してください。あと${7-state.safety.size}項目です。`;
+    if(done&&!state.safetyDone){state.safetyDone=true;const el=document.getElementById('safetyComplete');el.classList.add('done');el.textContent='✓ 安全な操作と確認事項を理解しました。「加工シミュレータ」へ進んでください。';refreshTabs();}
+  }
+
+  // simulator guidance and thickness
+  const pre=['simPrecheck','simGlasses','simMask'];
+  const select=document.getElementById('simWoodSelect'), slider=document.getElementById('simTableSlider');
+  if(select){select.disabled=false;select.removeAttribute('aria-disabled');select.style.pointerEvents='auto';}
+  const collector=document.getElementById('simCollectorBtn'), power=document.getElementById('simPowerBtn'), feed=document.getElementById('simFeedBtn');
+  const fullStop=document.getElementById('simFullStop'), after=document.getElementById('simAfterCheck');
+  let collectorSeen=false,powerSeen=false,feedSeen=false,powerOffSeen=false;
+  function selectedThickness(){const v=select.value;if(!v)return null;return Number(v.split('x')[2]);}
+  function finishMm(){return Math.round((60-Number(slider.value))*(50/60));}
+  function updateThickness(){
+    const b=selectedThickness(),f=finishMm();
+    document.getElementById('beforeThickness').textContent=b==null?'―':b.toFixed(1)+'mm';
+    document.getElementById('finishThickness').textContent=b==null?'―':f.toFixed(1)+'mm';
+    const c=b==null?null:b-f, el=document.getElementById('cutAmount');el.textContent=c==null?'―':c.toFixed(1)+'mm';
+    el.className=c!=null&&c>0&&c<=1?'safe':'danger'; updateSimInstruction();
+  }
+  function updateSimInstruction(){
+    const checks=pre.every(id=>document.getElementById(id).checked), b=selectedThickness(), cut=b==null?null:b-finishMm();
+    let msg='';
+    if(!document.getElementById('simPrecheck').checked)msg='次の操作：使用前点検済みにチェックしてください。';
+    else if(!document.getElementById('simGlasses').checked||!document.getElementById('simMask').checked)msg='次の操作：保護眼鏡と防塵マスクを確認してください。';
+    else if(!b)msg='次の操作：材料を選択してください。';
+    else if(!(cut>0&&cut<=1))msg='次の操作：切込み量を0mm超～1mm以下に設定してください。';
+    else if(!collectorSeen)msg='次の操作：集塵機をONにしてください。';
+    else if(!powerSeen)msg='次の操作：電源をONにしてください。';
+    else if(!feedSeen)msg='次の操作：回転が安定してから材料を送ってください。';
+    else if(!powerOffSeen)msg='次の操作：材料通過後に電源をOFFにしてください。';
+    else if(!fullStop.checked)msg='次の操作：完全停止を確認してください。';
+    else if(!after.checked)msg='次の操作：使用後確認を行ってください。';
+    else msg='標準操作を安全に完了しました。';
+    document.getElementById('simInstruction').textContent=msg;
+    if(checks&&b&&cut>0&&cut<=1&&collectorSeen&&powerSeen&&feedSeen&&powerOffSeen&&fullStop.checked&&after.checked&&!state.simDone){state.simDone=true;const el=document.getElementById('simComplete');el.classList.add('done');el.textContent='✓ 安全な標準操作を完了しました。「危険事例」へ進んでください。';refreshTabs();}
+  }
+  pre.forEach(id=>document.getElementById(id)?.addEventListener('change',updateSimInstruction));
+  const onMaterialSelect=()=>{updateThickness();updateSimInstruction();};
+  select?.addEventListener('change',onMaterialSelect);
+  select?.addEventListener('input',onMaterialSelect);
+  select?.addEventListener('pointerdown',e=>e.stopPropagation());
+  slider?.addEventListener('input',updateThickness);
+  collector?.addEventListener('click',()=>setTimeout(()=>{if(collector.textContent.includes('ON'))collectorSeen=true;updateSimInstruction()},0));
+  power?.addEventListener('click',()=>setTimeout(()=>{if(power.textContent.includes('OFF'))powerSeen=true;else if(powerSeen)powerOffSeen=true;updateSimInstruction()},0));
+  feed?.addEventListener('click',()=>{feedSeen=true;updateSimInstruction()});
+  fullStop?.addEventListener('change',updateSimInstruction);after?.addEventListener('change',updateSimInstruction);
+  document.getElementById('simResetBtn')?.addEventListener('click',()=>{collectorSeen=powerSeen=feedSeen=powerOffSeen=false;pre.forEach(id=>document.getElementById(id).checked=false);fullStop.checked=false;after.checked=false;updateThickness();});
+  updateThickness();
+
+  // danger cases
+  const dangerData={
+    deep:['切込み量過大','キックバック、材料破損、刃の損傷、モーター過負荷が起こり得ます。','1回の切込み量を1mm以下に設定します。'],
+    short:['短すぎる材料','送りローラーで安定して保持できず、傾きや跳ね返りが起こり得ます。','取扱説明書で定められた最小長さを超える材料を使用します。'],
+    early:['回転安定前の送り','刃とローラーが不安定なため、切削不良や材料飛散につながります。','始動後、回転と音が安定してから材料を送ります。'],
+    dust:['集塵機OFF','切りくずの詰まり、粉塵吸入、火災リスクが高まります。','加工前に集塵機をONにします。'],
+    metal:['金属異物','刃の欠損、火花、破片の飛散につながります。','加工前に釘・ねじ・金属片がないことを確認します。'],
+    adjust:['回転中の高さ調整','機械や材料が不安定になり、事故や損傷につながります。','電源を切り、完全停止後に高さを調整します。']
+  };
+  document.querySelectorAll('.danger-case').forEach(btn=>btn.addEventListener('click',()=>{
+    const k=btn.dataset.case,d=dangerData[k];state.danger.add(k);btn.classList.add('checked');
+    document.getElementById('dangerExplain').innerHTML=`<h3>危険！緊急停止：${d[0]}</h3><p><b>起こり得ること：</b>${d[1]}</p><p><b>正しい操作：</b>${d[2]}</p>`;
+    document.getElementById('dangerProgress').textContent=`確認済み ${state.danger.size}／3以上`;
+    if(state.danger.size>=3&&!state.dangerDone){state.dangerDone=true;const el=document.getElementById('dangerComplete');el.classList.add('done');el.textContent='✓ 3種類以上の危険事例を確認しました。「確認クイズ」へ進んでください。';refreshTabs();}
+  }));
+
+  // quiz: block unanswered and keep errors
+  const next=document.getElementById('quizNextBtn'),restart=document.getElementById('quizRestartBtn');
+  next.disabled=true;
+  document.getElementById('quizChoices')?.addEventListener('click',e=>{
+    const btn=e.target.closest('.quiz-choice-btn');if(!btn)return;
+    setTimeout(()=>{next.disabled=false;const q=document.getElementById('quizQuestion').textContent;const result=document.getElementById('quizResult');if(result.classList.contains('ng')){const correct=[...document.querySelectorAll('.quiz-choice-btn')].find(b=>b.classList.contains('correct'))?.textContent||'';state.quizErrors.push({q,chosen:btn.textContent,correct,exp:result.textContent});}},0);
+  });
+  next.addEventListener('click',e=>{if(next.disabled){e.preventDefault();e.stopImmediatePropagation();return;}setTimeout(()=>{if(document.getElementById('quizChoices').children.length)next.disabled=true;else{const r=document.getElementById('quizResult');if(!document.getElementById('quizReview')){const d=document.createElement('div');d.id='quizReview';d.className='quiz-review';d.innerHTML=state.quizErrors.length?'<h3>間違えた問題</h3>'+state.quizErrors.map((x,i)=>`<div><b>${i+1}. ${x.q}</b><br>あなたの回答：${x.chosen}<br>正しい答え：${x.correct}</div>`).join(''):'<h3>全問正解です。間違えた問題はありません。</h3>';r.after(d);}}},0)},true);
+  restart.addEventListener('click',()=>{state.quizErrors=[];document.getElementById('quizReview')?.remove();setTimeout(()=>next.disabled=true,0)});
+
+  refreshTabs();
+})();
+</script>
+
+</body>
+</html>

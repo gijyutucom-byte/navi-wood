@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>木材の反り</title>
+<style>
+:root{
+  --bark:#5c3d1e;--hw:#c87941;--bg:#faf6f0;--panel:#fff;
+  --green:#27774a;--text:#2c1a0e;--muted:#7a6555;--border:#e8ddd0;
+  --blue:#2980b9;--red:#c0392b;
+  --tab-h:44px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;
+  font-family:"Hiragino Sans","Meiryo","Yu Gothic",sans-serif;
+  background:var(--bg);color:var(--text);font-size:16px;}
+
+/* ── APP SHELL ── */
+#app{
+  width:100%;height:100vh;
+  display:flex;flex-direction:column;overflow:hidden;
+  background:var(--panel);
+}
+
+/* ── HEADER ── */
+#app>div[style*="linear-gradient"]{flex:0 0 auto;}
+
+/* ── TAB BAR ── */
+.tab-bar{
+  display:flex;align-items:stretch;gap:0;
+  border-bottom:3px solid var(--border);
+  flex:0 0 var(--tab-h);min-height:var(--tab-h);
+  background:#f5ede3;overflow-x:auto;
+}
+.tab-bar::-webkit-scrollbar{height:0;}
+.home-btn{
+  display:flex;align-items:center;justify-content:center;
+  padding:0 14px;background:var(--bark);color:#fff;
+  border:none;cursor:pointer;font-size:13px;font-weight:bold;
+  white-space:nowrap;flex:0 0 auto;gap:4px;
+}
+.home-btn:hover{background:#7a5530;}
+.tab-btn{
+  padding:0 16px;border:none;cursor:pointer;font-weight:bold;
+  font-size:14px;background:transparent;color:#888;
+  transition:.2s;white-space:nowrap;flex:0 0 auto;
+  border-bottom:3px solid transparent;margin-bottom:-3px;
+}
+.tab-btn.active{color:var(--hw);border-bottom-color:var(--hw);background:#fff;}
+.tab-btn.blue.active{color:var(--blue);border-bottom-color:var(--blue);}
+.tab-btn.green.active{color:var(--green);border-bottom-color:var(--green);}
+
+/* ── SECTIONS ── */
+.section{display:none;flex:1 1 0;min-height:0;overflow:hidden;}
+.section.active{display:flex;}
+
+/* ─────────────────────────────────────
+   SIM TAB  — 2-col grid
+───────────────────────────────────── */
+#sec-sim{
+  display:none;
+  gap:10px;padding:8px 12px;
+  overflow:hidden;
+}
+#sec-sim.active{display:grid;}
+/* Default: 2 columns */
+#sec-sim{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);align-content:start;}
+
+.sim-left,.sim-right{
+  display:flex;flex-direction:column;gap:8px;min-height:0;overflow:hidden;align-self:start;
+  grid-row:2;
+}
+.sim-right{overflow-y:auto;}
+
+.pnl{
+  background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:8px 12px;flex:0 0 auto;
+}
+.pnl-title{font-size:.85rem;font-weight:700;color:var(--muted);margin-bottom:5px;}
+
+canvas{display:block;width:100%;border-radius:6px;border:1px solid var(--border);}
+
+/* Log canvas — always square so the log stays circular */
+#logCanvas{width:100%;height:auto;aspect-ratio:1/1;flex:0 0 auto;}
+.log-wrap{flex:1 1 0;min-height:0;display:flex;flex-direction:column;gap:6px;overflow:hidden;}
+
+/* Board canvas — larger, fills available width */
+#boardCanvas{width:100%;height:auto;}
+
+/* slider */
+.dry-row{display:flex;align-items:center;gap:8px;}
+.icon-box{display:flex;flex-direction:column;align-items:center;font-size:1.1rem;min-width:28px;}
+.icon-box span{font-size:.65rem;color:var(--muted);}
+input[type=range]{
+  flex:1;-webkit-appearance:none;height:8px;border-radius:4px;
+  outline:none;cursor:pointer;
+  background:linear-gradient(to right,#d4a255,#87ceeb);
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:24px;height:24px;border-radius:50%;
+  background:var(--bark);border:3px solid #fff;
+  box-shadow:0 2px 5px rgba(0,0,0,.25);cursor:pointer;
+}
+
+/* moisture bar */
+.moist-wrap{background:#f0ebe3;border-radius:7px;padding:8px 12px;border:1px solid var(--border);}
+.moist-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+.moist-label{font-size:.82rem;color:var(--muted);}
+.moist-val{font-size:1.35rem;font-weight:700;}
+.moist-track{width:100%;height:16px;background:#ddd5c8;border-radius:7px;overflow:visible;position:relative;}
+.moist-fill{height:100%;border-radius:7px;transition:width .2s,background .2s;}
+.moist-fsp{position:absolute;top:-4px;height:calc(100% + 8px);width:2px;background:#555;border-radius:2px;}
+.moist-fsp::after{
+  content:'FSP\A30%';white-space:pre;position:absolute;top:100%;margin-top:2px;
+  left:50%;transform:translateX(-50%);font-size:.68rem;color:#444;text-align:center;line-height:1.2;
+}
+.moist-scale{display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin-top:20px;}
+.moist-chip{display:inline-block;padding:4px 12px;border-radius:12px;font-size:.84rem;font-weight:700;transition:all .25s;}
+.grain-badge{display:inline-flex;align-items:center;padding:5px 12px;border-radius:14px;font-weight:700;font-size:1rem;transition:all .3s;}
+.gi{background:#fff3e0;color:#bf360c;border:2px solid #ffb74d;}
+.gm{background:#e8f5e9;color:#1b5e20;border:2px solid #66bb6a;}
+.info-card{
+  background:var(--bg);border-left:3px solid var(--hw);border-radius:0 6px 6px 0;
+  padding:8px 12px;font-size:.88rem;line-height:1.65;transition:all .3s;
+}
+.info-card.m{border-left-color:var(--green);}
+.instruction{background:#fef9ec;border:1px solid #f0d070;border-radius:7px;
+  padding:7px 12px;font-size:.86rem;color:#5a4200;line-height:1.55;}
+
+/* ─────────────────────────────────────
+   FIX TAB
+───────────────────────────────────── */
+#sec-fix{
+  display:none;flex-direction:column;overflow:hidden;padding:6px 12px;gap:5px;
+}
+#sec-fix.active{display:flex;}
+
+.fix-method-row{
+  display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;flex:0 0 auto;
+}
+.fix-method-row::-webkit-scrollbar{height:0;}
+.fix-btn{
+  flex:0 0 auto;padding:6px 12px;border:2px solid var(--border);border-radius:8px;
+  background:#fff;cursor:pointer;font-size:.88rem;font-weight:700;
+  text-align:center;transition:.2s;color:var(--text);white-space:nowrap;
+}
+.fix-btn.active{border-color:var(--blue);background:#eef5fc;color:var(--blue);}
+
+/* Fix main area: canvas left, desc right */
+.fix-main{
+  flex:1 1 0;min-height:0;display:grid;
+  grid-template-columns:1fr 1fr;gap:10px;overflow:hidden;
+}
+.fix-canvas-col{
+  display:flex;flex-direction:column;gap:4px;align-items:center;min-height:0;
+}
+#fixCanvas{
+  flex:1 1 0;min-height:0;max-height:240px;width:100%;
+  border-radius:8px;border:1px solid var(--border);
+  background:#fdf8f2;
+}
+.fix-step-row{display:flex;gap:8px;align-items:center;justify-content:center;flex:0 0 auto;}
+.fix-step-btn{
+  padding:7px 18px;border:none;border-radius:8px;cursor:pointer;
+  font-size:.9rem;font-weight:700;background:#bbb;color:#fff;transition:.2s;
+}
+.fix-step-btn.on{background:var(--blue);}
+.fix-desc-col{
+  display:flex;flex-direction:column;gap:8px;overflow-y:auto;
+}
+.fix-desc-card{
+  background:#fff;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;font-size:.9rem;line-height:1.7;flex:0 0 auto;
+}
+.fix-tips{
+  background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;font-size:.86rem;line-height:1.7;flex:0 0 auto;
+}
+.fix-tips strong{color:var(--bark);}
+
+/* ─────────────────────────────────────
+   QUIZ TAB (jidokanna スタイル準拠・1問ずつ)
+───────────────────────────────────── */
+#sec-easy{
+  display:none;flex-direction:column;overflow-y:auto;padding:10px 14px;gap:0;
+}
+#sec-easy.active{display:flex;}
+#sec-easy::-webkit-scrollbar{width:4px;}
+#sec-easy::-webkit-scrollbar-thumb{background:#d0c0b0;border-radius:3px;}
+
+.quiz-panel-wrap{
+  display:flex;flex-direction:column;gap:12px;
+  max-width:760px;width:100%;
+}
+.quiz-meta-row{
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:6px;font-size:.96rem;font-weight:700;color:var(--bark);
+}
+.quiz-progress-bar-wrap{
+  width:100%;height:8px;background:var(--border);border-radius:999px;overflow:hidden;
+}
+.quiz-progress-bar{
+  height:100%;background:var(--hw);border-radius:999px;transition:width .35s;
+}
+.quiz-question{
+  font-size:1.0rem;font-weight:700;line-height:1.6;
+  color:var(--text);background:#fffaf4;border:1px solid var(--border);
+  border-radius:12px;padding:14px 16px;
+}
+.quiz-choices{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+}
+@media(max-width:500px){.quiz-choices{grid-template-columns:1fr;}}
+.quiz-choice-btn{
+  border:2px solid var(--border);background:#fff;color:var(--text);
+  padding:11px 14px;border-radius:10px;cursor:pointer;text-align:left;
+  font-family:inherit;font-size:.92rem;line-height:1.45;
+  transition:background .15s,border-color .15s;min-height:48px;
+}
+.quiz-choice-btn:hover:not(:disabled){background:#f5ede3;border-color:var(--hw);}
+.quiz-choice-btn.correct{background:#e6f4ea;border-color:#2e7d32;color:#1b5e20;}
+.quiz-choice-btn.wrong  {background:#fdecea;border-color:#c62828;color:#7f0000;}
+.quiz-choice-btn:disabled{cursor:default;}
+.quiz-result{
+  display:none;padding:12px 16px;border-radius:10px;
+  font-size:.92rem;line-height:1.65;
+}
+.quiz-result.ok {display:block;background:#e6f4ea;color:#1b5e20;border:1px solid #a5d6a7;}
+.quiz-result.ng {display:block;background:#fdecea;color:#7f0000;border:1px solid #ef9a9a;}
+.quiz-result.fin{display:block;background:#fff8e1;color:#5d4037;border:1px solid #ffe082;}
+.quiz-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.quiz-action-btn{
+  padding:10px 24px;border:none;border-radius:8px;font-family:inherit;
+  font-size:.92rem;font-weight:700;cursor:pointer;
+  background:var(--bark);color:#fff;transition:background .15s;
+}
+.quiz-action-btn:hover{background:#7a5530;}
+.quiz-action-btn.secondary{background:#8b6b4c;}
+.quiz-action-btn.secondary:hover{background:#6d5038;}
+
+/* ─────────────────────────────────────
+   MODAL
+───────────────────────────────────── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);
+  display:flex;align-items:center;justify-content:center;z-index:9999;
+}
+.modal-overlay.hidden{display:none;}
+.modal-box{
+  background:#fff;max-width:620px;width:92%;border-radius:14px;
+  padding:22px 26px;box-shadow:0 10px 30px rgba(0,0,0,.3);
+  max-height:88vh;overflow:auto;font-size:15px;line-height:1.7;color:var(--text);
+}
+.modal-box h2{margin:0 0 10px;font-size:20px;color:var(--bark);}
+.modal-box p{margin:6px 0;white-space:pre-wrap;}
+.modal-box b{color:var(--bark);}
+.modal-footer{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+.modal-start-btn{
+  padding:10px 24px;border:none;border-radius:8px;
+  background:var(--bark);color:#fff;font-weight:700;cursor:pointer;font-size:15px;
+}
+.modal-start-btn:hover{background:#7a5530;}
+.modal-index-btn{
+  padding:10px 18px;border:none;border-radius:8px;
+  background:#888;color:#fff;font-weight:700;cursor:pointer;font-size:14px;
+}
+.modal-index-btn:hover{background:#555;}
+
+/* ─────────────────────────────────────
+   MOISTURE TAB
+───────────────────────────────────── */
+#sec-mc{
+  display:none;flex-direction:column;overflow-y:auto;padding:8px 12px;gap:8px;
+}
+#sec-mc.active{display:flex;}
+#sec-mc::-webkit-scrollbar{width:5px;}
+#sec-mc::-webkit-scrollbar-thumb{background:#d0c0b0;border-radius:3px;}
+
+.mc-layout{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start;}
+.mc-stage{
+  background:#fffaf4;border:1px solid #e5d8c7;border-radius:14px;
+  padding:14px 18px;display:flex;flex-direction:row;align-items:flex-start;
+  gap:16px;position:relative;flex:0 0 auto;
+}
+.mc-slider-col{
+  display:flex;flex-direction:column;align-items:center;gap:6px;flex:0 0 auto;
+}
+.mc-slider-col label{font-size:.82rem;font-weight:700;color:var(--muted);white-space:nowrap;}
+#mcSlider{
+  -webkit-appearance:slider-vertical;appearance:slider-vertical;
+  writing-mode:vertical-lr;direction:ltr;
+  width:30px;height:200px;cursor:pointer;accent-color:var(--bark);
+}
+.mc-log{
+  position:relative;width:108px;height:248px;
+  border-radius:54px 54px 18px 18px;
+  border:2px solid rgba(90,55,25,.28);overflow:visible;
+  box-shadow:2px 3px 10px rgba(0,0,0,.15);flex:0 0 auto;
+}
+.mc-log::before{
+  content:"";position:absolute;left:9px;right:9px;top:5px;height:22px;
+  border-radius:50%;
+  background:repeating-radial-gradient(circle at 50% 50%,#ead7b8 0 3px,#a26c49 3px 5px,#ead7b8 5px 9px);
+  border:1px solid rgba(90,55,25,.18);z-index:3;
+}
+.mc-log-wood{
+  position:absolute;left:0;right:0;bottom:0;
+  background:repeating-linear-gradient(90deg,rgba(110,75,48,.22) 0 2px,transparent 2px 14px),
+    linear-gradient(180deg,#d0a377,#b57b4d);
+  transition:height .3s ease;z-index:1;
+}
+.mc-log-water{
+  position:absolute;left:0;right:0;top:27px;
+  background:
+    radial-gradient(circle at 22% 18%,rgba(255,255,255,.35) 0 3px,transparent 3px),
+    radial-gradient(circle at 55% 38%,rgba(255,255,255,.25) 0 2.5px,transparent 2.5px),
+    radial-gradient(circle at 35% 60%,rgba(255,255,255,.28) 0 2px,transparent 2px),
+    linear-gradient(180deg,rgba(154,223,255,.92),rgba(100,188,235,.82));
+  border-bottom:1.5px solid rgba(63,141,182,.5);
+  transition:height .3s ease;z-index:2;
+}
+.mc-log-labels{
+  display:flex;flex-direction:column;justify-content:space-between;
+  height:248px;padding:27px 0 4px;flex:0 0 auto;
+}
+.mc-lbl-w{display:flex;align-items:center;gap:5px;font-size:.84rem;font-weight:700;color:#1a6fa0;}
+.mc-lbl-w::before{content:"";display:inline-block;width:24px;height:2px;background:#1a6fa0;}
+.mc-lbl-d{display:flex;align-items:center;gap:5px;font-size:.84rem;font-weight:700;color:#7a4a1e;}
+.mc-lbl-d::before{content:"";display:inline-block;width:24px;height:2px;background:#7a4a1e;}
+.mc-brace{
+  display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;
+  height:248px;padding:27px 0 4px;font-size:.76rem;font-weight:700;color:var(--muted);
+}
+.mc-brace-eq{font-size:.74rem;line-height:1.4;text-align:right;}
+.mc-rate-big{font-size:2.2rem;font-weight:900;color:var(--bark);text-align:center;margin:6px 0 0;line-height:1;}
+.mc-rate-big span{font-size:1.0rem;font-weight:700;color:var(--muted);margin-left:3px;}
+.mc-nums{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+.mc-num-row{display:flex;align-items:baseline;gap:5px;font-size:.86rem;}
+.mc-num-row .nl{color:var(--muted);font-weight:700;white-space:nowrap;}
+.mc-num-row .nv{font-size:1.25rem;font-weight:800;color:var(--bark);min-width:48px;}
+.mc-num-row.water .nv{color:#1a6fa0;}
+.mc-num-row.wood  .nv{color:#7a4a1e;}
+.mc-state-lbl{
+  position:absolute;left:-12px;right:-12px;text-align:center;justify-content:center;
+  transform:translateY(-50%);background:rgba(255,255,255,.95);
+  border:1.5px solid #888;border-radius:6px;padding:3px 5px;
+  font-size:.72rem;font-weight:700;white-space:nowrap;color:#111;
+  pointer-events:none;z-index:20;display:flex;align-items:center;
+}
+.mc-log-wrap{display:flex;flex-direction:row;align-items:flex-start;gap:8px;position:relative;}
+.mc-formula-box{
+  background:#fffaf4;border:1px solid #e5d8c7;border-radius:12px;padding:12px 14px;
+}
+.mc-formula{font-weight:700;font-size:1.0rem;color:var(--bark);margin:5px 0 8px;}
+.mc-note-list{margin:6px 0 0;padding-left:1.1em;line-height:1.75;font-size:.92rem;}
+.mc-meta h3{margin:0 0 7px;font-size:1.0rem;color:var(--bark);}
+
+/* ─────────────────────────────────────
+   RESPONSIVE — narrow (tablets portrait / small)
+───────────────────────────────────── */
+@media(max-width:700px){
+  html,body{font-size:14px;}
+  #sec-sim{grid-template-columns:1fr;grid-template-rows:auto 1fr;overflow-y:auto;}
+  .sim-right{overflow-y:visible;}
+  .fix-main{grid-template-columns:1fr;}
+  .fix-desc-col{overflow-y:visible;}
+  #boardCanvas{max-height:110px;}
+  .mc-layout{grid-template-columns:1fr;}
+  .mc-stage{flex-wrap:wrap;}
+  #mcSlider{height:160px;}
+  .mc-log{width:88px;height:210px;}
+  .mc-log-labels{height:210px;}
+  .mc-brace{height:210px;}
+}
+@media(max-height:560px){
+  :root{--tab-h:36px;}
+  html,body{font-size:13px;}
+  .tab-btn{font-size:12px;padding:0 10px;}
+  #boardCanvas{max-height:100px;}
+}
+
+
+/* ===== 改訂版：順番学習・大きな文字・タブレット/スマホ対応 ===== */
+:root{--normal:#2e7d32;--warning:#ed8b00;--danger:#c62828;--lock:#d7d7d7;--guide:#1565c0;}
+html,body{font-size:16px;touch-action:manipulation;}
+button,input{font-family:inherit;}
+button:focus-visible,input:focus-visible{outline:3px solid #1565c0;outline-offset:3px;}
+.tab-bar{display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));gap:7px;padding:5px 8px;height:auto;min-height:54px;overflow:visible;border-bottom:0;background:#efe6da;}
+.home-btn,.tab-btn{min-height:48px;border-radius:10px;font-size:clamp(.92rem,1.05vw,1.06rem);padding:7px 9px;justify-content:center;}
+.tab-btn{background:#fff;box-shadow:0 4px 10px rgba(0,0,0,.07);border:0;margin:0;color:var(--bark);}
+.tab-btn.active,.tab-btn.blue.active,.tab-btn.green.active{background:var(--bark);color:#fff;border:0;}
+.tab-btn.locked{background:#ddd;color:#777;cursor:not-allowed;box-shadow:none;}
+.tab-btn.done:not(.active){background:#e7f5e9;color:#1b5e20;}
+.section{padding:10px 14px!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain;}
+.section.active{min-height:0;}
+.learning-head{display:flex;flex-direction:column;gap:7px;margin-bottom:8px;flex:0 0 auto;}
+.progress-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
+.progress-item{background:#edf0f2;border:1px solid #c7cfd7;color:#65717c;border-radius:8px;padding:7px 4px;text-align:center;font-size:clamp(.78rem,.9vw,.9rem);font-weight:800;line-height:1.25;}
+.progress-item.current{background:#e8f1ff;border:2px solid var(--guide);color:#0d47a1;}
+.progress-item.done{background:#e7f5e9;border-color:#72b47a;color:#1b5e20;}
+.next-action-banner{display:flex;align-items:center;gap:10px;background:#e8f1ff;border:3px solid var(--guide);border-radius:12px;padding:9px 13px;font-size:clamp(1rem,1.15vw,1.15rem);font-weight:900;color:#0d477f;}
+.next-action-num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--guide);color:#fff;flex:0 0 32px;}
+.completion-box{margin-top:10px;background:#f3f8f2;border:2px solid #b7d7b9;border-radius:12px;padding:10px 12px;font-size:clamp(.95rem,1.05vw,1.08rem);font-weight:800;line-height:1.5;}
+.completion-box.locked{background:#f4f4f4;border-color:#ccc;color:#777;}
+.lock-hint{display:none;position:fixed;left:50%;top:102px;transform:translateX(-50%);z-index:10000;background:#7a3a0a;color:#fff;border-radius:10px;padding:11px 16px;font-size:1rem;font-weight:800;box-shadow:0 6px 20px rgba(0,0,0,.25);}
+.lock-hint.show{display:block;}
+.pnl-title,.mc-meta h3{font-size:1.05rem;}
+.info-card,.instruction,.fix-desc-card,.fix-tips,.mc-note-list{font-size:1rem;}
+.fix-btn,.fix-step-btn,.quiz-action-btn,.modal-start-btn,.modal-index-btn{min-height:48px;font-size:1rem;}
+.quiz-question{font-size:1.15rem;line-height:1.65;padding:15px 17px;}
+.quiz-choice-btn{font-size:1rem;min-height:56px;padding:12px 14px;}
+.quiz-result{font-size:1rem;}
+.quiz-actions{display:grid;grid-template-columns:minmax(150px,auto) 1fr minmax(170px,auto);align-items:center;width:100%;}
+#quizRestartBtn{grid-column:1;background:#fff;color:#66584c;border:2px solid #a99c8e;}
+#quizNextBtn{grid-column:3;background:#1565c0;}
+#quizNextBtn:disabled{background:#c5c9cc;color:#fff;cursor:not-allowed;}
+.quiz-review{margin-top:10px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;text-align:left;}
+.quiz-review-title{grid-column:1/-1;font-size:1.05rem;font-weight:900;color:var(--bark);}
+.quiz-review-item{background:#fff;border:1px solid #e6cfc7;border-left:5px solid var(--danger);border-radius:9px;padding:8px 10px;font-size:.94rem;line-height:1.5;}
+.quiz-review-answer{color:#1b5e20;font-weight:800;}
+.quiz-review-perfect{padding:10px 12px;background:#e6f4ea;border:1px solid #a5d6a7;border-radius:9px;color:#1b5e20;font-weight:800;}
+#sec-sim .learning-head{grid-column:1/-1;grid-row:1;margin-bottom:0;}
+#sec-sim .sim-left{grid-column:1;}
+#sec-sim .sim-right{grid-column:2;}
+#sec-sim .pnl{padding:10px 14px;}
+#sec-sim .pnl-title{font-size:clamp(1.08rem,1.25vw,1.25rem);line-height:1.45;}
+#sec-sim .instruction{font-size:clamp(1rem,1.12vw,1.16rem);line-height:1.55;padding:10px 13px;}
+#sec-sim .info-card{font-size:clamp(1rem,1.12vw,1.16rem);line-height:1.65;padding:10px 13px;}
+#sec-sim .grain-badge{font-size:clamp(1.05rem,1.2vw,1.22rem);padding:7px 14px;}
+#sec-sim .moist-label{font-size:1rem;}
+#sec-sim .moist-val{font-size:1.65rem;}
+#sec-sim .moist-chip{font-size:1rem;padding:6px 14px;}
+#sec-sim .moist-scale{font-size:.82rem;line-height:1.35;gap:8px;}
+#sec-sim .dry-row{min-height:48px;}
+#sec-sim input[type=range]{height:12px;touch-action:pan-y;}
+#sec-sim input[type=range]::-webkit-slider-thumb{width:32px;height:32px;}
+#sec-sim input[type=range]::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:var(--bark);border:3px solid #fff;}
+.log-wrap{justify-content:flex-start;}
+#logCanvas{aspect-ratio:1/1;touch-action:none;max-height:min(58vh,610px);object-fit:contain;}
+#boardCanvas{max-height:min(31vh,310px);object-fit:contain;}
+#logCanvas{aspect-ratio:1/1;touch-action:none;}
+#boardCanvas{aspect-ratio:8/5;}
+#fixCanvas{aspect-ratio:18/11;}
+canvas{max-width:100%;height:auto!important;}
+#mcSlider{touch-action:none;}
+@media(max-width:960px){
+  #app{height:auto;min-height:100vh;overflow:visible;}
+  html,body{height:auto;min-height:100%;overflow:auto;font-size:16px;}
+  .tab-bar{grid-template-columns:repeat(2,minmax(0,1fr));position:sticky;top:0;z-index:100;}
+  .home-btn{grid-column:1/-1;}
+  #sec-sim{grid-template-columns:1fr;grid-template-rows:auto auto auto;overflow-y:visible;align-content:start;}
+  #sec-sim .learning-head{grid-column:1;grid-row:1;}
+  #sec-sim .sim-left{grid-column:1;grid-row:2;}
+  #sec-sim .sim-right{grid-column:1;grid-row:3;}
+  .sim-left,.sim-right{overflow:visible;}
+  .fix-main{grid-template-columns:1fr;overflow:visible;}
+  .fix-desc-col{overflow:visible;}
+  .mc-layout{grid-template-columns:1fr;}
+  .mc-stage{justify-content:center;flex-wrap:wrap;}
+  #mcSlider{-webkit-appearance:none;appearance:none;writing-mode:horizontal-tb;direction:ltr;width:min(520px,78vw);height:30px;}
+  .mc-slider-col{width:100%;flex-direction:row;justify-content:center;order:3;}
+  .progress-strip{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:600px){
+  #sec-sim .pnl-title{font-size:1.12rem;}
+  #sec-sim .instruction,#sec-sim .info-card{font-size:1.03rem;}
+  #sec-sim .moist-scale{display:grid;grid-template-columns:1fr 1fr;font-size:.86rem;}
+  #sec-sim .moist-scale span:nth-child(even){text-align:right;}
+  #logCanvas{max-height:none;width:100%;}
+  #boardCanvas{max-height:none;width:100%;}
+  .section{padding:9px 10px!important;}
+  .tab-bar{gap:5px;padding:5px;}
+  .home-btn,.tab-btn{font-size:.94rem;min-height:50px;padding:6px;white-space:normal;line-height:1.25;}
+  .next-action-banner{font-size:1rem;padding:8px 10px;}
+  .mc-stage{padding:10px;gap:10px;}
+  .mc-log{width:92px;height:214px;}.mc-log-labels,.mc-brace{height:214px;}
+  .fix-method-row{display:grid;grid-template-columns:1fr;overflow:visible;}
+  .fix-btn{width:100%;white-space:normal;}
+  .fix-step-row{display:grid;grid-template-columns:1fr 24px 1fr 24px 1fr;width:100%;}
+  .fix-step-btn{padding:8px 5px;}
+  .quiz-choices{grid-template-columns:1fr;}
+  .quiz-actions{grid-template-columns:1fr 1fr;gap:8px;}
+  #quizRestartBtn{grid-column:1;}#quizNextBtn{grid-column:2;}
+  .quiz-review{grid-template-columns:1fr;}
+  .modal-box{font-size:16px;padding:18px;}
+}
+
+
+/* ===== 丸太CGが消える問題の修正 ===== */
+#sec-sim{
+  grid-template-rows:auto auto auto;
+  align-items:start;
+}
+#sec-sim .sim-left,
+#sec-sim .sim-right{
+  align-self:start;
+  height:auto;
+  min-height:0;
+  overflow:visible;
+}
+#sec-sim .log-wrap{
+  flex:0 0 auto;
+  min-height:0;
+  height:auto;
+  overflow:visible;
+  align-items:center;
+  justify-content:flex-start;
+}
+#logCanvas{
+  display:block;
+  width:min(100%,560px);
+  height:auto !important;
+  min-width:280px;
+  min-height:280px;
+  aspect-ratio:1 / 1;
+  flex:0 0 auto;
+  align-self:center;
+  object-fit:contain;
+  background:#fffaf4;
+}
+#sec-sim .instruction{
+  width:100%;
+}
+#sec-sim #simCompletion{
+  grid-column:1 / -1;
+  grid-row:3;
+}
+@media (max-width:960px){
+  #sec-sim{grid-template-rows:auto auto auto auto;}
+  #sec-sim .learning-head{grid-row:1;}
+  #sec-sim .sim-left{grid-row:2;}
+  #sec-sim .sim-right{grid-row:3;}
+  #sec-sim #simCompletion{grid-row:4;}
+  #logCanvas{
+    width:min(100%,620px);
+    min-width:0;
+    min-height:260px;
+  }
+}
+@media (max-width:600px){
+  #logCanvas{
+    width:100%;
+    min-height:0;
+    aspect-ratio:1 / 1;
+  }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div style="background:linear-gradient(135deg,#5c3d1e,#8b6b4c);color:#fff;padding:8px 14px;flex:0 0 auto;">
+    <div style="font-size:clamp(1.05rem,1.6vw,1.25rem);font-weight:700;line-height:1.1;">
+      木材の反り　<span style="font-size:.76em;font-weight:400;opacity:.95;">木材の反りについて学べるWebアプリです</span>
+    </div>
+  </div>
+
+  <!-- 起動時モーダル -->
+  <div id="startupModal" class="modal-overlay">
+    <div class="modal-box">
+      <h2>📖 使い方ガイド</h2>
+      <p>このアプリは<b>木材の反り</b>について学ぶアプリです。
+<b>含水率</b>、<b>反りシミュレータ</b>、<b>反りを防ぐ・対処する</b>、<b>確認クイズ</b>で学べます。
+
+<b>■ 操作</b>
+・「<b>含水率</b>」では、含水率の説明とともに、含水率の変化に伴う木材状態の変化を確認できます。
+・「<b>反りシミュレータ</b>」では、木材の反りの様子をシミュレーションできます。
+・「<b>反りを防ぐ・対処する</b>」では、反った板の直し方をいくつか試せます。
+・<b>やさしい解説</b>では、ここで学んだことをクイズで確認します。</p>
+      <div class="modal-footer">
+        <button class="modal-start-btn" onclick="document.getElementById('startupModal').classList.add('hidden')">はじめる</button>
+        <button class="modal-index-btn" onclick="location.href='index.html'">🏠 メニューに戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="home-btn" onclick="location.href='index.html'">🏠 メニュー</button>
+    <button class="tab-btn active" id="tab-mc" data-tab="mc" onclick="showTab('mc')">💧 木材の含水率</button>
+    <button class="tab-btn locked" id="tab-sim" data-tab="sim" onclick="showTab('sim')">🔒 木取りと反り</button>
+    <button class="tab-btn locked" id="tab-fix" data-tab="fix" onclick="showTab('fix')">🔒 反りを防ぐ・対処する</button>
+    <button class="tab-btn locked" id="tab-easy" data-tab="easy" onclick="showTab('easy')">🔒 確認クイズ</button>
+  </div>
+
+  <!-- ══════════════ MOISTURE ══════════════ -->
+  <div class="section active" id="sec-mc">
+    <div class="learning-head"><div class="progress-strip" id="progressStripMc"></div><div class="next-action-banner"><span class="next-action-num">1</span><span id="nextActionMc">次の操作：含水率スライダーを動かしてください。</span></div></div>
+    <h2 style="font-size:1.05rem;color:var(--bark);margin:0 0 4px;padding:0;flex:0 0 auto;">木材の含水率
+      <span style="font-size:.82rem;font-weight:400;color:var(--muted);">　スライダーを上下すると水分量が変わります。</span>
+    </h2>
+
+    <!-- 上段：CG + 説明2列 -->
+    <div class="mc-layout" style="flex:0 0 auto;">
+
+      <div class="mc-stage">
+        <!-- 左ブレース -->
+        <div class="mc-brace">
+          <div class="mc-brace-eq">水分重量<br>＝<br><span id="mcBraceWater" style="color:#1a6fa0;">1.00</span></div>
+          <div class="mc-brace-eq" style="font-size:.6rem;color:#bbb;">｜<br>｜<br>｜<br>｜</div>
+          <div class="mc-brace-eq">木材重量<br>＝ 1</div>
+        </div>
+        <!-- 丸太CG -->
+        <div class="mc-log-wrap">
+          <div style="position:relative;flex:0 0 auto;">
+            <div class="mc-log" id="mcLog">
+              <div style="position:absolute;inset:0;border-radius:50px 50px 18px 18px;overflow:hidden;z-index:1;">
+                <div class="mc-log-water" id="mcLogWater"></div>
+                <div class="mc-log-wood"  id="mcLogWood"></div>
+              </div>
+            </div>
+            <div class="mc-state-lbl" id="mcStateLbl" style="top:120px;">
+              <span id="mcStateTxt">生材状態（50%以上）</span>
+            </div>
+          </div>
+          <div class="mc-log-labels">
+            <div class="mc-lbl-w">水分</div>
+            <div class="mc-lbl-d">木材</div>
+          </div>
+        </div>
+        <!-- 縦スライダー -->
+        <div class="mc-slider-col">
+          <label>少ない</label>
+          <input id="mcSlider" type="range" min="0" max="200" value="100"/>
+          <label>多い</label>
+        </div>
+        <!-- 含水率表示 -->
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;flex:1 1 auto;">
+          <div style="font-size:.86rem;font-weight:700;color:var(--muted);">含水率</div>
+          <div class="mc-rate-big"><span id="mcValue">100</span><span>%</span></div>
+          <div class="mc-nums">
+            <div class="mc-num-row water">
+              <span class="nl">水分重量</span>
+              <span class="nv" id="mcWaterVal">1.00</span>
+            </div>
+            <div class="mc-num-row wood">
+              <span class="nl">木材重量</span>
+              <span class="nv">1</span>
+            </div>
+            <div style="font-size:.78rem;color:var(--muted);margin-top:3px;line-height:1.5;">
+              含水率 ＝ 水分重量 ÷ 木材重量 × 100
+            </div>
+          </div>
+        </div>
+      </div><!-- /mc-stage -->
+
+      <!-- 右：説明（①乾燥の必要性→②含水率の計算式） -->
+      <div class="mc-meta">
+        <div class="mc-formula-box">
+          <h3 style="margin:0 0 7px;font-size:1.0rem;color:var(--bark);">木材乾燥の必要性</h3>
+          <ul class="mc-note-list">
+            <li>歪みが生じにくくなる</li>
+            <li>木材の強度が増す</li>
+            <li>変色や腐食を防ぐ</li>
+            <li>接着剤や塗装剤による加工がしやすい</li>
+          </ul>
+        </div>
+        <div class="mc-formula-box" style="margin-top:8px;">
+          <div class="mc-formula">木材含水率 ＝ 木材の水分量 ÷ 水分を全く含まない木材の重さ × 100</div>
+          <ul class="mc-note-list">
+            <li>含水率は、木材の中にどれだけ水分が入っているかを表す数値です。</li>
+            <li>木材重量を 1 としたとき、水分重量が 0.5 なら含水率は 50% です。</li>
+            <li>水分重量が 0.2 なら含水率は 20% です。</li>
+            <li>含水率が高いほど、木材の中に多くの水分が含まれています。</li>
+          </ul>
+        </div>
+      </div>
+
+    </div><!-- /mc-layout -->
+
+    <!-- 下段：含水率と木材の状態（CG・説明の下に表示） -->
+    <div class="mc-formula-box" style="flex:0 0 auto;margin-top:8px;">
+      <h3 style="margin:0 0 7px;font-size:1.0rem;color:var(--bark);">含水率と木材の状態</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px;font-size:.9rem;line-height:1.65;">
+        <div style="background:#e3f0fc;border-radius:7px;padding:7px 12px;"><b>飽水状態（100〜200%）</b><br>細胞の空洞まで水が充満している状態</div>
+        <div style="background:#e8f5e9;border-radius:7px;padding:7px 12px;"><b>生材状態（50%以上）</b><br>伐採直後など、多くの水分を含む状態</div>
+        <div style="background:#fff3e0;border-radius:7px;padding:7px 12px;"><b>繊維飽和点（約30%）</b><br>これを下回ると収縮・反りが始まる</div>
+        <div style="background:#fde8cc;border-radius:7px;padding:7px 12px;"><b>気乾材状態（約15%）</b><br>室内の空気と平衡。建材として使われる目安</div>
+        <div style="background:#f5f0ea;border-radius:7px;padding:7px 12px;"><b>全乾材状態（0%）</b><br>水分を完全に除去した状態</div>
+      </div>
+    </div>
+
+    <div class="completion-box locked" id="mcCompletion">主要な含水率（0・15・30・50・100％以上）を確認すると完了します。</div>
+  </div><!-- /moisture -->
+
+  <!-- ══════════════ SIM ══════════════ -->
+  <div class="section" id="sec-sim">
+    <div class="learning-head" style="grid-column:1/-1"><div class="progress-strip" id="progressStripSim"></div><div class="next-action-banner"><span class="next-action-num">2</span><span id="nextActionSim">次の操作：丸太の外側をタップして板目材を選んでください。</span></div></div>
+    <div class="sim-left">
+      <div class="pnl" style="flex:0 0 auto;">
+        <div class="pnl-title">① 丸太のどこを切る？（薄い板の範囲をタップ）</div>
+      </div>
+      <div class="log-wrap">
+        <canvas id="logCanvas" width="300" height="300"></canvas>
+        <div class="instruction">
+          💡 <strong>中心付近 → 柾目</strong>（反りにくい）／
+          <strong>外側 → 板目</strong>（乾燥で反る）
+        </div>
+      </div>
+    </div>
+
+    <div class="sim-right">
+      <div class="pnl">
+        <div class="pnl-title">② 乾燥後の板の変形</div>
+        <div id="grainBadge" class="grain-badge gi" style="margin-bottom:6px;">板目（いため）</div>
+        <canvas id="boardCanvas" width="320" height="200"></canvas>
+        <div id="infoCard" class="info-card" style="margin-top:6px;"></div>
+      </div>
+
+      <div class="pnl">
+        <div class="pnl-title">🔥 乾燥の度合い（スライダーを右へ）</div>
+        <div class="dry-row" style="margin-bottom:10px;">
+          <div class="icon-box">💧<span>湿</span></div>
+          <input type="range" id="drySlider" min="0" max="100" value="0">
+          <div class="icon-box">🔥<span>乾</span></div>
+        </div>
+        <div class="moist-wrap">
+          <div class="moist-header">
+            <span class="moist-label">📊 含水率</span>
+            <span class="moist-val"><span id="moistLabel">50</span>%</span>
+          </div>
+          <div class="moist-track">
+            <div class="moist-fill" id="moistFill"></div>
+            <div class="moist-fsp"  id="moistFsp"></div>
+          </div>
+          <div class="moist-scale">
+            <span>0%（完全乾燥）</span><span>15%（建材目標）</span>
+            <span>30%（FSP）</span><span>50%（生材）</span>
+          </div>
+          <div style="text-align:center;margin-top:6px;">
+            <span class="moist-chip" id="moistChip"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="completion-box locked" id="simCompletion" style="grid-column:1/-1">板目材と柾目材の両方で、乾燥後の変化を確認すると完了します。</div>
+  </div><!-- /sim -->
+
+  <!-- ══════════════ FIX ══════════════ -->
+  <div class="section" id="sec-fix">
+    <div class="learning-head"><div class="progress-strip" id="progressStripFix"></div><div class="next-action-banner"><span class="next-action-num">3</span><span id="nextActionFix">次の操作：予防方法と対処方法を順に確認してください。</span></div></div>
+
+    <div class="fix-method-row">
+      <button class="fix-btn active" id="fmBtn0" onclick="setFixMethod(0)">① 裏返して放置</button>
+      <button class="fix-btn"        id="fmBtn1" onclick="setFixMethod(1)">② 凹面にラップ</button>
+      <button class="fix-btn"        id="fmBtn2" onclick="setFixMethod(2)">③ 凹面に水分</button>
+      <button class="fix-btn"        id="fmBtn3" onclick="setFixMethod(3)">④ 荷重で矯正</button>
+      <button class="fix-btn"        id="fmBtn4" onclick="setFixMethod(4)">⑤ 塗装で予防</button>
+    </div>
+
+    <div class="fix-main">
+      <div class="fix-canvas-col">
+        <div class="fix-step-row">
+          <button class="fix-step-btn on" id="fstep0" onclick="setFixStep(0)">❶ before</button>
+          <span style="font-size:1.1rem;">→</span>
+          <button class="fix-step-btn"   id="fstep1" onclick="setFixStep(1)">❷ 処置中</button>
+          <span style="font-size:1.1rem;">→</span>
+          <button class="fix-step-btn"   id="fstep2" onclick="setFixStep(2)">❸ after</button>
+        </div>
+        <canvas id="fixCanvas" width="360" height="220"></canvas>
+      </div>
+      <div class="fix-desc-col">
+        <div class="fix-desc-card" id="fixDesc"></div>
+        <div class="fix-tips">
+          <strong>📌 プロの保管テクニック</strong><br>
+          板と板の間に<strong>さん木</strong>をはさんで積み重ね、空気が通るようにして含水率の変化を抑えます。<br><br>
+          <strong>🔩 その他の反り止め</strong><br>
+          ・反り止め金具（天板裏）<br>
+          ・幕板（テーブル縁に固定）<br>
+          ・裏桟 / 駒留め
+        </div>
+      </div>
+    </div>
+
+    <div class="completion-box locked" id="fixCompletion">予防方法2項目以上、対処方法2項目以上を確認すると完了します。</div>
+  </div><!-- /fix -->
+
+  <!-- ══════════════ QUIZ ══════════════ -->
+  <div class="section" id="sec-easy">
+    <div class="learning-head"><div class="progress-strip" id="progressStripEasy"></div><div class="next-action-banner"><span class="next-action-num">4</span><span id="nextActionEasy">問題に回答してください。</span></div></div>
+    <div class="quiz-panel-wrap">
+      <div class="quiz-meta-row">
+        <span id="quizProgress">問題 1 / 10</span>
+        <span id="quizScore">得点 0 / 0</span>
+      </div>
+      <div class="quiz-progress-bar-wrap">
+        <div class="quiz-progress-bar" id="quizProgressBar" style="width:10%"></div>
+      </div>
+      <div class="quiz-question" id="quizQuestion"></div>
+      <div class="quiz-choices"  id="quizChoices"></div>
+      <div class="quiz-result"   id="quizResult"></div>
+      <div class="quiz-actions">
+        <button class="quiz-action-btn secondary" id="quizRestartBtn" type="button">↺ 最初から</button>
+        <button class="quiz-action-btn" id="quizNextBtn" type="button" disabled>次の問題へ →</button>
+      </div>
+    </div>
+  </div><!-- /quiz -->
+
+</div><!-- /app -->
+<div id="lockHint" class="lock-hint">前の学習を完了してから進んでください。</div>
+<script>
+/* ══════════════════════════════
+   NAV / LEARNING PROGRESS
+══════════════════════════════ */
+const LEARN={mc:false,sim:false,fix:false};
+const MC_VISITS={zero:false,fifteen:false,thirty:false,fifty:false,hundred:false};
+const SIM_VISITS={itame:false,masame:false};
+const FIX_VISITS=new Set();
+const STEPS=[['mc','① 含水率'],['sim','② 木取りと反り'],['fix','③ 防止と対処'],['easy','④ 確認クイズ']];
+let currentTab='mc';
+function unlocked(t){return t==='mc'||(t==='sim'&&LEARN.mc)||(t==='fix'&&LEARN.sim)||(t==='easy'&&LEARN.fix);}
+function showLockHint(){const h=document.getElementById('lockHint');h.classList.add('show');clearTimeout(showLockHint.timer);showLockHint.timer=setTimeout(()=>h.classList.remove('show'),1800);}
+function renderProgress(){
+  const done={mc:LEARN.mc,sim:LEARN.sim,fix:LEARN.fix,easy:false};
+  document.querySelectorAll('[id^="progressStrip"]').forEach(strip=>{
+    strip.innerHTML=STEPS.map(([id,label])=>`<div class="progress-item ${done[id]?'done':''} ${currentTab===id?'current':''}">${done[id]?'✓ ':''}${label}</div>`).join('');
+  });
+  STEPS.forEach(([id,label],i)=>{const b=document.getElementById('tab-'+id);if(!b)return;const can=unlocked(id);b.classList.toggle('locked',!can);b.classList.toggle('done',!!done[id]);b.textContent=(can?'':'🔒 ')+label.replace(/^\d+\s/,'');});
+}
+function showTab(t){
+  if(!unlocked(t)){showLockHint();return;}
+  currentTab=t;
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+t).classList.add('active');
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='fix')requestAnimationFrame(()=>drawFix());
+  renderProgress();
+}
+function completeStep(step){
+  if(LEARN[step])return; LEARN[step]=true;
+  const box=document.getElementById(step+'Completion');if(box){box.classList.remove('locked');box.textContent=step==='mc'?'✓ 含水率と木材の状態を確認しました。次は「木取りと反り」へ進みましょう。':step==='sim'?'✓ 板目材と柾目材の反り方を比較しました。次は「反りを防ぐ・対処する」へ進みましょう。':'✓ 反りの予防と対処方法を確認しました。確認クイズへ進みましょう。';}
+  renderProgress();
+}
+renderProgress();
+
+/* ══════════════════════════════
+   MOISTURE
+══════════════════════════════ */
+(function(){
+  const slider  = document.getElementById('mcSlider');
+  const valEl   = document.getElementById('mcValue');
+  const waterEl = document.getElementById('mcLogWater');
+  const woodEl  = document.getElementById('mcLogWood');
+  const waterVal= document.getElementById('mcWaterVal');
+  const braceW  = document.getElementById('mcBraceWater');
+  const stateEl = document.getElementById('mcStateLbl');
+  const stateTxt= document.getElementById('mcStateTxt');
+
+  const STATES=[
+    {min:100,text:'多量の自由水を含む状態（100%以上）'},
+    {min:50, text:'生材に近い状態（50〜99%）'},
+    {min:31, text:'繊維飽和点より高い状態（31〜49%）'},
+    {min:27, text:'繊維飽和点付近（約30%）'},
+    {min:16, text:'乾燥中（16〜26%）'},
+    {min:10, text:'気乾状態の目安（10〜15%）'},
+    {min:1,  text:'非常に乾燥した状態（1〜9%）'},
+    {min:0,  text:'全乾状態（0%）'},
+  ];
+  function getState(v){return STATES.find(s=>v>=s.min)||STATES[STATES.length-1];}
+
+  function update(){
+    const v=Number(slider.value);
+    valEl.textContent=v;
+    const wm=(v/100).toFixed(2);
+    waterVal.textContent=wm;
+    braceW.textContent=wm;
+    const woodH=106;
+    const waterH=Math.min(Math.round(woodH*v/100),212);
+    waterEl.style.height=waterH+'px';
+    woodEl.style.height=woodH+'px';
+    woodEl.style.bottom='0';
+    const st=getState(v);
+    stateTxt.textContent=st.text;
+    // スライダーつまみ位置に合わせてラベルを移動
+    const thumbY=8+(v/200)*184;
+    const top=Math.max(8,Math.min(232,thumbY+10));
+    stateEl.style.top=top+'px';
+    stateEl.style.display='flex';
+    if(v<=2)MC_VISITS.zero=true;
+    if(v>=12&&v<=18)MC_VISITS.fifteen=true;
+    if(v>=27&&v<=33)MC_VISITS.thirty=true;
+    if(v>=48&&v<=55)MC_VISITS.fifty=true;
+    if(v>=100)MC_VISITS.hundred=true;
+    const n=Object.values(MC_VISITS).filter(Boolean).length;
+    document.getElementById('nextActionMc').textContent=n<5?`次の操作：主要な含水率を確認してください（${n}/5）。`:'すべて確認しました。「木取りと反り」へ進んでください。';
+    if(n===5)completeStep('mc');
+  }
+  slider.addEventListener('input',update);
+  update();
+})();
+
+/* ══════════════════════════════
+   SIM
+══════════════════════════════ */
+const logC=document.getElementById('logCanvas'),LX=logC.getContext('2d');
+const brdC=document.getElementById('boardCanvas'),BX=brdC.getContext('2d');
+const LW=300,LH=300,BW=320,BH=200;
+const lcx=LW/2,lcy=LH/2;
+const MWET=50,MDRY=5,FSP=30;
+let cutY=lcy-72;
+
+function getMoist(v){return MWET-(MWET-MDRY)*(v/100);}
+function bCol(m){
+  const t=Math.max(0,Math.min(1,(m-MDRY)/(MWET-MDRY)));
+  return{
+    l:`rgb(${Math.round(238-t*65)},${Math.round(198-t*108)},${Math.round(138-t*98)})`,
+    d:`rgb(${Math.round(188-t*55)},${Math.round(138-t*78)},${Math.round(78-t*43)})`
+  };
+}
+
+function drawLog(){
+  LX.clearRect(0,0,LW,LH);
+  const R=128;
+  const g=LX.createRadialGradient(lcx,lcy,0,lcx,lcy,R);
+  g.addColorStop(0,'#7a4a2a');g.addColorStop(.15,'#c87941');g.addColorStop(.55,'#d99660');
+  g.addColorStop(.80,'#e8b87a');g.addColorStop(.92,'#c8a060');g.addColorStop(1,'#5c3d1e');
+  LX.beginPath();LX.arc(lcx,lcy,R,0,Math.PI*2);LX.fillStyle=g;LX.fill();
+  LX.save();LX.beginPath();LX.arc(lcx,lcy,R,0,Math.PI*2);LX.clip();
+  for(let r=13;r<R;r+=13){
+    LX.beginPath();LX.arc(lcx,lcy,r,0,Math.PI*2);
+    LX.strokeStyle='rgba(80,40,10,.25)';LX.lineWidth=1.2;LX.stroke();
+  }
+  LX.beginPath();LX.arc(lcx,lcy,5,0,Math.PI*2);LX.fillStyle='#5a2e0a';LX.fill();
+  LX.restore();
+  LX.beginPath();LX.arc(lcx,lcy,R,0,Math.PI*2);LX.strokeStyle='#3a2010';LX.lineWidth=3;LX.stroke();
+
+  // 選択できる板の候補を常時薄く表示する（タップ対象の明示）
+  const targetHw=94,targetBh=24;
+  const targetZones=[
+    {y:lcy,fill:'rgba(39,119,74,.16)',stroke:'rgba(39,119,74,.72)',label:'柾目を選ぶ'},
+    {y:lcy-72,fill:'rgba(192,57,43,.14)',stroke:'rgba(192,57,43,.68)',label:'板目を選ぶ'},
+    {y:lcy+72,fill:'rgba(192,57,43,.14)',stroke:'rgba(192,57,43,.68)',label:'板目を選ぶ'}
+  ];
+  LX.save();LX.beginPath();LX.arc(lcx,lcy,R-3,0,Math.PI*2);LX.clip();
+  targetZones.forEach(z=>{
+    LX.fillStyle=z.fill;LX.fillRect(lcx-targetHw,z.y-targetBh/2,targetHw*2,targetBh);
+    LX.strokeStyle=z.stroke;LX.lineWidth=2;LX.setLineDash([7,5]);
+    LX.strokeRect(lcx-targetHw,z.y-targetBh/2,targetHw*2,targetBh);
+  });
+  LX.restore();LX.setLineDash([]);
+  targetZones.forEach((z,i)=>{
+    LX.font='bold 13px sans-serif';LX.textAlign='center';
+    const boxW=92,boxH=22,boxX=lcx-boxW/2;
+    const boxY=i===0?z.y-targetBh/2-27:(i===1?z.y-targetBh/2-27:z.y+targetBh/2+5);
+    LX.fillStyle='rgba(255,255,255,.90)';LX.strokeStyle=z.stroke;LX.lineWidth=1.5;
+    if(LX.roundRect){LX.beginPath();LX.roundRect(boxX,boxY,boxW,boxH,5);LX.fill();LX.stroke();}
+    else{LX.fillRect(boxX,boxY,boxW,boxH);LX.strokeRect(boxX,boxY,boxW,boxH);}
+    LX.fillStyle=i===0?'#1b5e20':'#9b2d20';LX.fillText(z.label,lcx,boxY+15);
+  });
+
+  const hw=92,bh=19,isMasame=Math.abs(cutY-lcy)<20;
+  LX.save();LX.beginPath();LX.arc(lcx,lcy,R-2,0,Math.PI*2);LX.clip();
+  LX.fillStyle=isMasame?'rgba(60,180,100,.28)':'rgba(220,80,30,.28)';
+  LX.fillRect(lcx-hw,cutY-bh/2,hw*2,bh);LX.restore();
+  LX.beginPath();LX.rect(lcx-hw,cutY-bh/2,hw*2,bh);
+  LX.strokeStyle=isMasame?'#27774a':'#c0392b';LX.lineWidth=2;LX.stroke();
+
+  const fd=cutY<lcy?-1:1;
+  LX.fillStyle='#111';LX.font='bold 17px sans-serif';LX.textAlign='center';
+  LX.fillText(fd<0?'↑ 木表（樹皮側）':'↓ 木表（樹皮側）',lcx,cutY-fd*(bh/2+18));
+
+  // ── 板の右側に柾目/板目ラベル（横書き）──
+  const lx2=lcx+hw+3, ly1=cutY-bh/2, ly2=cutY+bh/2;
+  const lblText=isMasame?'柾目':'板目';
+  LX.font='bold 14px sans-serif';
+  const tw=LX.measureText(lblText).width;
+  const boxW=tw+14, boxH=Math.max(24,bh);
+  LX.fillStyle=isMasame?'#1b5e20':'#bf360c';
+  LX.fillRect(lx2,ly1,boxW,boxH);
+  LX.fillStyle='#fff';LX.textAlign='left';
+  LX.fillText(lblText,lx2+7,ly1+boxH/2+5);
+}
+
+function drawBoard(m){
+  BX.clearRect(0,0,BW,BH);
+  const isMasame=Math.abs(cutY-lcy)<20;
+  const otop=cutY<=lcy;
+  const df=Math.max(0,(FSP-m)/(FSP-MDRY));
+  // warp — fits in BH=200 with labels
+  const wa=df*(isMasame?3:38);
+  const ws=otop?1:-1;
+  const bw=230,bh=28,hw=bw/2,hh=bh/2;
+  // board centred slightly left to leave room for right-side grain label
+  const bx=148, cy=BH/2;
+  BX.save();BX.translate(bx,cy);
+  const tCY=-hh+ws*wa, bCY=hh+ws*wa*.5;
+  BX.beginPath();
+  BX.moveTo(-hw,-hh);BX.quadraticCurveTo(0,tCY,hw,-hh);
+  BX.lineTo(hw,hh);BX.quadraticCurveTo(0,bCY,-hw,hh);BX.closePath();
+  const {l,d}=bCol(m);
+  const gr=BX.createLinearGradient(0,-hh-wa,0,hh+wa);
+  gr.addColorStop(0,l);gr.addColorStop(.5,d);gr.addColorStop(1,l);
+  BX.fillStyle=gr;BX.fill();
+  BX.save();BX.clip();
+  BX.strokeStyle=`rgba(80,40,10,${.15+df*.2})`;BX.lineWidth=1;
+  if(isMasame){for(let x=-hw;x<=hw;x+=11){BX.beginPath();BX.moveTo(x,-60);BX.lineTo(x,60);BX.stroke();}}
+  else{const ac=otop?(hh+60):-(hh+60);for(let r=50;r<=200;r+=18){BX.beginPath();BX.arc(0,ac,r,0,Math.PI*2);BX.stroke();}}
+  BX.restore();
+  BX.beginPath();
+  BX.moveTo(-hw,-hh);BX.quadraticCurveTo(0,tCY,hw,-hh);
+  BX.lineTo(hw,hh);BX.quadraticCurveTo(0,bCY,-hw,hh);BX.closePath();
+  BX.strokeStyle='#3a1a00';BX.lineWidth=2;BX.stroke();
+  BX.restore();
+
+  // 木表/木裏 labels above/below board
+  if(!isMasame&&df>.04){
+    BX.font='bold 15px sans-serif';BX.textAlign='center';
+    const tlY=cy-hh-wa-12, blY=cy+hh+wa*.5+15;
+    if(otop){BX.fillStyle='#a03000';BX.fillText('木表（凹む）',bx,tlY);
+      BX.fillStyle='#27774a';BX.fillText('木裏',bx,blY);}
+    else{BX.fillStyle='#27774a';BX.fillText('木裏',bx,tlY);
+      BX.fillStyle='#a03000';BX.fillText('木表（凹む）',bx,blY);}
+  }
+  if(m>=FSP-.5){BX.font='13px sans-serif';BX.fillStyle='#aaa';BX.textAlign='center';
+    BX.fillText('まだ収縮していません（FSP以上）',bx,BH-5);}
+
+  // ── 上部に柾目/板目ラベル（板CGの上・画面内に収まる位置）──
+  const lblText2=isMasame?'柾目（まさめ）板':'板目（いため）板';
+  BX.font='bold 15px sans-serif';
+  const tw2=BX.measureText(lblText2).width;
+  const lbW=tw2+20, lbH=27;
+  const lbX=(BW-lbW)/2, lbY=4;
+  BX.beginPath();  // 前のパスをクリアしてからラベル矩形を描く
+  BX.fillStyle=isMasame?'#1b5e20':'#bf360c';
+  if(BX.roundRect) BX.roundRect(lbX,lbY,lbW,lbH,4);
+  else BX.rect(lbX,lbY,lbW,lbH);
+  BX.fill();
+  BX.fillStyle='#fff';BX.textAlign='center';
+  BX.fillText(lblText2,BW/2,lbY+lbH/2+5);
+}
+
+function updMoist(m){
+  document.getElementById('moistLabel').textContent=Math.round(m);
+  const pct=(m/MWET)*100;
+  const f=document.getElementById('moistFill');
+  f.style.width=pct+'%';
+  if(m>=FSP)f.style.background='linear-gradient(to right,#6ab0dc,#87ceeb)';
+  else if(m>=15)f.style.background='linear-gradient(to right,#c8a030,#6ab0dc)';
+  else f.style.background='linear-gradient(to right,#e8c87a,#c8a030)';
+  document.getElementById('moistFsp').style.left=((FSP/MWET)*100)+'%';
+  const c=document.getElementById('moistChip');
+  if(m>=FSP){c.textContent='生材に近い — まだ収縮なし';c.style.background='#e3f0fc';c.style.color='#1a5a8a';}
+  else if(m>=20){c.textContent='乾燥中 — 収縮・変形が始まっています';c.style.background='#fff3cd';c.style.color='#7a5000';}
+  else if(m>=10){c.textContent='かなり乾燥 — 変形が大きくなっています';c.style.background='#fde8cc';c.style.color='#8a3a00';}
+  else{c.textContent='乾燥材 — 建材として使えるレベル';c.style.background='#fde0cc';c.style.color='#6a2000';}
+}
+function updText(isMasame,otop){
+  const b=document.getElementById('grainBadge'),ic=document.getElementById('infoCard');
+  if(isMasame){b.textContent='柾目（まさめ）';b.className='grain-badge gm';ic.className='info-card m';
+    ic.innerHTML='表も裏も放射方向 → 縮み方の差なし → <strong>ほとんど反りません ✅</strong>';}
+  else{b.textContent='板目（いため）';b.className='grain-badge gi';ic.className='info-card';
+    const od=otop?'上':'下';
+    ic.innerHTML='<strong>木表（'+od+'）= 接線方向</strong>、木裏 = 放射方向<br>'
+      +'乾燥で木表が<strong>約2倍</strong>縮む → <strong>木表側が凹む（カップ）</strong>向きに反ります。<br>'
+      +'<small style="color:#888;">比率 接線:放射:繊維 = 10:5:0.5〜1</small>';}
+}
+function simUpdate(){
+  const m=getMoist(parseInt(document.getElementById('drySlider').value));
+  updMoist(m);
+  const isMasame=Math.abs(cutY-lcy)<20,otop=cutY<=lcy;
+  drawLog();drawBoard(m);updText(isMasame,otop);
+  const dry=Number(document.getElementById('drySlider').value);
+  if(dry>=95){if(isMasame)SIM_VISITS.masame=true;else SIM_VISITS.itame=true;}
+  const n=Object.values(SIM_VISITS).filter(Boolean).length;
+  document.getElementById('nextActionSim').textContent=n===0?'次の操作：板目材を選び、乾燥スライダーを右端まで動かしてください。':n===1?'次の操作：もう一方の木取りを選び、乾燥を確認してください。':'両方を比較しました。「反りを防ぐ・対処する」へ進んでください。';
+  if(n===2)completeStep('sim');
+}
+function logClick(clientY,rect){
+  let ny=(clientY-rect.top)*(logC.height/rect.height);
+  // 指でも選びやすいよう、中心（柾目）または外側（板目）の代表位置へ吸着する
+  const candidates=[lcy-72,lcy,lcy+72];
+  ny=candidates.reduce((best,y)=>Math.abs(y-ny)<Math.abs(best-ny)?y:best,candidates[0]);
+  cutY=ny;
+  // クリックで木取り位置を変えたらスライダーを初期位置（湿った状態）にリセット
+  document.getElementById('drySlider').value=0;
+  simUpdate();
+}
+logC.addEventListener('pointerdown',e=>{e.preventDefault();logClick(e.clientY,logC.getBoundingClientRect());});
+document.getElementById('drySlider').addEventListener('input',simUpdate);
+simUpdate();
+
+/* ══════════════════════════════
+   FIX
+══════════════════════════════ */
+const FC=document.getElementById('fixCanvas');
+const FX=FC.getContext('2d');
+let fixMethod=0,fixStep=0;
+// Use canvas intrinsic size for drawing coords
+const FW=360,FH=220;
+
+const fixData=[
+  {title:'① 裏返して放置',steps:[
+    {label:'before', desc:'板が反っています（木表側が凹んでいる状態）。軽度な反りならまずこの方法を試します。'},
+    {label:'処置中', desc:'凹んだ面（木表）を下にして、さん木の上に置きます。自重と重力で自然に戻るのを数日〜数週間待ちます。室内か日陰で行いましょう。'},
+    {label:'after',  desc:'うまくいけば反りが緩和されます。完全には戻らない場合や、再び反る場合もあります。変化がなければ次の方法（②ラップ）を試してみましょう。'}
+  ]},
+  {title:'② 凹面にラップ',steps:[
+    {label:'before', desc:'軽度な反りで、①（裏返し）だけでは改善しなかった状態です。'},
+    {label:'処置中', desc:'凹んだ面（木表）だけにラップを覆い、湿気が逃げにくい状態にします。凹面を下にして数日置きます。'},
+    {label:'after',  desc:'片面だけ湿気を閉じ込めることで、木表側に水分差をつけ反りを戻す効果があります。'}
+  ]},
+  {title:'③ 凹面に水分',steps:[
+    {label:'before', desc:'かなり反っている板です。①②で改善しなかった場合に試します。'},
+    {label:'処置中', desc:'凹んだ面（木表）に霧吹きで水を軽くかけます。凹面を下にしてさん木の上に置き、数日〜1週間様子を見ます。※木肌がけば立つことがあります。'},
+    {label:'after',  desc:'木表に水分を与えて膨張させ、反りを相殺します。塗装済みの材には使えません。'}
+  ]},
+  {title:'④ 荷重で矯正',steps:[
+    {label:'before', desc:'水分を与えても戻らない頑固な反りです。'},
+    {label:'処置中', desc:'反った材の凹面を下にしてさん木の上に置き、上から同じ大きさの板と重い材を重ねて荷重をかけます。数日〜1週間以上放置します。'},
+    {label:'after',  desc:'重力と荷重で強制的に反りを矯正します。急激に荷重をかけると割れることがあるので注意！'}
+  ]},
+  {title:'⑤ 塗装で予防',steps:[
+    {label:'before', desc:'まだ反っていない板です。使用前に塗装することで反りを予防します。'},
+    {label:'処置中', desc:'木材の両面（特に裏面）に塗装します。ウレタン塗装は木材の呼吸を抑えて水分変化を防ぎ、反り予防に特に効果的です。'},
+    {label:'after',  desc:'両面に均等に塗装することで木表・木裏の水分変化の差を減らし、反りを大幅に抑制できます。用途に応じて、表裏をできるだけ均等に仕上げます。'}
+  ]}
+];
+
+function setFixMethod(i){
+  fixMethod=i;fixStep=0;
+  FIX_VISITS.add(i);
+  const prevention=[0,4].filter(x=>FIX_VISITS.has(x)).length;
+  const treatment=[1,2,3].filter(x=>FIX_VISITS.has(x)).length;
+  document.getElementById('nextActionFix').textContent=(prevention>=2&&treatment>=2)?'予防と対処を確認しました。確認クイズへ進んでください。':`次の操作：予防方法2項目・対処方法2項目を確認してください（予防${prevention}/2、対処${treatment}/2）。`;
+  if(prevention>=2&&treatment>=2)completeStep('fix');
+  for(let j=0;j<5;j++) document.getElementById('fmBtn'+j).classList.toggle('active',j===i);
+  for(let j=0;j<3;j++) document.getElementById('fstep'+j).classList.toggle('on',j===0);
+  drawFix();
+}
+function setFixStep(i){
+  fixStep=i;
+  for(let j=0;j<3;j++) document.getElementById('fstep'+j).classList.toggle('on',j===i);
+  drawFix();
+}
+
+function drawFBoard(cx,cy,warp,moist,lbl,lcol){
+  // Larger board for fix canvas: bw=200
+  const bw=200,bh=30,hw=bw/2,hh=bh/2;
+  const t=Math.max(0,Math.min(1,(moist-5)/45));
+  const c1=`rgb(${Math.round(238-t*65)},${Math.round(198-t*108)},${Math.round(138-t*98)})`;
+  const c2=`rgb(${Math.round(188-t*55)},${Math.round(138-t*78)},${Math.round(78-t*43)})`;
+  FX.save();FX.translate(cx,cy);
+  const tCY=-hh-warp,bCY=hh-warp*.4;
+  FX.beginPath();
+  FX.moveTo(-hw,-hh);FX.quadraticCurveTo(0,tCY,hw,-hh);
+  FX.lineTo(hw,hh);FX.quadraticCurveTo(0,bCY,-hw,hh);FX.closePath();
+  const gr=FX.createLinearGradient(0,-hh-Math.abs(warp),0,hh+Math.abs(warp));
+  gr.addColorStop(0,c1);gr.addColorStop(.5,c2);gr.addColorStop(1,c1);
+  FX.fillStyle=gr;FX.fill();
+  FX.save();FX.clip();
+  FX.strokeStyle='rgba(80,40,10,.2)';FX.lineWidth=1.2;
+  const ac=-(hh+60);
+  for(let r=50;r<=200;r+=18){FX.beginPath();FX.arc(0,ac,r,0,Math.PI*2);FX.stroke();}
+  FX.restore();
+  FX.beginPath();
+  FX.moveTo(-hw,-hh);FX.quadraticCurveTo(0,tCY,hw,-hh);
+  FX.lineTo(hw,hh);FX.quadraticCurveTo(0,bCY,-hw,hh);FX.closePath();
+  FX.strokeStyle='#3a1a00';FX.lineWidth=2.5;FX.stroke();
+  if(lbl){FX.fillStyle=lcol||'#555';FX.font='bold 14px sans-serif';FX.textAlign='center';
+    FX.fillText(lbl,0,hh+Math.abs(warp*.4)+20);}
+  FX.restore();
+}
+function drawSangi(x,y,w,h){
+  FX.fillStyle='#c87941';
+  FX.fillRect(x,y,50,h);FX.fillRect(x+w-50,y,50,h);
+  FX.fillStyle='#7a4010';FX.font='bold 12px sans-serif';FX.textAlign='center';
+  FX.fillText('さん木',x+25,y+h+16);FX.fillText('さん木',x+w-25,y+h+16);
+}
+
+function drawFix(){
+  FX.clearRect(0,0,FW,FH);
+  const m=fixMethod,s=fixStep;
+  const wb=32,wa=m===4?0:(m===3?5:10); // warp before / after
+  const bx=FW/2,by=FH/2+10;
+
+  // Status text at top
+  const statuses=[
+    ['板が反っています ❌','処置中…','板の反りが緩和する場合があります'],
+    ['板が反っています ❌','ラップ処置中…','板の反りが緩和されました ✅'],
+    ['板が反っています ❌','水分付与中…','板の反りが緩和されました ✅'],
+    ['板が反っています ❌','荷重をかけています…','板の反りが緩和する場合があります'],
+    ['板が反るリスクあり','塗装中…','塗装完了！反りを抑える効果が期待できます']
+  ];
+  const statCol=['#c0392b','#c87941','#27774a'];
+  FX.fillStyle=statCol[s];FX.font='bold 16px sans-serif';FX.textAlign='center';
+  FX.fillText(statuses[m][s],bx,28);
+
+  if(m===0){
+    if(s===1){
+      // upside down board on sangi
+      FX.save();FX.translate(bx,by-15);FX.scale(1,-1);
+      drawFBoard(0,0,wb-8,30,'');FX.restore();
+      drawSangi(bx-110,by+20,220,12);
+      // テキストはさん木の下（板・さん木と重ならない位置）
+      FX.fillStyle='#2980b9';FX.font='bold 13px sans-serif';FX.textAlign='center';
+      FX.fillText('凹面を下にして置く',bx,by+62);
+    } else {
+      drawFBoard(bx,by,s===0?wb:wa,30,'',s===0?'#c0392b':'#27774a');
+    }
+  } else if(m===1){
+    drawFBoard(bx,by,s===0?wb:(s===1?wb*.65:wa),30);
+    if(s===1){
+      FX.save();FX.globalAlpha=.4;FX.fillStyle='#88ccff';
+      FX.fillRect(bx-100,by+6,200,18);FX.restore();
+      FX.fillStyle='#2980b9';FX.font='bold 13px sans-serif';FX.textAlign='center';
+      FX.fillText('凹面（木表）にラップを覆う',bx,by+40);
+    }
+  } else if(m===2){
+    drawFBoard(bx,by,s===0?wb:(s===1?wb*.6:wa),30);
+    if(s===1){
+      for(let i=0;i<12;i++){
+        FX.fillStyle=`rgba(80,150,220,${.5+Math.random()*.3})`;
+        FX.beginPath();
+        FX.arc(bx-80+i*14,by+10+Math.sin(i*1.2)*6,3,0,Math.PI*2);FX.fill();
+      }
+      FX.fillStyle='#2980b9';FX.font='bold 13px sans-serif';FX.textAlign='center';
+      FX.fillText('霧吹きで凹面（木表）に水分を与える',bx,by+40);
+    }
+  } else if(m===3){
+    if(s===1){
+      drawSangi(bx-110,by+28,220,12);
+      drawFBoard(bx,by,wb*.4,30);
+      // board on top
+      FX.fillStyle='#c87941';FX.fillRect(bx-90,by-36,180,14);
+      // weight
+      FX.fillStyle='#888';FX.fillRect(bx-70,by-68,140,28);
+      FX.fillStyle='#444';FX.font='bold 14px sans-serif';FX.textAlign='center';
+      FX.fillText('重し（加重）',bx,by-74);
+      FX.fillStyle='#7a4010';FX.font='12px sans-serif';
+      FX.fillText('板 ＋ さん木',bx,by+55);
+    } else {
+      drawFBoard(bx,by,s===0?wb:wa,30,'',s===0?'#c0392b':'#27774a');
+    }
+  } else {
+    // 塗装: flat board, paint strokes in step 1
+    const warp=s===0?12:0;
+    drawFBoard(bx,by,warp,s===0?38:15,'',s===0?'#888':'#27774a');
+    if(s===1){
+      FX.save();FX.globalAlpha=.55;
+      FX.fillStyle='#d4a040';FX.fillRect(bx-90,by-18,180,9);
+      FX.fillStyle='#b08030';FX.fillRect(bx-90,by+12,180,9);FX.restore();
+      FX.fillStyle='#c87941';FX.font='bold 13px sans-serif';FX.textAlign='center';
+      FX.fillText('両面に塗装（ウレタン / オイル）',bx,by+38);
+    }
+  }
+
+  // Update desc
+  const fd=fixData[fixMethod];
+  document.getElementById('fixDesc').innerHTML=
+    '<strong>'+fd.steps[fixStep].label+'：</strong>'+fd.steps[fixStep].desc;
+}
+
+/* ══════════════════════════════
+   QUIZ (10 questions, shuffled choices)
+══════════════════════════════ */
+const QZ_DATA=[
+  {
+    q:'木材の含水率の計算式として正しいのはどれですか？',
+    opts:['水分重量 ÷ 木材重量（全乾時）× 100','木材重量 ÷ 水分重量 × 100','（水分重量 + 木材重量）÷ 木材重量 × 100','水分重量 × 木材重量 × 100'],
+    ans:0,
+    exp:'含水率 ＝ 水分重量 ÷ 全乾時の木材重量 × 100 です。木材重量1に対し水分0.3なら含水率30%になります。'
+  },
+  {
+    q:'木材が乾燥するとき、収縮・反りが始まる「繊維飽和点（FSP）」はおよそ含水率何%ですか？',
+    opts:['約5%','約15%','約30%','約50%'],
+    ans:2,
+    exp:'繊維飽和点（FSP）は約30%です。これを下回ると細胞壁から水が抜け始め、収縮と反りが生じます。'
+  },
+  {
+    q:'板目材が乾燥したとき、板はどちら側が凹みますか？',
+    opts:['木裏（放射方向）側','木表（接線方向）側','両面が均等に縮む','縮まずに反る方向はない'],
+    ans:1,
+    exp:'接線方向（木表側）は放射方向（木裏側）の約2倍縮むため、木表側が凹む（カップ）方向に反ります。'
+  },
+  {
+    q:'柾目材が板目材より反りにくい理由として正しいのはどれですか？',
+    opts:['柾目は木表・木裏ともに接線方向が揃っているから','柾目は木表・木裏ともに放射方向が揃っているから','柾目は含水率が低いから','柾目は年輪が多いから'],
+    ans:1,
+    exp:'柾目は年輪の半径方向に切り出すため、表も裏も放射方向が揃います。縮み方の差がないため反りが小さくなります。'
+  },
+  {
+    q:'木材の収縮率が最も大きい方向はどれですか？',
+    opts:['繊維（長さ）方向','放射方向（木裏側）','接線方向（木表側）','すべて同じ'],
+    ans:2,
+    exp:'接線方向（木表側・年輪に沿う方向）の収縮率が最も大きく、放射方向の約2倍、繊維方向の約10倍です。'
+  },
+  {
+    q:'建材として一般的に使われる「気乾材状態」の目安の含水率はいくつですか？',
+    opts:['約0%','約5%','約15%','約40%'],
+    ans:2,
+    exp:'気乾材状態（室内の空気と平衡した状態）は約15%が目安です。日本の建材として広く使われる基準です。'
+  },
+  {
+    q:'板目材を床材に使う場合、反りを考慮するとどのように固定するのが正しいですか？',
+    opts:['木表を上向きに固定する','木表を下向きに固定する','木裏を下向きに固定する','向きは関係ない'],
+    ans:1,
+    exp:'木表を下向きに固定すると、反った場合でも中央が浮き上がらず端が浮く程度に抑えられます。木表を上にすると中央が山型に盛り上がり危険です。'
+  },
+  {
+    q:'反りを修正する方法として適切でないのはどれですか？',
+    opts:['凹面（木表）を下にして放置する','凹面（木表）に霧吹きで水分を与える','強火のガスバーナーで素早く加熱乾燥する','凹面を下にして重しで荷重をかける'],
+    ans:2,
+    exp:'急激な加熱乾燥は割れや新たな反りの原因になります。反りの修正は時間をかけて水分調整や荷重を使うのが適切です。'
+  },
+  {
+    q:'木材乾燥の効果として正しくないのはどれですか？',
+    opts:['木材の強度が増す','変色・腐食を防ぐ','含水率が上がり体積が増える','接着剤・塗料の加工がしやすくなる'],
+    ans:2,
+    exp:'乾燥によって含水率は下がります。正しい効果は、強度増加・腐食防止・加工性向上などです。含水率が上がるのは乾燥ではなく吸湿のときです。'
+  },
+  {
+    q:'「さん木」を使った保管テクニックの目的として正しいのはどれですか？',
+    opts:['板と板の間に空気を通し、含水率変化を均等にする','板を素早く乾燥させるために加熱する','板目材を柾目材に変換する','木材の色を均一にする'],
+    ans:0,
+    exp:'さん木を板と板の間にはさんで積み重ねることで空気が流通し、含水率の変化が均等になって反りや歪みを抑制できます。'
+  }
+];
+
+// Fisher-Yates shuffle
+function shuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+/* ── jidokanna スタイル：1問ずつ表示 ── */
+let qIdx=0, qScore=0, qAnswered=false;
+let qOrder=shuffle(QZ_DATA.map((_,i)=>i));
+let qMistakes=[];
+
+const qEl=document.getElementById('quizQuestion');
+const cEl=document.getElementById('quizChoices');
+const rEl=document.getElementById('quizResult');
+const progEl=document.getElementById('quizProgress');
+const scoreEl=document.getElementById('quizScore');
+const barEl=document.getElementById('quizProgressBar');
+const nextBtn=document.getElementById('quizNextBtn');
+const restBtn=document.getElementById('quizRestartBtn');
+
+function renderQuiz(){
+  const q=QZ_DATA[qOrder[qIdx]];qAnswered=false;nextBtn.disabled=true;
+  progEl.textContent=`問題 ${qIdx+1} / ${QZ_DATA.length}`;
+  scoreEl.textContent=`得点 ${qScore} / ${qIdx}`;
+  barEl.style.width=`${((qIdx+1)/QZ_DATA.length)*100}%`;
+  qEl.textContent=q.q;rEl.className='quiz-result';rEl.textContent='';cEl.innerHTML='';
+  document.getElementById('nextActionEasy').textContent='問題に回答してください。';
+  shuffle(q.opts).forEach(c=>{
+    const btn=document.createElement('button');btn.className='quiz-choice-btn';btn.type='button';btn.textContent=c;
+    btn.addEventListener('click',()=>{
+      if(qAnswered)return;qAnswered=true;const ok=c===q.opts[q.ans];if(ok)qScore++;else qMistakes.push({q:q.q,user:c,correct:q.opts[q.ans],exp:q.exp});
+      scoreEl.textContent=`得点 ${qScore} / ${qIdx+1}`;
+      cEl.querySelectorAll('.quiz-choice-btn').forEach(b=>{b.disabled=true;if(b.textContent===q.opts[q.ans])b.classList.add('correct');else if(b===btn&&!ok)b.classList.add('wrong');});
+      rEl.className=`quiz-result ${ok?'ok':'ng'}`;
+      rEl.innerHTML=`${ok?'✅ 正解！':`❌ 不正解。正解は「${q.opts[q.ans]}」`}<br><span style="font-weight:normal">${q.exp}</span>`;
+      nextBtn.disabled=false;document.getElementById('nextActionEasy').textContent='「次の問題へ」を押してください。';
+    });cEl.appendChild(btn);
+  });
+}
+function finishQuiz(){
+  const pct=Math.round(qScore/QZ_DATA.length*100);progEl.textContent='クイズ終了';scoreEl.textContent=`得点 ${qScore} / ${QZ_DATA.length}`;barEl.style.width='100%';qEl.textContent='結果';cEl.innerHTML='';nextBtn.disabled=true;
+  const review=qMistakes.length?`<div class="quiz-review"><div class="quiz-review-title">間違えた問題と正解</div>${qMistakes.map((m,i)=>`<div class="quiz-review-item"><b>${i+1}. ${m.q}</b><br>あなたの回答：${m.user}<br><span class="quiz-review-answer">正しい答え：${m.correct}</span><br>${m.exp}</div>`).join('')}</div>`:'<div class="quiz-review-perfect">全問正解です。間違えた問題はありません。</div>';
+  rEl.className='quiz-result fin';rEl.innerHTML=`🎉 クイズ終了！<br>得点：<b>${qScore} / ${QZ_DATA.length} 点（${pct}%）</b><br>${pct>=80?'木材の含水率と反りの関係をよく理解できています。':pct>=60?'基本的な内容は理解できています。間違えた内容を復習しましょう。':'含水率から順番に、もう一度確認しましょう。'}${review}`;
+  document.getElementById('nextActionEasy').textContent='結果と間違えた問題を確認してください。';
+}
+nextBtn.addEventListener('click',()=>{if(!qAnswered)return;if(qIdx<QZ_DATA.length-1){qIdx++;renderQuiz();}else finishQuiz();});
+restBtn.addEventListener('click',()=>{qIdx=0;qScore=0;qAnswered=false;qMistakes=[];qOrder=shuffle(QZ_DATA.map((_,i)=>i));renderQuiz();});
+
+// initial draw
+drawFix();
+renderQuiz();
+renderProgress();
+</script>
+</body>
+</html>

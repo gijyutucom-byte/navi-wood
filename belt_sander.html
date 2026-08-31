@@ -1,0 +1,2392 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ベルトサンダーの基本</title>
+<style>
+  :root {
+    --main:    #6f4e37;
+    --main-2:  #8b6b4c;
+    --sub:     #8a6647;
+    --accent:  #ead7bb;
+    --bg:      #f7f4ef;
+    --panel:   #fffdfa;
+    --line:    #e5d8c7;
+    --text:    #2f2a24;
+    --normal:  #2e7d32;
+    --warning: #ed8b00;
+    --danger:  #c62828;
+    --stop:    #607d8b;
+    --shadow:  0 10px 24px rgba(0,0,0,0.08);
+    --radius:  16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    min-height: 100%;
+    font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    background: linear-gradient(180deg, #faf7f2, #efe7dc);
+    color: var(--text);
+    overflow-y: auto;
+  }
+
+  /* ── Header ─────────────────────────────── */
+  header {
+    background: linear-gradient(135deg, var(--main), var(--main-2));
+    color: white;
+    padding: 7px 16px;
+    box-shadow: var(--shadow);
+  }
+  header h1 {
+    font-size: clamp(0.88rem, 1.8vw, 1.1rem);
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Main layout ─────────────────────────── */
+  .container {
+    width: min(1280px, 100%);
+    margin: 0 auto;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  /* ── Tab row ─────────────────────────────── */
+  .tabs {
+    display: grid;
+    grid-template-columns: auto repeat(4, 1fr);
+    gap: 8px;
+  }
+  .tab-btn {
+    border: none;
+    background: #fff;
+    color: var(--main);
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    font-family: inherit;
+    font-size: clamp(0.75rem, 1.2vw, 0.88rem);
+    min-height: 44px;
+    transition: background 0.18s, color 0.18s;
+  }
+  .tab-btn.active { background: var(--main); color: #fff; }
+  .back-to-menu {
+    background: #5c4a35; color: #fff; border: none; border-radius: 10px;
+    padding: 0 12px; font-size: 0.78rem; font-weight: 700;
+    cursor: pointer; white-space: nowrap; min-height: 44px;
+    font-family: inherit;
+  }
+  .back-to-menu:hover { background: var(--main); }
+
+  /* ── Panel ───────────────────────────────── */
+  .panel {
+    display: none;
+    background: var(--panel);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow);
+  }
+  .panel.active { display: block; }
+  .section-title {
+    color: var(--main);
+    font-size: clamp(0.88rem, 1.4vw, 1.0rem);
+    font-weight: 700;
+    display: inline;
+  }
+  .section-lead {
+    font-size: clamp(0.70rem, 1.0vw, 0.80rem);
+    color: #5a4a38;
+    display: inline;
+    margin-left: 0.5em;
+  }
+  .section-line { margin-bottom: 8px; line-height: 1.4; }
+
+  /* ── 図解エリア（各部の名称） ─────────────── */
+  .diagram-layout { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 760px) {
+    .diagram-layout { grid-template-columns: 1fr 280px; align-items: start; }
+  }
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1200 / 760;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .canvas-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .label-overlay { position: absolute; inset: 0; pointer-events: none; }
+  .plabel {
+    position: absolute;
+    pointer-events: all;
+    background: rgba(111,78,55,0.88);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: clamp(0.58rem, 1.15vw, 0.74rem);
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    line-height: 1.3;
+    transition: background 0.15s, transform 0.1s;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+  }
+  .plabel:hover  { background: rgba(88,58,35,1); transform: translate(-50%,-50%) scale(1.08); }
+  .plabel.active { background: #c0622a; box-shadow: 0 0 0 3px rgba(192,98,42,0.38); }
+  .lead-svg {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    pointer-events: none; overflow: visible;
+  }
+  .lead-line {
+    stroke: rgba(111,78,55,0.55); stroke-width: 1.5; fill: none; stroke-dasharray: 4 3;
+  }
+  .lead-line.active { stroke: rgba(192,98,42,0.9); stroke-width: 2.4; }
+
+  /* ── 解説カード ──────────────────────────── */
+  .info-card {
+    background: #fffaf4;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    min-height: 160px;
+  }
+  .info-badge {
+    display: inline-block; background: var(--main); color: #fff;
+    font-size: 0.82rem; font-weight: 700; border-radius: 6px;
+    padding: 2px 10px; margin-bottom: 8px;
+  }
+  .info-title {
+    font-size: clamp(0.95rem, 1.6vw, 1.1rem); font-weight: 700;
+    color: var(--main); margin-bottom: 6px;
+  }
+  .info-text { font-size: clamp(0.76rem, 1.2vw, 0.86rem); line-height: 1.75; }
+  .info-safety {
+    margin-top: 10px; font-size: clamp(0.72rem, 1.1vw, 0.80rem); line-height: 1.7;
+    color: #8a2c2c; background: #fff2f2; border-left: 4px solid var(--danger);
+    border-radius: 6px; padding: 7px 10px; display: none;
+  }
+  .info-safety.show { display: block; }
+  .info-hint { font-size: clamp(0.7rem, 1.0vw, 0.78rem); color: #9a7a5a; margin-top: 10px; }
+
+  /* ── 安全パネル ──────────────────────────── */
+  .safety-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 10px; margin-top: 8px;
+  }
+  .safety-card {
+    background: #fffaf4; border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px 14px;
+  }
+  .safety-card h3 {
+    font-size: 0.84rem; color: var(--main); font-weight: 700;
+    margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+  }
+  .safety-card h3 .ico { font-size: 1.1rem; }
+  .safety-card ul { list-style: none; padding: 0; }
+  .safety-card ul li {
+    font-size: 0.78rem; line-height: 1.6; padding-left: 14px;
+    position: relative; color: var(--text);
+  }
+  .safety-card ul li::before {
+    content: '▸'; position: absolute; left: 0; color: var(--main-2);
+  }
+  .safety-note {
+    margin-top: 10px; font-size: 0.80rem; line-height: 1.7; font-weight: 700;
+    color: #7a3a0a; background: #fff6e6; border: 1px solid #ffd699;
+    border-left: 5px solid var(--warning); border-radius: 10px; padding: 10px 12px;
+  }
+
+  /* ── シミュレータ ────────────────────────── */
+  #panel-simulator { display: none; }
+  #panel-simulator.active { display: block; }
+  .sim-layout { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 760px) {
+    .sim-layout { grid-template-columns: 1fr 262px; align-items: start; }
+  }
+  .sim-canvas-wrap {
+    position: relative; width: 100%; aspect-ratio: 1200 / 760;
+    background: #fff; border: 1px solid var(--line);
+    border-radius: 14px; overflow: hidden; box-shadow: var(--shadow);
+  }
+  .sim-canvas-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .sim-danger-overlay {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    width: 72%; padding: 14px 10px;
+    display: none; align-items: center; justify-content: center; text-align: center;
+    background: rgba(198,40,40,0.93); color: #fff;
+    font-size: clamp(15px, 3.4vw, 32px); font-weight: 900; line-height: 1.3;
+    z-index: 20; pointer-events: none; border-radius: 10px;
+    border: 3px solid #8b0000; letter-spacing: 0.04em;
+  }
+  .sim-danger-overlay.show { display: flex; }
+
+  .sim-ctrl-card {
+    background: #fffaf4; border: 1px solid var(--line);
+    border-radius: 14px; padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .sim-ctrl-card.danger { border-color: var(--danger); background: #fff0f0; }
+  .sim-ctrl-title {
+    font-size: 0.80rem; font-weight: 700; color: var(--main);
+    border-bottom: 1px solid var(--line); padding-bottom: 5px;
+  }
+  .sim-sub-title {
+    font-size: 0.72rem; font-weight: 700; color: var(--main-2); margin-top: 2px;
+  }
+  .sim-btn {
+    padding: 7px 12px; font-size: clamp(0.72rem, 1.05vw, 0.82rem); font-weight: 700;
+    border: none; border-radius: 8px; cursor: pointer; font-family: inherit;
+    min-height: 38px; width: 100%; text-align: left; white-space: nowrap;
+    background: #efe6da; color: var(--text);
+    transition: background 0.15s, box-shadow 0.15s;
+  }
+  .sim-btn.btn-off  { background: var(--danger); color: #fff; }
+  .sim-btn.btn-on   { background: var(--normal); color: #fff; box-shadow: 0 0 8px rgba(46,125,50,.5); }
+  .sim-btn.btn-dark { background: #555; color: #fff; }
+  .sim-btn.btn-act  { background: #1565c0; color: #fff; }
+  .sim-btn.btn-act2 { background: #0d47a1; color: #fff; box-shadow: 0 0 8px rgba(13,71,161,.6); }
+  .sim-btn.btn-reset{ background: var(--stop); color: #fff; }
+  .sim-btn.btn-trouble { background: #fff; color: #8a2c2c; border: 2px solid #e0b4b4; font-size: 0.72rem; min-height: 34px; }
+  .sim-btn:disabled { background: #cfc6bb !important; color: #fff !important; cursor: not-allowed; box-shadow: none !important; }
+  .sim-select-label { font-size: 0.74rem; font-weight: 700; color: var(--main); margin-bottom: 3px; }
+  .sim-select {
+    padding: 7px 8px; border-radius: 8px; border: 1px solid var(--line);
+    font-family: inherit; font-size: clamp(0.70rem, 1.0vw, 0.80rem); font-weight: 700;
+    background: #fff; color: var(--text); cursor: pointer; width: 100%;
+  }
+  .sim-select:disabled { background: #eee; color: #888; cursor: not-allowed; }
+  .seg-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .seg-btn {
+    border: 2px solid var(--line); background: #fff; color: var(--text);
+    border-radius: 8px; font-family: inherit; font-size: 0.74rem; font-weight: 700;
+    padding: 7px 2px; cursor: pointer; min-height: 36px;
+  }
+  .seg-btn.active { background: var(--main); color: #fff; border-color: var(--main); }
+  .seg-btn.active[data-p="strong"] { background: var(--danger); border-color: var(--danger); }
+  .seg-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  #simStatus {
+    font-size: clamp(0.68rem, 1.0vw, 0.78rem); color: #5a4a38;
+    padding: 6px 8px; background: rgba(111,78,55,0.07);
+    border-radius: 6px; border-left: 3px solid var(--main-2); line-height: 1.5;
+  }
+  .sim-danger-msg {
+    display: none; font-size: clamp(0.68rem, 1.0vw, 0.76rem); font-weight: 700;
+    color: #8a1010; line-height: 1.65; padding: 8px 10px;
+    background: #fff0f0; border: 1px solid var(--danger);
+    border-left: 5px solid var(--danger); border-radius: 8px; white-space: pre-wrap;
+  }
+  .sim-danger-msg.show { display: block; }
+  .sim-danger-msg.warn {
+    color: #7a3a0a; background: #fff6e6; border-color: var(--warning); border-left-color: var(--warning);
+  }
+  .sim-step {
+    font-size: 0.70rem; line-height: 1.6; color: #5a4a38;
+    background: #fff; border: 1px dashed var(--line); border-radius: 8px; padding: 7px 9px;
+  }
+  .sim-step b { color: var(--main); }
+
+  /* ── 確認クイズ ──────────────────────────── */
+  .quiz-panel-wrap { display: flex; flex-direction: column; gap: 10px; max-width: 700px; }
+  .quiz-meta-row {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 6px; font-size: 0.84rem; font-weight: 700; color: var(--main);
+  }
+  .quiz-progress-bar-wrap {
+    width: 100%; height: 7px; background: var(--line); border-radius: 999px; overflow: hidden;
+  }
+  .quiz-progress-bar { height: 100%; background: var(--main); border-radius: 999px; transition: width 0.35s; }
+  .quiz-question {
+    font-size: clamp(0.86rem, 1.3vw, 1.0rem); font-weight: 700; line-height: 1.55;
+    background: #fffaf4; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+  }
+  .quiz-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  @media (max-width: 560px) { .quiz-choices { grid-template-columns: 1fr; } }
+  .quiz-choice-btn {
+    border: 2px solid var(--line); background: #fff; color: var(--text);
+    padding: 10px 12px; border-radius: 10px; cursor: pointer; text-align: left;
+    font-family: inherit; font-size: clamp(0.76rem, 1.1vw, 0.86rem); line-height: 1.4;
+    transition: background 0.15s, border-color 0.15s; min-height: 44px;
+  }
+  .quiz-choice-btn:hover:not(:disabled) { background: #f5ede3; border-color: var(--main-2); }
+  .quiz-choice-btn.correct { background: #e6f4ea; border-color: var(--normal); color: #1b5e20; }
+  .quiz-choice-btn.wrong   { background: #fdecea; border-color: var(--danger); color: #7f0000; }
+  .quiz-choice-btn:disabled { cursor: default; }
+  .quiz-result {
+    display: none; padding: 10px 14px; border-radius: 10px;
+    font-size: clamp(0.76rem, 1.1vw, 0.84rem); line-height: 1.6;
+  }
+  .quiz-result.ok  { display: block; background: #e6f4ea; color: #1b5e20; border: 1px solid #a5d6a7; }
+  .quiz-result.ng  { display: block; background: #fdecea; color: #7f0000; border: 1px solid #ef9a9a; }
+  .quiz-result.fin { display: block; background: #fff8e1; color: #5d4037; border: 1px solid #ffe082; }
+  .quiz-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .quiz-action-btn {
+    padding: 9px 20px; border: none; border-radius: 8px; font-family: inherit;
+    font-size: clamp(0.76rem, 1.1vw, 0.84rem); font-weight: 700; cursor: pointer;
+    background: var(--main); color: #fff; min-height: 44px;
+  }
+  .quiz-action-btn:hover { background: var(--main-2); }
+  .quiz-action-btn.secondary { background: #8b6b4c; }
+
+  /* ── 起動時モーダル ──────────────────────── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center; z-index: 9999;
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal-box {
+    background: #fff; max-width: 600px; width: 92%;
+    border-radius: 14px; padding: 20px 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    max-height: 88vh; overflow: auto;
+    font-size: 14px; line-height: 1.65; color: var(--text);
+  }
+  .modal-box h2 { margin: 0 0 10px; font-size: 17px; color: var(--main); }
+  .modal-box p  { margin: 6px 0; white-space: pre-wrap; }
+  .modal-box b  { color: var(--main); }
+  .modal-footer { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .modal-start-btn {
+    padding: 10px 22px; border: none; border-radius: 8px;
+    background: var(--main); color: #fff; font-weight: 700;
+    cursor: pointer; font-size: 14px; font-family: inherit; min-height: 44px;
+  }
+  .modal-index-btn {
+    padding: 10px 16px; border: none; border-radius: 8px;
+    background: #888; color: #fff; font-weight: 700;
+    cursor: pointer; font-size: 13px; font-family: inherit; min-height: 44px;
+  }
+
+
+  /* ── GIGA端末（1366×768想定）画面内レイアウト ── */
+  html, body { width:100%; height:100%; overflow:hidden; }
+  body { min-height:0; }
+  header { height:42px; padding:7px 16px; display:flex; align-items:center; }
+  header h1 { font-size:clamp(1.05rem,1.55vw,1.35rem); }
+  .container {
+    width:min(1320px,100%); height:calc(100vh - 42px); padding:7px 10px 9px;
+    gap:6px; overflow:hidden;
+  }
+  .tabs { flex:0 0 48px; gap:7px; }
+  .tab-btn,.back-to-menu { min-height:46px; padding:7px 9px; font-size:clamp(.84rem,1.1vw,1rem); }
+  .panel { flex:1 1 auto; min-height:0; height:calc(100vh - 103px); overflow:hidden; padding:10px 12px; }
+  .panel.active { display:flex; flex-direction:column; }
+  .section-line { flex:0 0 auto; margin-bottom:6px; }
+  .section-title { font-size:clamp(1rem,1.35vw,1.18rem); }
+  .section-lead { font-size:clamp(.78rem,1vw,.92rem); }
+  .diagram-layout,.sim-layout { flex:1 1 auto; min-height:0; align-items:center; }
+  /* CGは1200×760の縦横比を必ず維持する。高さと幅を同時に100%指定しない。 */
+  .canvas-wrap,.sim-canvas-wrap {
+    width:100%;
+    height:auto;
+    max-width:100%;
+    max-height:100%;
+    aspect-ratio:1200 / 760;
+    justify-self:center;
+    align-self:start;
+    flex:none;
+  }
+  .canvas-wrap canvas,.sim-canvas-wrap canvas,
+  .lead-svg,.label-overlay {
+    width:100%;
+    height:100%;
+  }
+  .diagram-layout { grid-template-columns:minmax(0,1fr) 300px; }
+  .sim-layout { grid-template-columns:minmax(0,1fr) 300px; }
+  .info-card { min-height:0; height:100%; padding:12px 14px; display:flex; flex-direction:column; }
+  .info-badge { font-size:.9rem; }
+  .info-title { font-size:clamp(1.05rem,1.4vw,1.24rem); }
+  .info-text { font-size:clamp(.84rem,1.08vw,.98rem); line-height:1.65; }
+  .info-safety { font-size:clamp(.8rem,1vw,.92rem); }
+  .plabel { font-size:clamp(.69rem,.95vw,.84rem); padding:5px 8px; }
+  .sim-ctrl-card { height:100%; min-height:0; overflow:hidden; padding:8px 10px; gap:5px; }
+  .sim-btn { min-height:34px; padding:5px 9px; font-size:clamp(.75rem,.94vw,.87rem); }
+  .sim-select { padding:5px 7px; font-size:clamp(.74rem,.9vw,.84rem); }
+  .sim-sub-title,.sim-select-label,.sim-ctrl-title { font-size:.8rem; }
+  .sim-step { font-size:.73rem; line-height:1.45; padding:5px 7px; }
+  #simStatus,.sim-danger-msg { font-size:.75rem; line-height:1.45; padding:5px 7px; }
+  .quiz-panel-wrap { flex:1 1 auto; min-height:0; max-width:none; }
+  .quiz-question { font-size:clamp(1rem,1.25vw,1.15rem); padding:10px 13px; }
+  .quiz-choice-btn { font-size:clamp(.88rem,1.05vw,1rem); min-height:50px; padding:9px 11px; }
+  .quiz-result { font-size:clamp(.86rem,1vw,.96rem); }
+  .quiz-action-btn { font-size:.9rem; min-height:42px; }
+
+  /* 学習確認・ロック表示 */
+  .completion-box {
+    margin-top:auto; background:#f3f8f2; border:2px solid #b7d7b9; border-radius:12px;
+    padding:9px 11px; font-size:clamp(.82rem,1vw,.94rem); line-height:1.45; font-weight:700;
+  }
+  .completion-box label { display:flex; gap:9px; align-items:flex-start; cursor:pointer; }
+  .completion-box input { width:22px; height:22px; flex:0 0 22px; accent-color:var(--normal); }
+  .completion-box.locked { background:#f4f4f4; border-color:#ccc; color:#777; }
+  #partsCompletionBox { margin-top:12px; }
+  .progress-mini { margin-top:6px; font-size:.78rem; color:#5a4a38; }
+  .tab-btn.locked { background:#ddd; color:#777; cursor:not-allowed; box-shadow:none; }
+  .lock-hint { display:none; position:fixed; left:50%; top:92px; transform:translateX(-50%); z-index:9000;
+    background:#7a3a0a; color:#fff; border-radius:10px; padding:10px 16px; font-size:.92rem; font-weight:700;
+    box-shadow:0 6px 20px rgba(0,0,0,.25); }
+  .lock-hint.show { display:block; }
+
+  /* 安全ポイントは4群に圧縮し，上側に詰めて大きく表示 */
+  #panel-safety { justify-content:flex-start; }
+  #panel-safety .section-line { margin-bottom:8px; }
+  #panel-safety .section-title { font-size:clamp(1.15rem,1.55vw,1.38rem); }
+  #panel-safety .section-lead { font-size:clamp(.92rem,1.15vw,1.05rem); }
+  .safety-grid {
+    flex:0 0 auto;
+    min-height:0;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-rows:auto auto;
+    align-content:start;
+    gap:10px;
+    margin-top:2px;
+  }
+  .safety-card {
+    min-height:0;
+    padding:13px 16px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+  }
+  .safety-card h3 { font-size:clamp(1.12rem,1.42vw,1.3rem); margin-bottom:8px; }
+  .safety-card h3 .ico { font-size:1.35em; }
+  .safety-card ul li {
+    font-size:clamp(.98rem,1.22vw,1.12rem);
+    line-height:1.62;
+    padding-left:20px;
+    margin:1px 0;
+  }
+  .safety-note {
+    flex:0 0 auto;
+    margin-top:9px;
+    padding:10px 13px;
+    font-size:clamp(.95rem,1.15vw,1.05rem);
+    line-height:1.5;
+  }
+  #panel-safety .completion-box {
+    margin-top:9px;
+    font-size:clamp(.92rem,1.1vw,1.02rem);
+    padding:10px 12px;
+  }
+
+  @media (max-width:900px){
+    .diagram-layout,.sim-layout{grid-template-columns:minmax(0,1fr) 275px;}
+  }
+  @media (max-height:700px){
+    header{height:36px}.container{height:calc(100vh - 36px);padding:5px 8px}.tabs{flex-basis:42px}
+    .tab-btn,.back-to-menu{min-height:40px}.panel{height:calc(100vh - 88px);padding:7px 9px}
+    .section-line{margin-bottom:4px}.safety-card{padding:7px 10px}.safety-card ul li{line-height:1.45}
+    .completion-box{padding:6px 9px}.sim-btn{min-height:30px;padding:3px 7px}.sim-ctrl-card{gap:3px}
+  }
+
+
+
+  /* ── 加工シミュレータの操作パネルをスクロール無しで見やすく再構成 ── */
+  #panel-simulator .sim-layout {
+    grid-template-columns: minmax(0,1fr) 338px;
+    align-items: start;
+    gap: 10px;
+  }
+  #panel-simulator .sim-ctrl-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 8px 9px;
+    gap: 6px;
+  }
+  #panel-simulator .sim-ctrl-title {
+    font-size: .84rem;
+    padding-bottom: 4px;
+  }
+  .sim-selects-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .sim-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  #panel-simulator .sim-select-label,
+  #panel-simulator .sim-sub-title,
+  #panel-simulator .sim-ctrl-title {
+    font-size: .8rem;
+  }
+  #panel-simulator .sim-select {
+    padding: 5px 7px;
+    font-size: clamp(.72rem,.88vw,.82rem);
+  }
+  .sim-action-grid,
+  .sim-danger-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .sim-action-grid .full,
+  .sim-danger-grid .full { grid-column: 1 / -1; }
+  #panel-simulator .sim-btn {
+    width: 100%;
+    min-height: 34px;
+    padding: 5px 6px;
+    text-align: center;
+    white-space: normal;
+    line-height: 1.22;
+    font-size: clamp(.72rem,.88vw,.83rem);
+  }
+  #panel-simulator .sim-btn.btn-trouble {
+    min-height: 33px;
+    font-size: .71rem;
+  }
+  #panel-simulator .seg-row {
+    gap: 5px;
+  }
+  #panel-simulator .seg-btn {
+    min-height: 34px;
+    padding: 5px 2px;
+    font-size: .72rem;
+  }
+  .sim-message-stack {
+    display: none !important;
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  #panel-simulator #simStatus,
+  #panel-simulator .sim-danger-msg,
+  #panel-simulator .sim-step {
+    margin: 0;
+    padding: 5px 7px;
+    font-size: .71rem;
+    line-height: 1.42;
+  }
+  @media (max-width: 1120px) {
+    #panel-simulator .sim-layout { grid-template-columns: minmax(0,1fr) 310px; }
+    .sim-selects-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-height: 760px) {
+    #panel-simulator .sim-ctrl-card { padding: 7px 8px; gap: 5px; }
+    #panel-simulator .sim-btn { min-height: 31px; padding: 4px 5px; font-size: .7rem; }
+    #panel-simulator .sim-btn.btn-trouble { font-size: .68rem; }
+    #panel-simulator .seg-btn { min-height: 30px; font-size: .69rem; }
+    #panel-simulator #simStatus,
+    #panel-simulator .sim-danger-msg,
+    #panel-simulator .sim-step { padding: 4px 6px; font-size: .68rem; line-height: 1.34; }
+  }
+
+
+
+  /* ── 今回の改善：加工開始ボタン・CG上の危険表示・名称確認済み表示 ── */
+  .plabel.checked { background:#2e7d32; color:#fff; box-shadow:0 0 0 2px rgba(46,125,50,.25); }
+  .plabel.checked::before { content:'✓ '; font-weight:900; }
+  .plabel.active,.plabel.checked.active { background:#c0622a; box-shadow:0 0 0 3px rgba(192,98,42,.38); }
+  #simTouchBtn.sim-start-btn {
+    grid-column:1 / -1; min-height:44px !important; padding:8px 10px !important;
+    font-size:clamp(.88rem,1.05vw,1rem) !important; font-weight:900; text-align:center;
+    background:#0d47a1; border:2px solid #08356f;
+    box-shadow:0 4px 0 #08356f,0 0 10px rgba(13,71,161,.28);
+  }
+  #simTouchBtn.sim-start-btn:disabled { box-shadow:none; }
+  .sim-danger-overlay {
+    width:88%; max-width:920px; min-height:0; padding:15px 18px;
+    justify-content:flex-start; text-align:left; font-size:clamp(13px,1.45vw,20px);
+    font-weight:800; line-height:1.5; letter-spacing:0; white-space:pre-wrap; border-width:3px;
+  }
+  .sim-danger-overlay .danger-overlay-text { width:100%; }
+  @media (max-height:760px){.sim-danger-overlay{padding:11px 14px;font-size:clamp(12px,1.25vw,17px);line-height:1.4;}}
+
+
+
+  /* ── クイズ終了時の誤答一覧 ── */
+  .quiz-review {
+    margin-top: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 7px;
+    text-align: left;
+  }
+  .quiz-review-title {
+    grid-column: 1 / -1;
+    font-size: clamp(.9rem,1.05vw,1rem);
+    font-weight: 900;
+    color: var(--main);
+    margin-bottom: 1px;
+  }
+  .quiz-review-item {
+    background: #fff;
+    border: 1px solid #e6cfc7;
+    border-left: 5px solid var(--danger);
+    border-radius: 9px;
+    padding: 7px 9px;
+    font-size: clamp(.73rem,.9vw,.84rem);
+    line-height: 1.4;
+    color: var(--text);
+  }
+  .quiz-review-item b { color: #7f0000; }
+  .quiz-review-answer { color: #1b5e20; font-weight: 800; }
+  .quiz-review-perfect {
+    margin-top: 8px;
+    padding: 9px 12px;
+    border-radius: 9px;
+    background: #e6f4ea;
+    border: 1px solid #a5d6a7;
+    color: #1b5e20;
+    font-weight: 800;
+  }
+  #panel-quiz .quiz-result.fin {
+    max-height: none;
+  }
+  @media (max-width: 760px) {
+    .quiz-review { grid-template-columns: 1fr; }
+  }
+  @media (max-height: 720px) {
+    .quiz-review { gap: 5px; }
+    .quiz-review-item { padding: 5px 7px; font-size: .7rem; line-height: 1.3; }
+  }
+
+
+  /* ===== 学習ナビゲーション改善 ===== */
+  .next-action-banner{flex:0 0 auto;display:flex;align-items:center;gap:10px;background:#e8f1ff;border:3px solid #1565c0;border-radius:13px;padding:9px 14px;margin:0 0 7px;font-weight:900;color:#0d477f;font-size:clamp(.9rem,1.15vw,1.08rem);box-shadow:0 3px 0 rgba(13,71,161,.18)}
+  .next-action-num{display:inline-flex;align-items:center;justify-content:center;width:31px;height:31px;border-radius:50%;background:#1565c0;color:#fff;flex:0 0 31px}
+  .process-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-bottom:7px;flex:0 0 auto}
+  .process-item{border:1px solid #c7cfd7;background:#edf0f2;color:#65717c;border-radius:8px;padding:6px 4px;text-align:center;font-size:clamp(.62rem,.78vw,.74rem);font-weight:800;line-height:1.25}
+  .process-item.current{border:2px solid #1565c0;background:#e8f1ff;color:#0d47a1}
+  .process-item.done{border-color:#72b47a;background:#e7f5e9;color:#1b5e20}
+  .status-badges{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+  .status-badge{background:#f0f1f2;border:1px solid #d6d9dc;border-radius:8px;padding:5px 4px;text-align:center;font-size:.69rem;font-weight:800;line-height:1.25;color:#5d666e}
+  .status-badge.ok{background:#e7f5e9;border-color:#9ccc9f;color:#1b5e20}
+  .sim-btn.next-action,.sim-select.next-action{outline:3px solid #1565c0!important;outline-offset:1px;background:#1565c0!important;color:#fff!important;box-shadow:0 4px 0 #0d477f!important}
+  .sim-btn.attention-action{outline:3px solid #ed8b00!important;outline-offset:1px;background:#ed8b00!important;color:#fff!important}
+  .danger-learning-box{border:2px solid #ed8b00;background:#fff8e8;border-radius:10px;padding:7px 8px}
+  .danger-learning-box summary{cursor:pointer;font-weight:900;color:#7a3a0a;font-size:.78rem}
+  .danger-learning-note{font-size:.69rem;color:#8a2c2c;font-weight:800;margin:4px 0 6px}
+  .safety-judgment{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .judge-card{background:#fff;border:2px solid #e2d5c5;border-radius:10px;padding:9px 10px;font-size:clamp(.78rem,.95vw,.9rem);line-height:1.4}
+  .judge-options{display:flex;gap:7px;margin-top:7px}.judge-btn{flex:1;border:2px solid #b9b0a4;background:#fff;border-radius:8px;padding:7px;font-weight:800;cursor:pointer}.judge-btn.correct{background:#e7f5e9;border-color:#2e7d32;color:#1b5e20}.judge-btn.wrong{background:#fdecea;border-color:#c62828;color:#7f0000}
+  .judge-feedback{min-height:1.3em;margin-top:5px;font-size:.76rem;font-weight:800}
+  .danger-icons{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:7px}.danger-icon{background:#fff6e6;border:1px solid #ffd699;border-radius:9px;padding:6px;text-align:center;font-size:clamp(.68rem,.82vw,.78rem);font-weight:800;line-height:1.3}
+  .result-eval{display:none;margin-top:6px;background:#e7f5e9;border:2px solid #72b47a;border-radius:10px;padding:8px 10px;font-size:.75rem;line-height:1.5;color:#1b5e20}.result-eval.show{display:block}.result-eval-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:5px}.result-eval-grid span{background:#fff;border-radius:6px;padding:4px;text-align:center;font-weight:800}
+  #simTouchBtn,#simMoveBtn,#simReleaseBtn{touch-action:none;user-select:none;-webkit-user-select:none}
+  @media(max-height:760px){.next-action-banner{padding:6px 10px;margin-bottom:5px}.process-item{padding:4px 2px}.status-badge{padding:3px 2px}.danger-icons{gap:4px}.danger-icon{padding:4px}.safety-judgment{gap:5px}.judge-card{padding:6px 8px}}
+
+
+  /* CG上の次操作ガイド */
+  .sim-next-overlay{
+    position:absolute;left:50%;bottom:2.2%;top:auto;transform:translateX(-50%);
+    width:min(88%,900px);display:flex;align-items:center;justify-content:center;gap:12px;
+    padding:11px 18px;border:3px solid #0d47a1;border-radius:14px;
+    background:rgba(232,241,255,.97);color:#0d477f;
+    font-size:clamp(16px,1.75vw,24px);font-weight:900;line-height:1.35;text-align:center;
+    box-shadow:0 5px 14px rgba(13,71,161,.24);z-index:15;pointer-events:none;
+  }
+  .sim-next-overlay.hidden{display:none}
+  .sim-next-overlay-num{display:inline-flex;align-items:center;justify-content:center;
+    width:42px;height:42px;flex:0 0 42px;border-radius:50%;background:#1565c0;color:#fff;
+    font-size:clamp(17px,1.7vw,23px)}
+  .sim-next-overlay.waiting{border-color:#ed8b00;background:rgba(255,248,232,.97);color:#7a3a0a}
+  .sim-next-overlay.waiting .sim-next-overlay-num{background:#ed8b00}
+  .sim-next-overlay.danger-guide{border-color:#ed8b00;background:rgba(255,248,232,.98);color:#7a3a0a}
+  .sim-next-overlay.danger-guide .sim-next-overlay-num{background:#ed8b00}
+  .sim-result-overlay{
+    position:absolute;left:50%;bottom:2.2%;top:auto;transform:translateX(-50%);
+    width:min(90%,930px);display:none;padding:12px 16px;border:3px solid #2e7d32;
+    border-radius:14px;background:rgba(231,245,233,.98);color:#1b5e20;
+    box-shadow:0 5px 14px rgba(46,125,50,.24);z-index:16;text-align:left;
+    font-size:clamp(13px,1.2vw,17px);line-height:1.4;pointer-events:none;
+  }
+  .sim-result-overlay.show{display:block}
+  .sim-result-title{font-size:clamp(17px,1.55vw,22px);font-weight:900;text-align:center;margin-bottom:6px}
+  .sim-result-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin-bottom:6px}
+  .sim-result-grid span{background:#fff;border:1px solid #a5d6a7;border-radius:7px;padding:5px 3px;text-align:center;font-weight:800}
+  .sim-result-advice{font-weight:800;text-align:center}
+  .danger-learning-box.guide-active{outline:3px solid #ed8b00;outline-offset:2px;box-shadow:0 0 12px rgba(237,139,0,.35)}
+  @media(max-width:900px){.sim-result-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  @media(max-height:700px){.sim-result-overlay{bottom:1.2%;padding:8px 11px}.sim-result-grid span{padding:3px 2px}}
+  @media(max-height:700px){.sim-next-overlay{bottom:1.2%;top:auto;padding:7px 12px;font-size:clamp(14px,1.5vw,19px)}.sim-next-overlay-num{width:34px;height:34px;flex-basis:34px}}
+
+  /* 操作ミス後の再開案内・クイズ誤操作防止 */
+  .sim-danger-overlay.show{pointer-events:auto}
+  .danger-overlay-content{width:100%}
+  .danger-retry-btn{display:none;margin:12px auto 0;min-width:250px;border:3px solid #fff;border-radius:10px;padding:10px 18px;background:#fff;color:#8b0000;font-family:inherit;font-size:clamp(.86rem,1.05vw,1rem);font-weight:900;cursor:pointer;box-shadow:0 4px 0 rgba(70,0,0,.45);pointer-events:auto}
+  .sim-danger-overlay.show .danger-retry-btn{display:block}
+  .danger-retry-btn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(70,0,0,.45)}
+  .reset-help{grid-column:1/-1;text-align:center;margin-top:-2px;font-size:.67rem;line-height:1.3;color:#6b625a}
+  .quiz-actions{display:grid;grid-template-columns:minmax(150px,auto) 1fr minmax(170px,auto);align-items:center;width:100%}
+  #quizRestartBtn{grid-column:1;background:#fff;color:#66584c;border:2px solid #a99c8e}
+  #quizRestartBtn:hover{background:#f2eee9}
+  #quizNextBtn{grid-column:3;background:#1565c0}
+  #quizNextBtn:hover:not(:disabled){background:#0d47a1}
+  #quizNextBtn:disabled{background:#c5c9cc;color:#fff;cursor:not-allowed}
+  @media(max-width:560px){.quiz-actions{grid-template-columns:1fr 1fr}#quizRestartBtn{grid-column:1}#quizNextBtn{grid-column:2}}
+
+
+
+  /* ===== 低い画面での表示切れ対策 ===== */
+  /* ヘッダーとタブは画面内に残し、各学習パネルの中だけをスクロールする。 */
+  .panel {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+  }
+  #panel-simulator {
+    padding-bottom: 10px;
+  }
+  #panel-simulator .sim-layout {
+    min-height: min-content;
+  }
+  #panel-simulator .sim-ctrl-card {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  /* 高さが不足する端末では、内容を削らずに余白と部品を圧縮する。 */
+  @media (max-height: 900px) {
+    #panel-simulator .section-line { margin-bottom: 3px; }
+    #panel-simulator .next-action-banner {
+      padding: 5px 9px;
+      margin-bottom: 4px;
+      border-width: 2px;
+      font-size: clamp(.82rem,1vw,.96rem);
+    }
+    #panel-simulator .next-action-num {
+      width: 27px; height: 27px; flex-basis: 27px;
+    }
+    #panel-simulator .process-strip { gap: 3px; margin-bottom: 4px; }
+    #panel-simulator .process-item { padding: 3px 2px; line-height: 1.15; }
+    #panel-simulator .sim-layout { gap: 7px; }
+    #panel-simulator .sim-ctrl-card { padding: 6px 7px; gap: 4px; }
+    #panel-simulator .status-badges { gap: 3px; }
+    #panel-simulator .status-badge { padding: 3px 2px; line-height: 1.15; }
+    #panel-simulator .sim-selects-grid,
+    #panel-simulator .sim-action-grid { gap: 4px; }
+    #panel-simulator .sim-btn { min-height: 29px; padding: 3px 5px; line-height: 1.15; }
+    #panel-simulator #simTouchBtn.sim-start-btn { min-height: 37px !important; padding: 5px 7px !important; }
+    #panel-simulator .seg-btn { min-height: 28px; padding: 3px 2px; }
+    #panel-simulator .danger-learning-box { padding: 5px 6px; }
+    #panel-simulator .danger-learning-note { margin: 2px 0 4px; }
+    #panel-simulator .sim-message-stack { gap: 3px; }
+    #panel-simulator #simStatus,
+    #panel-simulator .sim-danger-msg,
+    #panel-simulator .sim-step { padding: 3px 5px; line-height: 1.25; }
+  }
+
+  /* 極端に低い画面では右操作欄も個別にスクロール可能にする。 */
+  @media (max-height: 720px) {
+    #panel-simulator .sim-ctrl-card {
+      max-height: calc(100vh - 205px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+    }
+  }
+
+  /* 中学1年生向けの読み仮名と、操作案内の重複表示防止 */
+  .plabel ruby{ruby-position:over}.plabel rt{font-size:.58em;line-height:1;color:#fff;font-weight:700}
+  #panel-simulator>.next-action-banner{display:none!important}
+  #panel-simulator .section-line{margin-bottom:3px}
+  #panel-simulator .process-strip{margin-top:0}
+
+  /* 手がベルトへ接近したCGを見せるため、危険説明を少し下へ移動する */
+  .sim-danger-overlay.hand-danger{top:68%;width:84%;max-width:900px;padding:10px 15px;font-size:clamp(12px,1.25vw,17px)}
+  .sim-danger-overlay.hand-danger .danger-retry-btn{margin-top:7px;padding:7px 14px;min-width:230px}
+  .danger-learning-box.next-choice,#simResetBtn.next-choice{outline:3px solid #1565c0!important;outline-offset:2px;box-shadow:0 0 12px rgba(21,101,192,.35)!important}
+
+
+  .sim-result-choice{margin-top:8px;padding:8px 10px;border-radius:9px;background:#fff8e1;border:2px solid #ed8b00;color:#6d3b00;font-size:clamp(.78rem,1vw,.94rem);font-weight:800;line-height:1.45;text-align:center}
+  .sim-result-choice b{color:#0d47a1}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚙️ ベルトサンダーの基本　―　工作機械の使い方を学ぶ</h1>
+</header>
+
+<!-- 起動時モーダル -->
+<div id="startupModal" class="modal-overlay">
+  <div class="modal-box">
+    <h2>📖 使い方ガイド</h2>
+    <p>このアプリは，木材の表面や側面を研磨する<b>ベルトサンダー</b>について学ぶアプリです。
+<b>各部の名称</b>，<b>安全な使い方</b>，<b>加工シミュレータ</b>，<b>確認クイズ</b>で学べます。
+
+<b>■ 操作</b>
+・「<b>各部の名称</b>」では，ラベルをクリックすると説明が表示されます。
+・「<b>安全な使い方</b>」では，作業前や作業中の注意を確認できます。
+・「<b>加工シミュレータ</b>」では，材料を研磨する操作を体験できます。危険な操作をすると，機械が緊急停止します。
+・「<b>確認クイズ</b>」では，学習した内容を10問で確認できます。
+
+<b>■ ベルトサンダーの4原則</b>
+① 保護眼鏡と防塵マスクを着ける
+② 軍手を着けない
+③ 材料を両手で持ち，軽く当てる
+④ 同じ場所に当て続けず，少しずつ動かす</p>
+    <div class="modal-footer">
+      <button class="modal-start-btn" onclick="document.getElementById('startupModal').classList.add('hidden')">はじめる</button>
+      <button class="modal-index-btn" onclick="location.href='index.html'">🏠 メニューに戻る</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- タブ -->
+  <div class="tabs">
+    <button class="back-to-menu" type="button" onclick="location.href='index.html'">🏠 メニュー</button>
+    <button class="tab-btn active" data-panel="panel-parts">各部の名称</button>
+    <button class="tab-btn" data-panel="panel-safety">安全な使い方</button>
+    <button class="tab-btn" data-panel="panel-simulator">加工シミュレータ</button>
+    <button class="tab-btn" data-panel="panel-quiz">確認クイズ</button>
+  </div>
+
+  <!-- ====== パネル1: 各部の名称 ====== -->
+  <div class="panel active" id="panel-parts">
+    <div class="section-line"><p class="section-title">各部の名称をクリックして確認しよう</p><p class="section-lead">ラベルをタップ・クリックすると、その部位の名称と解説が表示されます。</p></div>
+
+    <div class="diagram-layout">
+      <div class="canvas-wrap" id="cgWrap">
+        <canvas id="partsCanvas" width="1200" height="760"></canvas>
+        <svg class="lead-svg" id="leadSvg" viewBox="0 0 1200 760" preserveAspectRatio="none"></svg>
+        <div class="label-overlay" id="labelOverlay">
+          <button class="plabel" data-part="work_rest"     style="left:9%;  top:14%">ワークレスト</button>
+          <button class="plabel" data-part="driven_roller" style="left:24%; top:7%"><ruby>従動<rt>じゅうどう</rt></ruby>ローラー</button>
+          <button class="plabel" data-part="sanding_belt"  style="left:47%; top:9%">サンディングベルト</button>
+          <button class="plabel" data-part="drive_roller"  style="left:70%; top:7%"><ruby>駆動<rt>くどう</rt></ruby>ローラー</button>
+          <button class="plabel" data-part="motor_base"    style="left:89%; top:31%">モーター・ベース</button>
+          <button class="plabel" data-part="dust_port"     style="left:62%; top:83%"><ruby>集塵口<rt>しゅうじんぐち</rt></ruby></button>
+          <button class="plabel" data-part="power_switch"  style="left:20%; top:90%"><ruby>電源<rt>でんげん</rt></ruby>スイッチ</button>
+          <button class="plabel" data-part="tracking_knob" style="left:12%; top:58%">ベルト<ruby>位置調整<rt>いちちょうせい</rt></ruby>ノブ</button>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-badge" id="infoBadge">‥</div>
+        <div class="info-title" id="infoTitle">ラベルをクリックしてください</div>
+        <div class="info-text"  id="infoText">ベルトサンダーの各部位の名称と役割が、ここに表示されます。</div>
+        <div class="info-safety" id="infoSafety"></div>
+        <div class="info-hint" id="infoHint">※機種によって部品の形や位置が異なる場合があります。</div>
+        <div class="completion-box locked" id="partsCompletionBox">
+          <label><input id="partsConfirm" type="checkbox" disabled>
+            <span>各部の名称と役割を確認しました。<div class="progress-mini" id="partsProgress">確認済み 0 / 8</div></span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== パネル2: 安全な使い方 ====== -->
+  <div class="panel" id="panel-safety">
+    <div class="section-line"><p class="section-title">安全な使い方のポイント</p><p class="section-lead">ベルトサンダーを安全に使うため、次のことを必ず守りましょう。</p></div>
+    <div class="safety-grid">
+      <div class="safety-card">
+        <h3><span class="ico">🥽</span>1　服装を整える</h3>
+        <ul>
+          <li>保護眼鏡と防塵マスクを着ける</li>
+          <li>長い髪を束ね、袖口を閉じる</li>
+          <li>巻き込まれるため、手袋は着けない</li>
+        </ul>
+      </div>
+      <div class="safety-card">
+        <h3><span class="ico">✅</span>2　始める前に確認</h3>
+        <ul>
+          <li>ベルト・ワークレスト・材料に異常がない</li>
+          <li>周囲に人や物がなく、集塵機が動いている</li>
+          <li>材料をベルトから離して電源を入れる</li>
+        </ul>
+      </div>
+      <div class="safety-card">
+        <h3><span class="ico">🪵</span>3　加工中の操作</h3>
+        <ul>
+          <li>回転が安定してから、材料を両手で持つ</li>
+          <li>ワークレストで支え、軽くベルトに当てる</li>
+          <li>同じ所を削りすぎないよう少しずつ動かす</li>
+        </ul>
+      </div>
+      <div class="safety-card">
+        <h3><span class="ico">⛔</span>4　異常時・終了時</h3>
+        <ul>
+          <li>異音・振動・ベルトずれは、すぐ材料を離す</li>
+          <li>電源を切り、完全停止してから先生に知らせる</li>
+          <li>自分で調整・修理・内部清掃をしない</li>
+        </ul>
+      </div>
+    </div>
+    <div class="danger-icons" aria-label="危険の理由">
+      <div class="danger-icon">🧤 軍手<br>→ 巻き込み</div><div class="danger-icon">🪵 小さな材料<br>→ 指が接近</div><div class="danger-icon">⬇ 強い力<br>→ 過負荷</div><div class="danger-icon">🔥 連続研磨<br>→ 焦げ</div><div class="danger-icon">🔩 釘入り<br>→ ベルト損傷</div>
+    </div>
+    <div class="safety-note"><b>覚える合言葉：</b>「保護具・両手・軽く・動かす・異常なら止めて先生」</div>
+    <div class="safety-judgment">
+      <div class="judge-card" data-judge="gloves"><b>判断1：</b>ベルトサンダーでは，材料を安定して持つために軍手を着ける。<div class="judge-options"><button class="judge-btn" data-answer="true">○ 正しい</button><button class="judge-btn" data-answer="false">× 間違い</button></div><div class="judge-feedback"></div></div>
+      <div class="judge-card" data-judge="stable"><b>判断2：</b>材料は，ベルトの回転が安定してから軽く当てる。<div class="judge-options"><button class="judge-btn" data-answer="true">○ 正しい</button><button class="judge-btn" data-answer="false">× 間違い</button></div><div class="judge-feedback"></div></div>
+    </div>
+    <div class="completion-box locked" id="safetyCompletionBox"><label><input id="safetyConfirm" type="checkbox" disabled><span>2問とも正しく判断すると，安全確認が完了します。</span></label></div>
+  </div>
+
+  <!-- ====== パネル3: 加工シミュレータ ====== -->
+  <div class="panel" id="panel-simulator">
+    <div class="section-line"><p class="section-title">加工シミュレータ</p><p class="section-lead">保護具を着け、材料とベルトの番手を選び、上から軽く押し当てる研磨操作を体験しよう。</p></div>
+    <div class="next-action-banner" id="nextActionBanner"><span class="next-action-num" id="nextActionNum">1</span><span id="nextActionText">次の操作：材料を選んでください</span></div>
+    <div class="process-strip" id="processStrip"><div class="process-item" data-step="prepare">□ 安全な準備</div><div class="process-item" data-step="stable">□ 回転安定</div><div class="process-item" data-step="sand">□ 軽く研磨</div><div class="process-item" data-step="move">□ 左右に動かす</div><div class="process-item" data-step="release">□ 材料を離す</div><div class="process-item" data-step="stop">□ 電源OFF・停止</div><div class="process-item" data-step="collector">□ 集塵機OFF</div></div>
+
+    <div class="sim-layout">
+      <div class="sim-canvas-wrap" id="simCanvasWrap">
+        <canvas id="simCanvas" width="1200" height="760"></canvas>
+        <div class="sim-next-overlay" id="simNextOverlay"><span class="sim-next-overlay-num" id="simNextOverlayNum">1</span><span id="simNextOverlayText">次の操作：材料を選んでください</span></div>
+        <div class="sim-result-overlay" id="simResultOverlay"><div class="sim-result-title">✅ 加工結果</div><div class="sim-result-grid"><span>保護具：○</span><span>集塵機：○</span><span>両手保持：○</span><span>押す力：○</span><span>材料移動：○</span><span>終了手順：○</span></div><div class="sim-result-advice" id="simResultAdvice">安全に研磨できました。</div><div class="sim-result-choice">次は、まず右側の<br><b>「加工操作を最初からやり直す」</b><br>を押してください。<br>その後、<b>「危険を確認する実験」</b>を選べます。</div></div>
+        <div class="sim-danger-overlay" id="simDangerOverlay"><div class="danger-overlay-content"><div class="danger-overlay-text" id="simDangerOverlayText">危険！
+緊急停止</div><button id="simDangerRetryBtn" class="danger-retry-btn" type="button">↺ 正しい手順でやり直す</button></div></div>
+      </div>
+
+      <div class="sim-ctrl-card" id="simCtrlCard">
+        <div class="sim-ctrl-title">操作パネル</div>
+        <div class="status-badges"><div class="status-badge" id="badgeGoggles">🥽 眼鏡：未</div><div class="status-badge" id="badgeMask">😷 マスク：未</div><div class="status-badge" id="badgeCollector">🌀 集塵：OFF</div><div class="status-badge" id="badgeHold">🖐 両手：未</div></div>
+
+        <div class="sim-selects-grid">
+          <div class="sim-field">
+            <div class="sim-select-label">材料選択</div>
+            <select id="simMaterial" class="sim-select">
+              <option value="">材料を選んでください</option>
+              <option value="wide_surface">板の広い面</option>
+              <option value="edge">板の側面</option>
+              <option value="end_grain">板の木口</option>
+              <option value="too_small">小さすぎる材料</option>
+              <option value="metal_embedded">釘が入った材料</option>
+            </select>
+          </div>
+          <div class="sim-field">
+            <div class="sim-select-label">ベルトの番手</div>
+            <select id="simGrit" class="sim-select">
+              <option value="60">#60 荒削り</option>
+              <option value="120" selected>#120 表面を整える</option>
+              <option value="180">#180 仕上げ</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="sim-sub-title">準備と基本操作</div>
+        <div class="sim-action-grid">
+          <button id="simGogglesBtn" class="sim-btn btn-dark">🥽 保護眼鏡を着ける</button>
+          <button id="simMaskBtn"    class="sim-btn btn-dark">😷 防塵マスクを着ける</button>
+          <button id="simCollectorBtn" class="sim-btn btn-dark">🌀 集塵機を動かす</button>
+          <button id="simPowerBtn"     class="sim-btn btn-off">⚡ 電源を入れる</button>
+          <button id="simHoldBtn"      class="sim-btn">🖐 材料を両手で持つ</button>
+          <button id="simTouchBtn" class="sim-btn btn-act sim-start-btn">▶ 材料をベルトへ軽く当てる</button>
+        </div>
+
+        <div class="sim-field">
+          <div class="sim-select-label">押し付ける力</div>
+          <div class="seg-row" id="simPressure">
+            <button class="seg-btn" data-p="weak" type="button">弱い</button>
+            <button class="seg-btn active" data-p="proper" type="button">適切</button>
+            <button class="seg-btn" data-p="strong" type="button">強い</button>
+          </div>
+        </div>
+
+        <div class="sim-action-grid">
+          <button id="simMoveBtn"    class="sim-btn btn-act">↔ 材料を動かす</button>
+          <button id="simReleaseBtn" class="sim-btn btn-act">⏹ ベルトから離す</button>
+          <button id="simResetBtn" class="sim-btn btn-reset full">↺ 加工操作を最初からやり直す</button>
+          <div class="reset-help">材料・番手・保護具の設定は残ります</div>
+        </div>
+
+        <details class="danger-learning-box" id="dangerLearningBox"><summary>⚠ 危険を確認する実験</summary><div class="danger-learning-note">保護具を着け、集塵機を動かし、<b>電源を入れたら</b>、下の実験を1つ選びます。<br><strong>これは実機では絶対に行いません。</strong></div><div class="sim-danger-grid"><button id="simHandBtn" class="sim-btn btn-trouble">✋ 手をベルトに近づける</button><button id="simSlipBtn" class="sim-btn btn-trouble">〰 ベルトが横にずれる</button></div></details>
+        <div class="result-eval" id="resultEval" hidden><div id="resultAdvice"></div></div>
+
+        <div class="sim-message-stack">
+          <div class="sim-danger-msg" id="simDangerMsg"></div>
+          <div id="simStatus">材料とベルトの番手を選んでください。</div>
+          <div class="sim-step" id="simStep"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== パネル4: 確認クイズ ====== -->
+  <div class="panel" id="panel-quiz">
+    <div class="section-line"><p class="section-title">確認クイズ</p><p class="section-lead">ベルトサンダーの安全な使い方について、10問で確認しましょう。</p></div>
+    <div class="quiz-panel-wrap">
+      <div class="quiz-meta-row">
+        <span id="quizProgress">問題 1 / 10</span>
+        <span id="quizScore">得点 0 / 0</span>
+      </div>
+      <div class="quiz-progress-bar-wrap">
+        <div class="quiz-progress-bar" id="quizProgressBar" style="width:10%"></div>
+      </div>
+      <div class="quiz-question" id="quizQuestion"></div>
+      <div class="quiz-choices" id="quizChoices"></div>
+      <div class="quiz-result" id="quizResult"></div>
+      <div class="quiz-actions">
+        <button class="quiz-action-btn secondary" id="quizRestartBtn" type="button">↺ 最初から</button>
+        <button class="quiz-action-btn" id="quizNextBtn" type="button">次の問題へ →</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+<div id="lockHint" class="lock-hint">前の学習を完了してから進んでください。</div>
+
+<script>
+/* =====================================================================
+   ベルトサンダーの基本 － 共通描画（各部の名称／加工シミュレータ 共用）
+   座標系：1200 × 760
+===================================================================== */
+const G = {
+  body:   "#dfdad0",   /* 機体（明るいグレージュ） */
+  body2:  "#c6c0b4",
+  body3:  "#a9a697",
+  dark:   "#33333a",   /* モーター・ベース */
+  dark2:  "#26262c",
+  metal:  "#c3c3ca",
+  metal2: "#8f8f98",
+  edge:   "#22212a",
+  belt:   "#8a6867",   /* サンディングベルト（研磨面） */
+  belt2:  "#a88180",
+  belt3:  "#6d5150",
+  wood:   "#d7a35a",
+  woodCut:"#e8be80",
+  wood2:  "#b98240",
+  burn:   "#5a3a1c",
+  skin:   "#f0c9a4",
+  red:    "#c62828",
+  green:  "#2e7d32",
+  dust:   "#c9a86a"
+};
+
+/* 機械の主要寸法 */
+const M = {
+  axisY: 330, idlerX: 290, driveX: 810, rollerR: 52, beltR: 60, beltW: 14,
+  beltTop: 263, beltBot: 397,
+  restX: 30, restW: 185, restTop: 263, restH: 22,
+  contactC: 550, contactHalf: 48,
+  boardW: 190, boardH: 34,
+  restBoardX: 20
+};
+
+function rr(g,x,y,w,h,r,fill,stroke=G.edge,lw=2){
+  g.beginPath();
+  g.moveTo(x+r,y); g.lineTo(x+w-r,y);
+  g.quadraticCurveTo(x+w,y,x+w,y+r);
+  g.lineTo(x+w,y+h-r);
+  g.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  g.lineTo(x+r,y+h);
+  g.quadraticCurveTo(x,y+h,x,y+h-r);
+  g.lineTo(x,y+r);
+  g.quadraticCurveTo(x,y,x+r,y);
+  g.closePath();
+  if(fill){ g.fillStyle=fill; g.fill(); }
+  if(stroke){ g.lineWidth=lw; g.strokeStyle=stroke; g.stroke(); }
+}
+function cir(g,x,y,r,fill,stroke=G.edge,lw=2){
+  g.beginPath(); g.arc(x,y,r,0,Math.PI*2);
+  if(fill){ g.fillStyle=fill; g.fill(); }
+  if(stroke){ g.lineWidth=lw; g.strokeStyle=stroke; g.stroke(); }
+}
+function ln(g,x1,y1,x2,y2,color=G.edge,lw=2){
+  g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2);
+  g.strokeStyle=color; g.lineWidth=lw; g.lineCap="round"; g.stroke();
+}
+function poly(g,pts,fill,stroke=G.edge,lw=2){
+  g.beginPath(); g.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length;i++) g.lineTo(pts[i][0],pts[i][1]);
+  g.closePath();
+  if(fill){ g.fillStyle=fill; g.fill(); }
+  if(stroke){ g.lineWidth=lw; g.strokeStyle=stroke; g.stroke(); }
+}
+function beltPath(g){
+  g.beginPath();
+  g.moveTo(M.idlerX, M.axisY-M.beltR);
+  g.lineTo(M.driveX, M.axisY-M.beltR);
+  g.arc(M.driveX, M.axisY, M.beltR, -Math.PI/2, Math.PI/2);
+  g.lineTo(M.idlerX, M.axisY+M.beltR);
+  g.arc(M.idlerX, M.axisY, M.beltR, Math.PI/2, Math.PI*1.5);
+  g.closePath();
+}
+
+/* ---- ベース・機体 ---- */
+function drawBaseBody(g){
+  rr(g,110,645,1040,66,14,G.dark);
+  g.fillStyle="rgba(255,255,255,0.10)"; g.fillRect(130,658,1000,9);
+  rr(g,150,705,110,26,8,G.dark2,G.edge,0);
+  rr(g,1000,705,110,26,8,G.dark2,G.edge,0);
+  rr(g,160,470,770,180,16,G.body);
+  rr(g,180,486,730,52,10,G.body2,null,0);
+  g.fillStyle="rgba(255,255,255,0.45)"; g.fillRect(190,494,700,10);
+}
+function drawMotor(g){
+  rr(g,960,520,150,128,10,G.dark2);
+  rr(g,920,340,220,180,34,G.dark);
+  for(let x=950;x<=1110;x+=20) ln(g,x,362,x,498,"rgba(255,255,255,0.14)",5);
+  rr(g,930,392,60,66,8,G.metal2);
+  cir(g,1030,430,26,G.metal2,G.edge,2);
+  rr(g,850,272,80,128,12,G.body2);
+}
+function drawFrame(g){
+  /* ベルトの内側（プラテン・フレーム） */
+  rr(g,M.idlerX-6,M.axisY-46,M.driveX-M.idlerX+12,92,6,G.body3);
+  rr(g,320,M.axisY-30,460,60,4,G.body2,null,0);
+  /* フレームを機体につなぐ支柱（駆動側） */
+  rr(g,772,378,110,116,10,G.body2);
+  /* 従動側ハウジング（ベルト位置調整ノブが付く） */
+  rr(g,96,294,128,74,12,G.body2);
+}
+function drawWorkRest(g){
+  rr(g,58,290,50,188,6,G.body2);
+  rr(g,M.restX,M.restTop,M.restW,M.restH,4,G.metal);
+  g.fillStyle="rgba(255,255,255,0.55)"; g.fillRect(M.restX+6,M.restTop+3,M.restW-14,5);
+  ln(g,M.restX+M.restW-4,M.restTop,M.restX+M.restW-4,M.restTop+M.restH,G.metal2,2);
+}
+function drawTrackingKnob(g){
+  ln(g,196,330,178,330,G.metal2,12);
+  cir(g,166,330,26,G.dark,G.edge,2);
+  cir(g,166,330,13,G.metal2,G.edge,1.5);
+  for(let a=0;a<Math.PI*2;a+=Math.PI/6){
+    ln(g,166+Math.cos(a)*20,330+Math.sin(a)*20,166+Math.cos(a)*26,330+Math.sin(a)*26,"rgba(255,255,255,0.35)",2);
+  }
+}
+function drawDustPort(g){
+  poly(g,[[600,360],[752,360],[726,502],[652,502]],G.body3);
+  g.beginPath(); g.ellipse(689,502,40,14,0,0,Math.PI*2);
+  g.fillStyle=G.dark2; g.fill(); g.strokeStyle=G.edge; g.lineWidth=2; g.stroke();
+  g.beginPath(); g.ellipse(689,502,28,9,0,0,Math.PI*2);
+  g.fillStyle="#111"; g.fill();
+}
+function drawSwitchBox(g,powerOn){
+  rr(g,240,498,116,116,10,G.body2);
+  cir(g,298,532,20,powerOn?G.green:"#6f7c6f",G.edge,2);
+  cir(g,298,578,20,powerOn?"#7a5a5a":G.red,G.edge,2);
+  g.fillStyle="#3b3b3b"; g.font="bold 15px sans-serif"; g.textAlign="center";
+  g.fillText("I",298,538); g.fillText("O",298,584);
+  g.textAlign="left";
+  ln(g,298,614,298,650,"#2b2b2b",11);
+}
+function drawRollers(g,phase,powerOn){
+  [[M.idlerX,"従動"],[M.driveX,"駆動"]].forEach(([cx])=>{
+    cir(g,cx,M.axisY,M.rollerR,G.metal2,G.edge,2);
+    cir(g,cx,M.axisY,M.rollerR-9,"#767680",null,0);
+    cir(g,cx,M.axisY,11,G.metal,G.edge,2);
+    const a = phase*0.012*(powerOn?1:0);
+    g.save(); g.translate(cx,M.axisY); g.rotate(a);
+    g.strokeStyle="rgba(255,255,255,0.5)"; g.lineWidth=3;
+    for(let i=0;i<6;i++){
+      g.rotate(Math.PI/6);
+      g.beginPath(); g.moveTo(-M.rollerR+12,0); g.lineTo(M.rollerR-12,0); g.stroke();
+    }
+    g.restore();
+  });
+}
+function drawBelt(g,phase,damaged){
+  /* ベルト本体 */
+  g.save();
+  beltPath(g);
+  g.lineWidth=M.beltW+4; g.strokeStyle=G.edge; g.stroke();
+  beltPath(g);
+  g.lineWidth=M.beltW; g.strokeStyle=G.belt; g.stroke();
+  /* 研磨粒子の質感＋回転表現 */
+  beltPath(g);
+  g.lineWidth=M.beltW-4; g.strokeStyle=G.belt2;
+  g.setLineDash([9,15]); g.lineDashOffset=-phase; g.stroke();
+  beltPath(g);
+  g.lineWidth=M.beltW-8; g.strokeStyle=G.belt3;
+  g.setLineDash([4,20]); g.lineDashOffset=-phase*1.0-6; g.stroke();
+  g.setLineDash([]);
+  g.restore();
+  /* 横ずれ表示 */
+  if(damaged){
+    g.save();
+    g.strokeStyle=G.red; g.lineWidth=4; g.setLineDash([10,8]);
+    beltPath(g); g.stroke(); g.setLineDash([]);
+    g.restore();
+  }
+}
+function drawArrow(g){
+  const y=224;
+  ln(g,470,y,610,y,"#7a6a58",4);
+  poly(g,[[610,y-9],[634,y],[610,y+9]],"#7a6a58","#7a6a58",1);
+  g.fillStyle="#7a6a58"; g.font="bold 17px sans-serif"; g.textAlign="right";
+  g.fillText("ベルトの回転方向",460,y+6); g.textAlign="left";
+}
+
+/* 機械全体（材料や手は含まない） */
+function drawMachine(g,S){
+  g.clearRect(0,0,1200,760);
+  g.fillStyle="#ffffff"; g.fillRect(0,0,1200,760);
+  g.save();
+  g.translate(S.shake||0,0);
+  drawBaseBody(g);
+  drawMotor(g);
+  drawDustPort(g);
+  drawFrame(g);
+  drawWorkRest(g);
+  drawRollers(g,S.phase||0,S.powerOn);
+  drawBelt(g,S.phase||0,S.beltSlipped);
+  drawSwitchBox(g,S.powerOn);
+  drawTrackingKnob(g);
+  if(S.showArrow) drawArrow(g);
+  g.restore();
+}
+
+/* =====================================================================
+   パネル1：各部の名称
+===================================================================== */
+const PARTS = {
+  sanding_belt: {
+    badge:'サンディングベルト', title:'サンディングベルト',
+    text:'回転して木材を削ったり、表面を整えたりする部分です。番手（#60・#120・#180など）によって、削れる量と仕上がりが変わります。',
+    safety:'⚠️ 回転中のベルトには、絶対に手を触れません。',
+    anchor:[550,266], target:[47,9]
+  },
+  drive_roller: {
+    badge:'<ruby>駆動<rt>くどう</rt></ruby>ローラー', title:'<ruby>駆動<rt>くどう</rt></ruby>ローラー',
+    text:'<ruby>駆動<rt>くどう</rt></ruby>ローラーは、モーターの力を伝え、サンディングベルトを回転させる部分です。',
+    safety:'', anchor:[810,330], target:[70,7]
+  },
+  driven_roller: {
+    badge:'<ruby>従動<rt>じゅうどう</rt></ruby>ローラー', title:'<ruby>従動<rt>じゅうどう</rt></ruby>ローラー',
+    text:'<ruby>従動<rt>じゅうどう</rt></ruby>ローラーは、サンディングベルトを支え、一定の張りで回転させる部分です。',
+    safety:'', anchor:[290,330], target:[24,7]
+  },
+  work_rest: {
+    badge:'ワークレスト', title:'ワークレスト',
+    text:'材料を支え、安定させながら研磨するための部分です。',
+    safety:'⚠️ 材料を支え、手がベルトに近づきすぎないようにします。',
+    anchor:[120,268], target:[9,14]
+  },
+  power_switch: {
+    badge:'<ruby>電源<rt>でんげん</rt></ruby>スイッチ', title:'<ruby>電源<rt>でんげん</rt></ruby>スイッチ',
+    text:'<ruby>電源<rt>でんげん</rt></ruby>スイッチは、機械を動かしたり止めたりするスイッチです。',
+    safety:'⚠️ 始動と停止は、作業する本人が行います。',
+    anchor:[298,556], target:[20,90]
+  },
+  tracking_knob: {
+    badge:'ベルト<ruby>位置調整<rt>いちちょうせい</rt></ruby>ノブ', title:'ベルト<ruby>位置調整<rt>いちちょうせい</rt></ruby>ノブ',
+    text:'ベルト<ruby>位置調整<rt>いちちょうせい</rt></ruby>ノブは、サンディングベルトがローラーの中央を回るように調整する部分です。',
+    safety:'⚠️ 生徒は回転中に調整しません。ベルトがずれたときは、電源を切って先生に知らせます。',
+    anchor:[166,330], target:[12,58]
+  },
+  dust_port: {
+    badge:'<ruby>集塵口<rt>しゅうじんぐち</rt></ruby>', title:'<ruby>集塵口<rt>しゅうじんぐち</rt></ruby>',
+    text:'<ruby>集塵口<rt>しゅうじんぐち</rt></ruby>は、研磨で発生した木の粉を<ruby>集塵機<rt>しゅうじんき</rt></ruby>で吸い取るための部分です。',
+    safety:'⚠️ 加工前に<ruby>集塵機<rt>しゅうじんき</rt></ruby>を作動させます。',
+    anchor:[689,498], target:[62,83]
+  },
+  motor_base: {
+    badge:'モーター・ベース', title:'モーター・ベース',
+    text:'モーターはベルトを回転させ、ベースは機械全体を安定して支えます。',
+    safety:'', anchor:[1030,430], target:[89,31]
+  }
+};
+
+(function(){
+  const pc = document.getElementById('partsCanvas').getContext('2d');
+  drawMachine(pc,{powerOn:false,phase:0,showArrow:false});
+
+  const svg = document.getElementById('leadSvg');
+  function drawLead(key,active){
+    const old = svg.querySelector('[data-lead="'+key+'"]');
+    if(old) old.remove();
+    const p = PARTS[key]; if(!p) return;
+    const el = document.createElementNS('http://www.w3.org/2000/svg','line');
+    el.setAttribute('x1', p.target[0]/100*1200);
+    el.setAttribute('y1', p.target[1]/100*760);
+    el.setAttribute('x2', p.anchor[0]);
+    el.setAttribute('y2', p.anchor[1]);
+    el.setAttribute('class','lead-line'+(active?' active':''));
+    el.setAttribute('data-lead',key);
+    el.setAttribute('vector-effect','non-scaling-stroke');
+    svg.appendChild(el);
+  }
+
+  const badge=document.getElementById('infoBadge'), title=document.getElementById('infoTitle'),
+        text=document.getElementById('infoText'), safe=document.getElementById('infoSafety'),
+        hint=document.getElementById('infoHint');
+  function resetInfo(){
+    badge.textContent='‥';
+    title.textContent='ラベルをクリックしてください';
+    text.textContent='ベルトサンダーの各部位の名称と役割が、ここに表示されます。';
+    safe.textContent=''; safe.classList.remove('show');
+    hint.textContent='※機種によって部品の形や位置が異なる場合があります。';
+  }
+
+  let activeKey=null;
+  const viewedParts=new Set();
+  const partsConfirm=document.getElementById('partsConfirm');
+  const partsProgress=document.getElementById('partsProgress');
+  const partsBox=document.getElementById('partsCompletionBox');
+  function updatePartsProgress(){
+    const n=viewedParts.size, total=Object.keys(PARTS).length;
+    partsProgress.textContent='確認済み '+n+' / '+total;
+    partsConfirm.disabled=n<total;
+    partsBox.classList.toggle('locked',n<total);
+    if(n===total && !partsConfirm.checked) partsProgress.textContent+='　→ チェックしてください';
+  }
+  partsConfirm.addEventListener('change',()=>{
+    learningGate.parts=partsConfirm.checked;
+    updateSimulatorLock();
+  });
+  document.querySelectorAll('.plabel').forEach(btn=>{
+    const key=btn.dataset.part;
+    drawLead(key,false);
+    btn.addEventListener('click',()=>{
+      const p=PARTS[key]; if(!p) return;
+      viewedParts.add(key); btn.classList.add('checked'); updatePartsProgress();
+      if(activeKey===key){
+        btn.classList.remove('active'); drawLead(key,false);
+        activeKey=null; resetInfo(); return;
+      }
+      if(activeKey){
+        document.querySelector('.plabel[data-part="'+activeKey+'"]')?.classList.remove('active');
+        drawLead(activeKey,false);
+      }
+      activeKey=key; btn.classList.add('active'); drawLead(key,true);
+      badge.innerHTML=p.badge; title.innerHTML=p.title; text.innerHTML=p.text;
+      if(p.safety){ safe.innerHTML=p.safety; safe.classList.add('show'); }
+      else { safe.innerHTML=''; safe.classList.remove('show'); }
+      hint.textContent='※機種によって部品の形や位置が異なる場合があります。';
+    });
+  });
+  updatePartsProgress();
+})();
+
+/* =====================================================================
+   タブ切り替え
+===================================================================== */
+const learningGate={parts:false,safety:false,sim:false};
+function simulatorUnlocked(){ return learningGate.parts && learningGate.safety; }
+function updateSimulatorLock(){
+  const simTab=document.querySelector('.tab-btn[data-panel="panel-simulator"]');
+  const quizTab=document.querySelector('.tab-btn[data-panel="panel-quiz"]');
+  if(simTab){simTab.classList.toggle('locked',!simulatorUnlocked());simTab.setAttribute('aria-disabled',String(!simulatorUnlocked()));simTab.title=simulatorUnlocked()?'加工シミュレータへ進む':'名称と安全な使い方の確認が必要です';}
+  if(quizTab){quizTab.classList.toggle('locked',!simulatorUnlocked());quizTab.setAttribute('aria-disabled',String(!simulatorUnlocked()));quizTab.title=simulatorUnlocked()?'確認クイズへ進む':'名称と安全な使い方の確認が必要です';}
+}
+function showLockHint(){
+  const h=document.getElementById('lockHint'); if(!h) return;
+  h.classList.add('show'); clearTimeout(showLockHint.t); showLockHint.t=setTimeout(()=>h.classList.remove('show'),2600);
+}
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',(ev)=>{
+    if((btn.dataset.panel==='panel-simulator' && !simulatorUnlocked()) || (btn.dataset.panel==='panel-quiz' && !simulatorUnlocked())){
+      ev.preventDefault(); showLockHint(); return;
+    }
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.panel)?.classList.add('active');
+  });
+});
+updateSimulatorLock();
+</script>
+
+<script>
+(function(){
+  const cb=document.getElementById('safetyConfirm'), box=document.getElementById('safetyCompletionBox');
+  const state={gloves:false,stable:false};
+  document.querySelectorAll('.judge-card').forEach(card=>{
+    card.querySelectorAll('.judge-btn').forEach(btn=>btn.addEventListener('click',()=>{
+      const key=card.dataset.judge;
+      const answer=btn.dataset.answer==='true';
+      const correct=(key==='gloves')?!answer:answer;
+      card.querySelectorAll('.judge-btn').forEach(x=>x.classList.remove('correct','wrong'));
+      btn.classList.add(correct?'correct':'wrong');
+      card.querySelector('.judge-feedback').textContent=correct?'✅ 正しく判断できました。':(key==='gloves'?'❌ 軍手は巻き込まれるため着けません。':'❌ 回転が安定してから軽く当てます。');
+      state[key]=correct;
+      if(state.gloves&&state.stable){cb.disabled=false;cb.checked=true;box.classList.remove('locked');learningGate.safety=true;updateSimulatorLock();}
+    }));
+  });
+  if(cb) cb.addEventListener('change',()=>{learningGate.safety=cb.checked;updateSimulatorLock();});
+})();
+</script>
+
+<script>
+/* =====================================================================
+   パネル3：加工シミュレータ
+===================================================================== */
+(function(){
+  const cv   = document.getElementById('simCanvas');
+  const g    = cv.getContext('2d');
+  const elMaterial = document.getElementById('simMaterial');
+  const elGrit     = document.getElementById('simGrit');
+  const btnGoggles = document.getElementById('simGogglesBtn');
+  const btnMask    = document.getElementById('simMaskBtn');
+  const btnCol     = document.getElementById('simCollectorBtn');
+  const btnHold    = document.getElementById('simHoldBtn');
+  const btnPower   = document.getElementById('simPowerBtn');
+  const btnTouch   = document.getElementById('simTouchBtn');
+  const btnMove    = document.getElementById('simMoveBtn');
+  const btnRelease = document.getElementById('simReleaseBtn');
+  const btnReset   = document.getElementById('simResetBtn');
+  const btnDangerRetry = document.getElementById('simDangerRetryBtn');
+  const btnHand    = document.getElementById('simHandBtn');
+  const btnSlip    = document.getElementById('simSlipBtn');
+  const segWrap    = document.getElementById('simPressure');
+  const elStatus   = document.getElementById('simStatus');
+  const elStep     = document.getElementById('simStep');
+  const elDangerMsg= document.getElementById('simDangerMsg');
+  const elOverlay  = document.getElementById('simDangerOverlay');
+  const elOverlayText = document.getElementById('simDangerOverlayText');
+  const elCard     = document.getElementById('simCtrlCard');
+  const nextActionText=document.getElementById('nextActionText'), nextActionNum=document.getElementById('nextActionNum');
+  const simNextOverlay=document.getElementById('simNextOverlay'), simNextOverlayText=document.getElementById('simNextOverlayText'), simNextOverlayNum=document.getElementById('simNextOverlayNum');
+  const simResultOverlay=document.getElementById('simResultOverlay'), simResultAdvice=document.getElementById('simResultAdvice');
+  const dangerLearningBox=document.getElementById('dangerLearningBox');
+  const processItems=[...document.querySelectorAll('#processStrip .process-item')];
+  const badgeGoggles=document.getElementById('badgeGoggles'), badgeMask=document.getElementById('badgeMask'), badgeCollector=document.getElementById('badgeCollector'), badgeHold=document.getElementById('badgeHold');
+  const resultEval=document.getElementById('resultEval'), resultAdvice=document.getElementById('resultAdvice');
+
+  /* ---- 状態変数 ---- */
+  let selectedMaterial='', selectedGrit='120';
+  let gogglesOn=false, maskOn=false;
+  let collectorOn=false, powerOn=false, rotationStable=false;
+  let materialHeld=false, materialTouching=false, materialMoving=false;
+  let pressureLevel='proper', beltPositionNormal=true, dangerStopped=false;
+  let handNearBelt=false, hasSanded=false, completed=false, hasMoved=false, releasedAfterSanding=false, stoppedAfterSanding=false;
+
+  let phase=0, beltSpeed=0, staticTime=0, strongTime=0, moveT=0;
+  let statusOverride='', statusUntil=0;
+
+  const SEG=52;
+  let profile=new Array(SEG).fill(0);
+  let burn=new Array(SEG).fill(0);
+
+  let bx=M.restBoardX, byBottom=M.beltTop;      /* 板の現在位置（アニメ用） */
+  const dusts=[];
+
+  const GRIT={
+    '60' :{rate:0.100, line:3.0, gap:9,  color:'#a06a2c', label:'#60 荒削り'},
+    '120':{rate:0.055, line:1.8, gap:6,  color:'#b98240', label:'#120 表面を整える'},
+    '180':{rate:0.030, line:1.0, gap:4,  color:'#cfa268', label:'#180 仕上げ'}
+  };
+  const PRESS={weak:0.5, proper:1.0, strong:1.9};
+
+  /* ---- 危険条件（要件定義書 D01〜D12） ---- */
+  const DANGER={
+    D01:{n:'集塵機OFFで加工', m:'集塵機を動かしてから加工してください。',
+         d:'木粉が周囲に広がり、吸い込んだり、視界が悪くなったりする危険があります。',
+         c:'加工前に集塵機をONにします。', mode:'stop'},
+    D02:{n:'材料を接触させたまま始動', m:'材料をベルトから離してから電源を入れます。',
+         d:'始動時に材料が急に動く危険があります。',
+         c:'材料をベルトから離して始動します。', mode:'block'},
+    D03:{n:'回転安定前の接触', m:'ベルトの回転が安定するまで待ってください。',
+         d:'回転が不安定な状態で当てると、材料が急に動いたり、研磨面を傷つけたりします。',
+         c:'電源を入れた後、回転が一定になるまで待ちます。', mode:'stop'},
+    D04:{n:'材料を保持せず加工', m:'材料は両手で安定して持ちます。',
+         d:'材料が急に動いたり、飛ばされたりする危険があります。',
+         c:'材料を両手で持ち、ワークレストに当てます。', mode:'stop'},
+    D05:{n:'小さすぎる材料', m:'手がベルトに近づくため加工できません。',
+         d:'小さな材料は安定して持てず、指が回転するベルトに近づきます。',
+         c:'手を安全な位置に保てる大きさの材料を使用します。', mode:'block'},
+    D06:{n:'強い押し付け', m:'力を入れすぎています。軽く当ててください。',
+         d:'ベルトやモーターに大きな負担がかかり、材料が急に動くことがあります。',
+         c:'材料は軽い力でベルトに当てます。', mode:'stop'},
+    D07:{n:'一か所への連続研磨', m:'削りすぎや焦げの原因になります。',
+         d:'同じ場所に当て続けると、その部分だけが深く削れたり、摩擦熱で焦げたりします。',
+         c:'材料を少しずつ左右に動かします。', mode:'stop'},
+    D08:{n:'金属を含む材料', m:'金属の入った材料は加工できません。',
+         d:'釘やねじがベルトを傷つけ、事故につながる可能性があります。',
+         c:'加工前に材料から釘やねじを取り除きます。', mode:'block'},
+    D09:{n:'ベルトの横ずれ', m:'電源を切り、先生に知らせてください。',
+         d:'ベルトがローラーから外れたり、機械に接触したりする危険があります。',
+         c:'材料を離して電源を切り、自分で調整せず先生に知らせます。', mode:'stop'},
+    D11:{n:'手がベルトに接近', m:'手を回転部分から離してください。',
+         d:'指や手がサンディングベルトに触れる危険があります。',
+         c:'材料を両手で持ち、指をベルトから離します。', mode:'stop'},
+    D13:{n:'保護具の未着用', m:'保護眼鏡と防塵マスクを着けてから加工します。',
+         d:'研磨で飛ぶ木粉や細かな破片が目に入ったり、粉じんを吸い込んだりする危険があります。',
+         c:'加工前に保護眼鏡と防塵マスクを着けます。', mode:'stop'},
+    D12:{n:'材料接触中の電源OFF', m:'材料をベルトから離してから停止します。',
+         d:'停止時に材料がベルトへ接触していると、材料が急に動いたり、研磨面を傷つけたりします。',
+         c:'材料を離してから電源を切ります。', mode:'block'}
+  };
+
+  function dangerText(id){
+    const d=DANGER[id];
+    return '⛔ '+d.m+'\n【どうなる？】'+d.d+'\n【正しい操作】'+d.c;
+  }
+  function fireDanger(id){
+    const d=DANGER[id];
+    if(d.mode==='stop'){
+      dangerStopped=true;
+      powerOn=false; rotationStable=false; beltSpeed=0;
+      materialMoving=false;
+      staticTime=0; strongTime=0;
+      if(elOverlayText){ elOverlayText.textContent='【危険！緊急停止】'+d.n+'\n'+dangerText(id)+'\n\n【もう一度やるには】表示された「正しい手順でやり直す」ボタンを押してください。'; }
+      elOverlay.classList.toggle('hand-danger',id==='D11');
+      elOverlay.classList.add('show');
+      if(simNextOverlay) simNextOverlay.classList.add('hidden');
+      elCard.classList.add('danger');
+      elDangerMsg.classList.remove('show','warn');
+      elDangerMsg.textContent='';
+      setStatus('「正しい手順でやり直す」ボタンを押してください。',999999);
+    }else{
+      elDangerMsg.classList.add('warn');
+      elDangerMsg.textContent='【この操作はできません】'+d.n+'\n'+dangerText(id);
+      elDangerMsg.classList.add('show');
+      setStatus(d.m,6000);
+    }
+    updateUI();
+  }
+  function clearDangerMsg(){
+    if(dangerStopped) return;
+    elDangerMsg.classList.remove('show','warn');
+    elDangerMsg.textContent='';
+  }
+  function setStatus(t,ms){ statusOverride=t; statusUntil=performance.now()+(ms||4000); elStatus.textContent=t; }
+
+  /* ---- 状態からの自動メッセージ ---- */
+  function autoStatus(){
+    if(dangerStopped) return '危険な原因を直してください。正しく直すと再開できます。';
+    if(!selectedMaterial) return '材料とベルトの番手を選んでください。';
+    if(!gogglesOn || !maskOn) return '保護眼鏡と防塵マスクを着けましょう。';
+    if(!collectorOn && !powerOn && !materialTouching) return '集塵機を動かしてください。';
+    if(!powerOn && beltSpeed>0) return 'ベルトが完全に停止するまで待ってください。';
+    if(!powerOn && completed) return '安全に研磨できました。';
+    if(!powerOn && materialTouching) return '材料がベルトに触れています。電源を入れる前に材料を離しましょう。';
+    if(!powerOn) return '材料をベルトから離したまま、電源を入れてください。';
+    if(!rotationStable) return 'ベルトの回転が安定するまで待ってください。';
+    if(!materialHeld) return '回転が安定しました。材料を両手で持ってください。';
+    if(materialTouching && materialMoving) return '材料を軽く当て、少しずつ動かしてください。';
+    if(materialTouching) return '材料を少しずつ左右に動かしてください。';
+    if(hasSanded) return '材料をベルトから離してください。';
+    return '回転が安定しました。材料を軽く当ててください。';
+  }
+  function nextStep(){
+    if(dangerStopped) return '<b>つぎ：</b>危険な原因を直す';
+    if(!selectedMaterial) return '<b>つぎ：</b>材料を選ぶ';
+    if(!gogglesOn || !maskOn) return '<b>つぎ：</b>保護眼鏡と防塵マスクを着ける';
+    if(!collectorOn && !powerOn) return '<b>つぎ：</b>集塵機をONにする';
+    if(!powerOn && beltSpeed>0) return '<b>つぎ：</b>完全に停止するまで待つ';
+    if(!powerOn) return '<b>つぎ：</b>材料を離した状態で電源をONにする';
+    if(!rotationStable) return '<b>つぎ：</b>回転が安定するまで待つ';
+    if(!materialHeld && !hasSanded) return '<b>つぎ：</b>材料を両手で持つ';
+    if(!materialTouching && !hasSanded) return '<b>つぎ：</b>「加工開始」を押す';
+    if(materialTouching && !materialMoving) return '<b>つぎ：</b>材料を少しずつ動かす';
+    if(materialTouching) return '<b>つぎ：</b>研磨できたら材料をベルトから離す';
+    return '<b>つぎ：</b>電源をOFFにする';
+  }
+
+  function processState(){
+    return {
+      prepare:!!(selectedMaterial&&gogglesOn&&maskOn&&collectorOn),
+      stable:rotationStable||hasSanded,
+      sand:hasSanded,
+      move:hasMoved,
+      release:releasedAfterSanding,
+      stop:stoppedAfterSanding||(hasSanded&&!powerOn&&beltSpeed<0.02),
+      collector:!!(hasSanded&&!collectorOn)
+    };
+  }
+  function currentAction(){
+    if(dangerStopped) return [0,'次の操作：「正しい手順でやり直す」ボタンを押してください','danger'];
+    if(dangerLearningBox && dangerLearningBox.open){
+      if(!gogglesOn) return [1,'危険を確認する実験：保護眼鏡を着けてください','goggles'];
+      if(!maskOn) return [2,'危険を確認する実験：防塵マスクを着けてください','mask'];
+      /* 電源が入った後は、集塵機の再判定で案内を戻さず、実験選択へ進める。 */
+      if(powerOn) return [5,'危険を確認する実験：電源が入りました。下の2つから実験を1つ選んでください','dangerChoice'];
+      if(!collectorOn) return [3,'危険を確認する実験：集塵機を動かしてください','collector'];
+      return [4,'危険を確認する実験：電源を入れてください','power'];
+    }
+    if(completed) return [13,'次の操作：まず「加工操作を最初からやり直す」を押してください。その後、「危険を確認する実験」を選べます','completeChoice'];
+    if(!selectedMaterial) return [1,'次の操作：材料を選んでください','material'];
+    if(!gogglesOn) return [2,'次の操作：保護眼鏡を着けてください','goggles'];
+    if(!maskOn) return [3,'次の操作：防塵マスクを着けてください','mask'];
+    if(!collectorOn&&!hasSanded) return [4,'次の操作：集塵機を動かしてください','collector'];
+    if(!powerOn&&!hasSanded&&beltSpeed<.02) return [5,'次の操作：材料をベルトから離したまま、電源を入れてください','power'];
+    if(powerOn&&!rotationStable) return [6,'次の操作：回転が安定するまで待ってください','wait'];
+    if(!materialHeld&&!hasSanded) return [7,'次の操作：回転が安定しました。材料を両手で持ってください','hold'];
+    if(!materialTouching&&!hasSanded) return [8,'次の操作：材料をベルトへ軽く当ててください','touch'];
+    if(materialTouching&&!hasMoved) return [9,'次の操作：材料を左右に動かしてください','move'];
+    if(materialTouching&&hasMoved) return [10,'次の操作：研磨できたら材料をベルトから離してください','release'];
+    if(hasSanded&&(powerOn||beltSpeed>.02)) return [11,'次の操作：電源を切り、完全停止を待ってください','power'];
+    return [13,'次の操作：まず「加工操作を最初からやり直す」を押してください。その後、「危険を確認する実験」を選べます','completeChoice'];
+  }
+  function clearHighlights(){[elMaterial,btnGoggles,btnMask,btnCol,btnHold,btnPower,btnTouch,btnMove,btnRelease].forEach(x=>x&&x.classList.remove('next-action','attention-action'));}
+  function updateLearningNav(){
+    const [num,text,key]=currentAction(); nextActionNum.textContent=num||'!'; nextActionText.textContent=text; clearHighlights();
+    if(simNextOverlay){
+      const hide=(key==='danger');
+      simNextOverlay.classList.toggle('hidden',hide);
+      simNextOverlay.classList.toggle('waiting',key==='wait');
+      simNextOverlay.classList.toggle('danger-guide',key==='dangerChoice'||key==='completeChoice');
+      simNextOverlayNum.textContent=num||'!';
+      simNextOverlayText.textContent=text;
+    }
+    if(dangerLearningBox){ dangerLearningBox.classList.toggle('guide-active',key==='dangerChoice'); dangerLearningBox.classList.toggle('next-choice',key==='completeChoice'); }
+    if(simResultOverlay) simResultOverlay.classList.toggle('show',completed && !dangerStopped);
+    const map={material:elMaterial,goggles:btnGoggles,mask:btnMask,collector:btnCol,hold:btnHold,power:btnPower,touch:btnTouch,move:btnMove,release:btnRelease};
+    btnReset.classList.toggle('next-choice',key==='completeChoice');
+    if(map[key]) map[key].classList.add(key==='power'&&hasSanded?'attention-action':'next-action');
+    const ps=processState(); let first=false; processItems.forEach(x=>{const k=x.dataset.step;x.classList.toggle('done',!!ps[k]);x.textContent=(ps[k]?'✅ ':'□ ')+x.textContent.replace(/^✅ |^□ /,'');x.classList.remove('current');if(!ps[k]&&!first){x.classList.add('current');first=true;}});
+    const setBadge=(el,ok,text)=>{el.classList.toggle('ok',ok);el.textContent=text};
+    setBadge(badgeGoggles,gogglesOn,'🥽 眼鏡：'+(gogglesOn?'✅':'未'));setBadge(badgeMask,maskOn,'😷 マスク：'+(maskOn?'✅':'未'));setBadge(badgeCollector,collectorOn,'🌀 集塵：'+(collectorOn?'ON':'OFF'));setBadge(badgeHold,materialHeld,'🖐 両手：'+(materialHeld?'✅':'未'));
+  }
+  function tryRecover(){
+    if(!dangerStopped) return;
+    const safe=!materialTouching&&!handNearBelt&&beltPositionNormal;
+    if(safe){dangerStopped=false;elOverlay.classList.remove('show','hand-danger');elCard.classList.remove('danger');statusOverride='';statusUntil=0;setStatus('✅ 危険を回避できました。正しい手順で再開しましょう。',5000);}
+  }
+
+  /* ---- UIの有効・無効（制御ルール CR01〜CR09） ---- */
+  function updateUI(){
+    const dz=dangerStopped;
+    elMaterial.disabled = dz || powerOn || beltSpeed>0;
+    elGrit.disabled     = dz || powerOn || beltSpeed>0;
+    btnGoggles.disabled = false;
+    btnMask.disabled    = false;
+    btnCol.disabled     = false;
+    btnHold.disabled    = dz && materialTouching;
+    btnPower.disabled   = dz;
+    btnTouch.disabled   = dz || !selectedMaterial || materialTouching;
+    btnMove.disabled    = dz || !materialTouching;
+    btnRelease.disabled = dz || !materialTouching;
+    const experimentReady=!!(dangerLearningBox&&dangerLearningBox.open&&powerOn&&!dz);
+    btnHand.disabled    = !experimentReady;
+    btnSlip.disabled    = !experimentReady;
+    segWrap.querySelectorAll('.seg-btn').forEach(b=>b.disabled=dz);
+
+    btnGoggles.className   = 'sim-btn '+(gogglesOn?'btn-on':'btn-dark');
+    btnGoggles.textContent = gogglesOn?'🥽 保護眼鏡を外す':'🥽 保護眼鏡を着ける';
+    btnMask.className      = 'sim-btn '+(maskOn?'btn-on':'btn-dark');
+    btnMask.textContent    = maskOn?'😷 防塵マスクを外す':'😷 防塵マスクを着ける';
+    btnCol.className   = 'sim-btn '+(collectorOn?'btn-on':'btn-dark');
+    btnCol.textContent = collectorOn?'🌀 集塵機を止める':'🌀 集塵機を動かす';
+    btnCol.setAttribute('aria-pressed',String(collectorOn));
+    btnCol.dataset.state=collectorOn?'on':'off';
+    btnHold.className  = 'sim-btn '+(materialHeld?'btn-on':'');
+    btnHold.textContent= materialHeld?'🖐 材料を保持中':'🖐 材料を両手で持つ';
+    btnPower.className = 'sim-btn '+(powerOn?'btn-on':'btn-off');
+    btnPower.textContent = powerOn?'■ 電源を切る':'⚡ 電源を入れる';
+    btnMove.className  = 'sim-btn '+(materialMoving?'btn-act2':'btn-act');
+    btnMove.textContent= materialMoving?'⏸ 材料の移動を止める':'↔ 材料を左右に動かす';
+
+    elStep.innerHTML = nextStep();
+    updateLearningNav();
+  }
+
+  /* ---- 板の形状リセット ---- */
+  function resetBoard(){
+    profile=new Array(SEG).fill(0);
+    burn=new Array(SEG).fill(0);
+    hasSanded=false; completed=false; hasMoved=false; releasedAfterSanding=false; stoppedAfterSanding=false;
+    bx=M.restBoardX; byBottom=M.beltTop;
+    dusts.length=0;
+  }
+
+  /* =============== 描画：材料・手・木粉 =============== */
+  function boardTargets(){
+    let tx, ty;
+    if(materialTouching){
+      const dip = pressureLevel==='strong'?9:(pressureLevel==='weak'?0:3);
+      tx = M.contactC - M.boardW/2 + (materialMoving?Math.sin(moveT*0.0016)*88:0);
+      ty = M.beltTop + dip;
+    }else if(materialHeld){
+      tx = M.contactC - M.boardW/2;
+      ty = M.beltTop - 86;
+    }else{
+      tx = M.restBoardX; ty = M.beltTop;
+    }
+    return [tx,ty];
+  }
+  function drawBoard(){
+    const w=M.boardW, h=M.boardH, segW=w/SEG;
+    const top=byBottom-h;
+    /* 板の外形（下端は研磨で削れた輪郭） */
+    g.beginPath();
+    g.moveTo(bx,top); g.lineTo(bx+w,top);
+    for(let i=SEG-1;i>=0;i--){
+      const x0=bx+(i+1)*segW, x1=bx+i*segW, y=byBottom-profile[i];
+      g.lineTo(x0,y); g.lineTo(x1,y);
+    }
+    g.closePath();
+    g.fillStyle=G.wood; g.fill();
+    g.strokeStyle='#8a5a25'; g.lineWidth=2.5; g.stroke();
+
+    /* 研磨された面（番手による質感の違い） */
+    const gr=GRIT[selectedGrit];
+    for(let i=0;i<SEG;i++){
+      const x=bx+i*segW, y=byBottom-profile[i];
+      if(profile[i]>0.4){
+        g.fillStyle=G.woodCut; g.fillRect(x,y,segW+0.6,9);
+        if(burn[i]>1){
+          g.globalAlpha=Math.min(0.85,burn[i]/45);
+          g.fillStyle=G.burn; g.fillRect(x,y,segW+0.6,11);
+          g.globalAlpha=1;
+        }
+      }
+    }
+    /* 研磨跡（番手が粗いほど線が太く粗い） */
+    g.save();
+    g.strokeStyle=gr.color; g.lineWidth=gr.line*0.7;
+    for(let i=0;i<SEG;i++){
+      if(profile[i]<=0.4) continue;
+      const x=bx+i*segW, y=byBottom-profile[i];
+      if(i%Math.max(1,Math.round(gr.gap/2))===0){
+        g.beginPath(); g.moveTo(x,y+3); g.lineTo(x+segW*1.6,y+3); g.stroke();
+      }
+    }
+    g.restore();
+    /* 未研磨面のざらつき */
+    g.save(); g.strokeStyle='#a9762f'; g.lineWidth=1.4;
+    for(let i=0;i<SEG;i+=3){
+      if(profile[i]>0.4) continue;
+      const x=bx+i*segW, y=byBottom-profile[i];
+      g.beginPath(); g.moveTo(x,y-3); g.lineTo(x+segW*1.2,y-6); g.stroke();
+    }
+    g.restore();
+    /* 板の上面 */
+    g.fillStyle='rgba(255,255,255,0.25)'; g.fillRect(bx+3,top+3,w-6,6);
+
+    /* 削り量ラベル（画面左上に固定表示） */
+    const maxD=Math.max.apply(null,profile);
+    if(maxD>0.6){
+      const mm=(maxD*0.15).toFixed(1);
+      const burnMax=Math.max.apply(null,burn);
+      const txt='削り量 最大 '+mm+' mm　/　'+GRIT[selectedGrit].label+(burnMax>18?'　⚠ 焦げ':'');
+      g.font='bold 21px sans-serif';
+      const tw=g.measureText(txt).width;
+      g.fillStyle='rgba(255,255,255,0.92)';
+      g.fillRect(26,74,tw+16,32);
+      g.strokeStyle='#e5d8c7'; g.lineWidth=1.5; g.strokeRect(26,74,tw+16,32);
+      g.fillStyle=burnMax>18?G.red:'#6f4e37';
+      g.fillText(txt,34,97);
+    }
+  }
+  /* 上から押し付けていることを示す矢印 */
+  function drawPressArrow(){
+    if(!materialTouching) return;
+    const cx=bx+M.boardW/2, top=byBottom-M.boardH;
+    const len=pressureLevel==='weak'?32:(pressureLevel==='strong'?78:52);
+    const w  =pressureLevel==='weak'?6:(pressureLevel==='strong'?13:9);
+    const col=pressureLevel==='strong'?G.red:(pressureLevel==='weak'?'#4a7fb5':G.green);
+    const y1=top-14, y0=y1-len;
+    ln(g,cx,y0,cx,y1-15,col,w);
+    poly(g,[[cx-w-7,y1-17],[cx+w+7,y1-17],[cx,y1]],col,col,1);
+    g.fillStyle=col; g.font='bold 19px sans-serif'; g.textAlign='center';
+    g.fillText('押し付ける力：'+(pressureLevel==='weak'?'弱い':pressureLevel==='strong'?'強い':'適切'),cx,y0-9);
+    g.textAlign='left';
+  }
+  /* 保持中：上から降ろすことを示すガイド */
+  function drawDropGuide(){
+    if(!materialHeld||materialTouching) return;
+    const cx=bx+M.boardW/2;
+    g.save();
+    g.setLineDash([9,7]); g.strokeStyle='#8b6b4c'; g.lineWidth=4;
+    [cx-62,cx+62].forEach(x=>{ g.beginPath(); g.moveTo(x,byBottom+8); g.lineTo(x,M.beltTop-16); g.stroke(); });
+    g.setLineDash([]);
+    [cx-62,cx+62].forEach(x=>poly(g,[[x-10,M.beltTop-18],[x+10,M.beltTop-18],[x,M.beltTop-3]],'#8b6b4c','#8b6b4c',1));
+    g.restore();
+    g.fillStyle='#8b6b4c'; g.font='bold 19px sans-serif'; g.textAlign='center';
+    g.fillText('上から軽く押し当てる',cx,byBottom+50);
+    g.textAlign='left';
+  }
+  /* 作業者の保護具（着用状態を表示） */
+  function drawWorker(){
+    const cx=1086, cy=132, r=46;
+    cir(g,cx,cy,r,G.skin,'#b98a63',2.5);
+    g.beginPath(); g.arc(cx,cy,r,Math.PI*1.05,Math.PI*1.95); g.closePath();
+    g.fillStyle='#4a3a2a'; g.fill();
+    if(gogglesOn){
+      rr(g,cx-40,cy-19,80,27,9,'#39485a','#22303c',2);
+      rr(g,cx-34,cy-14,29,17,5,'#a8dbe8',null,0);
+      rr(g,cx+5,cy-14,29,17,5,'#a8dbe8',null,0);
+    }else{
+      cir(g,cx-15,cy-7,5,'#2f2a24',null,0);
+      cir(g,cx+15,cy-7,5,'#2f2a24',null,0);
+    }
+    if(maskOn){
+      rr(g,cx-33,cy+8,66,33,11,'#eef2f6','#b9c3cc',2);
+      ln(g,cx-33,cy+16,cx-50,cy+3,'#b9c3cc',3);
+      ln(g,cx+33,cy+16,cx+50,cy+3,'#b9c3cc',3);
+    }else{
+      g.beginPath(); g.arc(cx,cy+14,13,0.15*Math.PI,0.85*Math.PI);
+      g.strokeStyle='#2f2a24'; g.lineWidth=3; g.stroke();
+    }
+    const ok=gogglesOn&&maskOn;
+    g.font='bold 19px sans-serif'; g.textAlign='center';
+    g.fillStyle=ok?G.green:G.red;
+    g.fillText(ok?'保護具 OK':'⚠ 保護具を着ける',cx,cy+r+26);
+    g.textAlign='left';
+  }
+  function drawHand(cx,cy,flip){
+    g.save(); g.translate(cx,cy); if(flip) g.scale(-1,1);
+    g.fillStyle=G.skin; g.strokeStyle='#b98a63'; g.lineWidth=2;
+    g.beginPath();
+    g.moveTo(-30,4); g.quadraticCurveTo(-34,-26,-6,-30);
+    g.quadraticCurveTo(26,-32,32,-8); g.quadraticCurveTo(36,10,20,12);
+    g.lineTo(-24,12); g.closePath(); g.fill(); g.stroke();
+    for(let i=0;i<3;i++){
+      g.beginPath(); g.moveTo(-14+i*14,12); g.lineTo(-14+i*14,2); g.stroke();
+    }
+    /* そで */
+    g.fillStyle='#4a7fb5'; g.strokeStyle='#33587e';
+    g.beginPath(); g.moveTo(-30,4); g.lineTo(-64,-6); g.lineTo(-64,-30); g.lineTo(-8,-30);
+    g.closePath(); g.fill(); g.stroke();
+    g.restore();
+  }
+  function drawHands(){
+    /* 危険実験で手をベルトへ近づけている間は、通常の両手保持CGを隠す。 */
+    if(!materialHeld || handNearBelt) return;
+    const top=byBottom-M.boardH;
+    drawHand(bx+46,top-2,false);
+    drawHand(bx+M.boardW-46,top-2,true);
+  }
+  function drawHandNearBelt(){
+    if(!handNearBelt) return;
+    /* 通常の両手保持CGと重ならないよう、右下から1本の手が近づく表示にする。 */
+    const handX=M.contactC+185;
+    const handY=M.beltTop+22;
+    drawHand(handX,handY,false);
+    /* 指先とベルトの接近箇所を囲む。 */
+    const dangerX=handX-31;
+    const dangerY=handY-20;
+    g.save();
+    g.strokeStyle=G.red; g.lineWidth=6;
+    g.beginPath(); g.arc(dangerX,dangerY,38,0,Math.PI*2); g.stroke();
+    g.fillStyle=G.red; g.font='bold 20px sans-serif'; g.textAlign='center';
+    g.fillText('危険',dangerX,dangerY-48);
+    g.textAlign='left';
+    g.restore();
+  }
+  function spawnDust(n){
+    for(let i=0;i<n;i++){
+      dusts.push({
+        x:M.contactC+(Math.random()-0.5)*90,
+        y:M.beltTop-2,
+        vx:1.2+Math.random()*3.2,
+        vy:-1.2-Math.random()*2.2,
+        r:2+Math.random()*3.4,
+        life:1
+      });
+    }
+  }
+  function updateDust(dt){
+    const k=dt/16.7;
+    for(let i=dusts.length-1;i>=0;i--){
+      const p=dusts[i];
+      if(collectorOn){
+        const dx=689-p.x, dy=502-p.y, d=Math.hypot(dx,dy)||1;
+        p.vx+=dx/d*0.55*k; p.vy+=dy/d*0.55*k;
+        p.vx*=0.94; p.vy*=0.94;
+        if(d<30) p.life=0;
+      }else{
+        p.vy+=0.07*k; p.vx*=0.995;
+      }
+      p.x+=p.vx*k; p.y+=p.vy*k;
+      p.life-=0.006*k;
+      if(p.life<=0||p.y>740||p.x>1190) dusts.splice(i,1);
+    }
+  }
+  function drawDust(){
+    g.save();
+    dusts.forEach(p=>{
+      g.globalAlpha=Math.max(0,Math.min(1,p.life));
+      g.fillStyle=G.dust;
+      g.beginPath(); g.ellipse(p.x,p.y,p.r,p.r*0.6,p.x*0.02,0,Math.PI*2); g.fill();
+    });
+    g.restore();
+  }
+  function drawSpark(){
+    if(!materialTouching||beltSpeed<0.2) return;
+    g.save();
+    g.globalAlpha=0.55+Math.sin(phase*0.4)*0.2;
+    const grad=g.createRadialGradient(M.contactC,M.beltTop,4,M.contactC,M.beltTop,70);
+    grad.addColorStop(0,'rgba(255,236,180,0.95)');
+    grad.addColorStop(1,'rgba(255,236,180,0)');
+    g.fillStyle=grad;
+    g.beginPath(); g.ellipse(M.contactC,M.beltTop,74,26,0,0,Math.PI*2); g.fill();
+    g.restore();
+  }
+  function drawInfoBar(){
+    g.save();
+    g.font='bold 21px sans-serif';
+    g.fillStyle='#6f4e37';
+    const st=[];
+    st.push('保護具:'+((gogglesOn&&maskOn)?'着用':'未着用'));
+    st.push('集塵機:'+(collectorOn?'ON':'OFF'));
+    st.push('電源:'+(powerOn?'ON':'OFF'));
+    st.push('回転:'+(beltSpeed<0.02?'停止':(!rotationStable?'始動中':(beltSpeed<0.9?'低下中':'安定'))));
+    st.push('番手:'+GRIT[selectedGrit].label);
+    st.push('押し付け:'+(pressureLevel==='weak'?'弱い':pressureLevel==='strong'?'強い':'適切'));
+    g.fillText(st.join('　／　'),30,44);
+    if(!beltPositionNormal){
+      g.fillStyle=G.red;
+      g.fillText('⚠ ベルトが横にずれています',30,74);
+    }
+    g.restore();
+  }
+
+  /* =============== メインループ =============== */
+  let last=performance.now(), rafId=null, active=false;
+  function loop(now){
+    if(!active){ rafId=null; return; }
+    const dt=Math.min(50,now-last); last=now;
+    step(dt);
+    render();
+    rafId=requestAnimationFrame(loop);
+  }
+  function step(dt){
+    /* ベルト速度 */
+    let target=0;
+    if(powerOn) target=(materialTouching&&pressureLevel==='strong')?0.42:1;
+    const s=dt/2000;
+    if(beltSpeed<target) beltSpeed=Math.min(target,beltSpeed+s);
+    else beltSpeed=Math.max(target,beltSpeed-s);
+    const wasStable=rotationStable;
+    if(powerOn && beltSpeed>=0.999) rotationStable=true;
+    if(!powerOn) rotationStable=false;
+    if(!wasStable && rotationStable){
+      setStatus(dangerLearningBox&&dangerLearningBox.open?'電源が入っています。下の2つから危険を確認する実験を1つ選んでください。':'回転が安定しました。次に材料を両手で持ってください。',4000);
+      updateUI();
+    }
+    phase += beltSpeed*7*(dt/16.7);
+
+    if(materialMoving) moveT+=dt;
+
+    /* 板の位置補間 */
+    const [tx,ty]=boardTargets();
+    const k=Math.min(1,dt/120);
+    bx += (tx-bx)*k; byBottom += (ty-byBottom)*k;
+
+    /* 研磨処理 */
+    if(materialTouching && beltSpeed>0.15 && !dangerStopped){
+      const gr=GRIT[selectedGrit];
+      const rate=gr.rate*PRESS[pressureLevel]*beltSpeed*(dt/16.7);
+      const segW=M.boardW/SEG;
+      for(let i=0;i<SEG;i++){
+        const cx=bx+(i+0.5)*segW;
+        if(Math.abs(cx-M.contactC)<=M.contactHalf){
+          profile[i]=Math.min(M.boardH-9,profile[i]+rate);
+          if(!materialMoving) burn[i]=Math.min(60,burn[i]+rate*2.6);
+          hasSanded=true;
+        }
+      }
+      spawnDust(collectorOn?2:3);
+
+      /* D07 一か所への連続研磨 */
+      if(!materialMoving){
+        staticTime+=dt;
+        if(staticTime>=4500){ fireDanger('D07'); }
+        else if(staticTime>=2500 && !elDangerMsg.classList.contains('show')){
+          elDangerMsg.classList.add('warn','show');
+          elDangerMsg.textContent='⚠ 同じ場所に当て続けています。材料を少しずつ左右に動かしましょう。';
+        }
+      }else{ staticTime=0; }
+
+      /* D06 強い押し付け */
+      if(pressureLevel==='strong'){
+        strongTime+=dt;
+        if(strongTime>=3000){ fireDanger('D06'); }
+        else if(strongTime>=1000 && !elDangerMsg.classList.contains('show')){
+          elDangerMsg.classList.add('warn','show');
+          elDangerMsg.textContent='⚠ 押し付ける力が強すぎます。モーターの回転が落ちています。軽く当てましょう。';
+        }
+      }else{ strongTime=0; }
+    }else{
+      staticTime=0; strongTime=0;
+    }
+
+    /* 完了判定 */
+    if(hasSanded && !powerOn && beltSpeed<0.01 && !materialTouching && !dangerStopped && !completed){
+      completed=true; if(dangerLearningBox) dangerLearningBox.open=false; learningGate.sim=true; updateSimulatorLock();
+      const advice=pressureLevel==='weak'?'安全に加工できました。押す力が弱く，研磨量は少なめでした。':(selectedGrit==='60'?'安全に加工できました。#60は粗い研磨跡が残りやすいため，仕上げには細かい番手を使います。':'安全に研磨できました。材料を軽く当て，左右に動かせています。');
+      resultAdvice.textContent=advice; if(simResultAdvice) simResultAdvice.textContent=advice; if(simResultOverlay) simResultOverlay.classList.add('show');
+      setStatus('完全停止しました。まず「加工操作を最初からやり直す」を押してください。その後、「危険を確認する実験」を選べます。',8000);
+      updateUI();
+    }
+    updateDust(dt);
+  }
+  function render(){
+    const shake = (beltSpeed>0.05? Math.sin(phase*0.5)*1.1*beltSpeed : 0);
+    drawMachine(g,{powerOn:powerOn||beltSpeed>0.01, phase:phase, shake:shake,
+                   showArrow:beltSpeed>0.05, beltSlipped:!beltPositionNormal});
+    g.save(); g.translate(shake,0);
+    drawSpark();
+    if(selectedMaterial && selectedMaterial!=='too_small' && selectedMaterial!=='metal_embedded'){
+      drawBoard(); drawHands(); drawDropGuide(); drawPressArrow();
+    }else if(selectedMaterial){
+      drawSpecialMaterial();
+    }
+    drawHandNearBelt();
+    drawDust();
+    drawWorker();
+    g.restore();
+    drawInfoBar();
+    elStatus.textContent = (performance.now()<statusUntil && statusOverride) ? statusOverride : autoStatus();
+    const stp=nextStep(); if(elStep.innerHTML!==stp) elStep.innerHTML=stp;
+  }
+  function drawSpecialMaterial(){
+    const w = selectedMaterial==='too_small'?58:M.boardW;
+    const h = selectedMaterial==='too_small'?26:M.boardH;
+    const x = materialHeld ? (M.contactC-w/2) : M.restBoardX+30;
+    const y = (materialHeld? M.beltTop-42 : M.beltTop)-h;
+    rr(g,x,y,w,h,3,G.wood,'#8a5a25',2.5);
+    if(selectedMaterial==='metal_embedded'){
+      /* 釘 */
+      ln(g,x+60,y-16,x+60,y+h-6,'#8f8f98',7);
+      cir(g,x+60,y-18,9,G.metal,G.edge,2);
+      ln(g,x+130,y-14,x+130,y+h-6,'#8f8f98',6);
+      cir(g,x+130,y-16,8,G.metal,G.edge,2);
+      g.fillStyle=G.red; g.font='bold 21px sans-serif';
+      g.fillText('⚠ 釘が入っています',x-6,y-34);
+    }else{
+      g.fillStyle=G.red; g.font='bold 21px sans-serif';
+      g.fillText('⚠ 小さすぎて安定して持てません',x-40,y-20);
+    }
+    if(materialHeld){
+      drawHand(x+((selectedMaterial==='too_small')?w/2:46),y-2,false);
+      if(selectedMaterial!=='too_small') drawHand(x+w-46,y-2,true);
+    }
+  }
+
+  function start(){ if(rafId) return; active=true; last=performance.now(); rafId=requestAnimationFrame(loop); }
+  function stop(){ active=false; if(rafId){ cancelAnimationFrame(rafId); rafId=null; } }
+
+  /* =============== 操作イベント =============== */
+  elMaterial.addEventListener('change',()=>{
+    selectedMaterial=elMaterial.value;
+    materialHeld=false; materialTouching=false; materialMoving=false;
+    resetBoard(); clearDangerMsg();
+    if(selectedMaterial==='too_small') setStatus('この材料は小さすぎます。加工できるか考えてみましょう。',5000);
+    if(selectedMaterial==='metal_embedded') setStatus('この材料には釘が入っています。加工できるか考えてみましょう。',5000);
+    updateUI(); render();
+  });
+  elGrit.addEventListener('change',()=>{
+    selectedGrit=elGrit.value;
+    setStatus(({'60':'#60は速く削れますが、研磨跡が残りやすい番手です。',
+                '120':'#120は削れ方と仕上がりのバランスがよい番手です。',
+                '180':'#180は削れる量は少ないですが、表面を滑らかにできます。'})[selectedGrit],5000);
+    updateUI();
+  });
+  btnGoggles.addEventListener('click',()=>{
+    gogglesOn=!gogglesOn; clearDangerMsg();
+    setStatus(gogglesOn?'保護眼鏡を着けました。飛んでくる木粉から目を守ります。'
+                       :'保護眼鏡を外しました。加工前には必ず着けます。',3500);
+    updateUI();
+  });
+  btnMask.addEventListener('click',()=>{
+    maskOn=!maskOn; clearDangerMsg();
+    setStatus(maskOn?'防塵マスクを着けました。木の粉を吸い込まないようにします。'
+                    :'防塵マスクを外しました。加工前には必ず着けます。',3500);
+    updateUI();
+  });
+  function setCollectorState(nextState, message=true){
+    collectorOn=Boolean(nextState);
+    btnCol.setAttribute('aria-pressed',String(collectorOn));
+    btnCol.dataset.state=collectorOn?'on':'off';
+    if(message){
+      setStatus(collectorOn
+        ? '集塵機が作動中です。木粉を吸い取ります。'
+        : '集塵機を止めました。',3000);
+    }
+    updateUI();
+    render();
+  }
+  btnCol.addEventListener('click',()=>{
+    clearDangerMsg();
+    setCollectorState(!collectorOn,true);
+  });
+  btnHold.addEventListener('click',()=>{
+    if(materialTouching){ setStatus('材料を離してから持ち方を変えます。',3000); return; }
+    if(!selectedMaterial){ setStatus('先に材料を選んでください。',3000); return; }
+    if(!powerOn || !rotationStable){ setStatus('先に電源を入れ、ベルトの回転が安定してから材料を両手で持ちます。',4500); return; }
+    materialHeld=!materialHeld; clearDangerMsg();
+    setStatus(materialHeld?'材料を両手で安定して持ちました。':'材料をワークレストに置きました。',3000);
+    updateUI();
+  });
+  btnPower.addEventListener('click',()=>{
+    clearDangerMsg();
+    if(!powerOn){
+      if(!selectedMaterial){ setStatus('先に材料を選んでください。',3000); return; }
+      if(materialHeld){ setStatus('電源を入れる前に、材料をいったんワークレストへ置いてください。',4000); return; }
+      if(materialTouching){ fireDanger('D02'); return; }   /* D02 */
+      powerOn=true; completed=false;
+      setStatus('電源を入れました。回転が安定するまで待ちましょう。',3000);
+    }else{
+      if(materialTouching){ fireDanger('D12'); return; }    /* D12 */
+      powerOn=false; if(hasSanded) stoppedAfterSanding=true;
+      setStatus('電源を切りました。完全に停止するまで触れません。',4000);
+    }
+    updateUI();
+  });
+  btnTouch.addEventListener('click',()=>{
+    clearDangerMsg();
+    if(!selectedMaterial){ setStatus('先に材料を選んでください。',3000); return; }
+    if(selectedMaterial==='too_small'){ fireDanger('D05'); return; }        /* D05 */
+    if(selectedMaterial==='metal_embedded'){ fireDanger('D08'); return; }   /* D08 */
+    if(!powerOn && beltSpeed<0.01){
+      if(!materialHeld){ setStatus('まず材料を両手で持ちましょう。',3000); return; }
+      materialTouching=true;
+      setStatus('材料がベルトに触れています。始動前に材料は離しておきます。',5000);
+      updateUI(); return;
+    }
+    if(!gogglesOn || !maskOn){ fireDanger('D13'); return; } /* D13 */
+    if(!materialHeld){ fireDanger('D04'); return; }        /* D04 */
+    if(!rotationStable){ fireDanger('D03'); return; }      /* D03 */
+    if(!collectorOn){ fireDanger('D01'); return; }         /* D01 */
+    materialTouching=true; staticTime=0; strongTime=0;
+    setStatus('材料を軽く当てました。少しずつ左右に動かしましょう。',4000);
+    updateUI();
+  });
+  segWrap.querySelectorAll('.seg-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      pressureLevel=b.dataset.p;
+      segWrap.querySelectorAll('.seg-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      if(pressureLevel!=='strong') clearDangerMsg();
+      strongTime=0;
+      setStatus(pressureLevel==='strong'?'⚠ 強く押し付けています。ベルトやモーターに負担がかかります。'
+              :pressureLevel==='weak'?'弱い力です。削れる量は少なくなります。'
+              :'適切な力です。軽く当てましょう。',4000);
+      updateUI();
+    });
+  });
+  btnMove.addEventListener('click',()=>{
+    if(!materialTouching) return;
+    materialMoving=!materialMoving;
+    if(materialMoving){ clearDangerMsg(); staticTime=0; hasMoved=true; }
+    setStatus(materialMoving?'材料を少しずつ動かしています。':'材料を止めました。同じ場所に当て続けないようにします。',4000);
+    updateUI();
+  });
+  btnRelease.addEventListener('click',()=>{
+    if(hasSanded) releasedAfterSanding=true;
+    materialTouching=false; materialMoving=false;
+    staticTime=0; strongTime=0; clearDangerMsg();
+    setStatus('材料をベルトから離しました。電源を切りましょう。',4000);
+    updateUI();
+  });
+  btnHand.addEventListener('click',()=>{
+    clearDangerMsg();
+    if(powerOn||beltSpeed>0.01){
+      handNearBelt=true;
+      fireDanger('D11');                      /* D11 */
+      render();
+      return;
+    }
+    setStatus('回転が止まっていても、ベルトには不用意に触れません。',4000);
+  });
+  btnSlip.addEventListener('click',()=>{
+    clearDangerMsg();
+    beltPositionNormal=false;
+    if(powerOn||beltSpeed>0.01){ fireDanger('D09'); return; }     /* D09 */
+    setStatus('ベルトがずれています。自分で直さず、先生に知らせましょう。',5000);
+    updateUI();
+  });
+  function resetOperation(fromDanger=false){
+    /* 材料・ベルトの番手・保護具は保持し、機械の操作だけを安全な初期状態へ戻す。
+       危険実験のやり直しでは、作動中の集塵機をそのまま維持する。 */
+    /* 集塵機がすでにONなら、通常のやり直しでも危険実験のやり直しでも維持する。 */
+    const keepCollector = collectorOn;
+    collectorOn=keepCollector; powerOn=false; rotationStable=false;
+    materialHeld=false; materialTouching=false; materialMoving=false;
+    pressureLevel='proper'; beltPositionNormal=true; dangerStopped=false;
+    handNearBelt=false; beltSpeed=0; phase=0; staticTime=0; strongTime=0; moveT=0;
+    segWrap.querySelectorAll('.seg-btn').forEach(x=>x.classList.toggle('active',x.dataset.p==='proper'));
+    elOverlay.classList.remove('show','hand-danger');
+    if(elOverlayText) elOverlayText.textContent='危険！\n緊急停止';
+    elCard.classList.remove('danger');
+    elDangerMsg.classList.remove('show','warn'); elDangerMsg.textContent='';
+    statusOverride=''; statusUntil=0;
+    learningGate.sim=false; updateSimulatorLock(); resultEval.classList.remove('show'); if(simResultOverlay) simResultOverlay.classList.remove('show'); resetBoard(); updateUI(); render();
+    setStatus(fromDanger
+      ? '✅ 危険な操作を解除しました。青く示された「次の操作」から正しい手順で再開してください。'
+      : (selectedMaterial ? '加工操作を最初からに戻しました。続けて「危険を確認する実験」を選べます。材料・番手・保護具の設定は残っています。' : '材料とベルトの番手を選んでください。'), 6000);
+  }
+  btnReset.addEventListener('click',()=>resetOperation(false));
+  if(btnDangerRetry) btnDangerRetry.addEventListener('click',()=>resetOperation(true));
+
+  if(dangerLearningBox){
+    dangerLearningBox.addEventListener('toggle',()=>{
+      if(dangerLearningBox.open && completed){
+        dangerLearningBox.open=false;
+        updateUI(); render();
+        return;
+      }
+      updateUI(); render();
+      /* 操作指示はCG上のガイドだけに表示する。 */
+    });
+  }
+
+  /* タブ切り替えでアニメーション制御 */
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      if(b.dataset.panel==='panel-simulator' && simulatorUnlocked()){ requestAnimationFrame(()=>{ render(); start(); }); }
+      else stop();
+    });
+  });
+
+  updateUI();
+  render();
+})();
+
+/* =====================================================================
+   パネル4：確認クイズ
+===================================================================== */
+(function(){
+  const QUIZ=[
+    {q:'ベルトサンダーを使うときに必要な保護具はどれですか。',
+     choices:['保護眼鏡と防塵マスク','軍手だけ','帽子だけ','特に必要ない'],
+     answer:'保護眼鏡と防塵マスク',
+     exp:'研磨で飛ぶ木粉や細かな破片から、目や呼吸器を守る必要があります。'},
+    {q:'作業中に手袋を着けないのはなぜですか。',
+     choices:['回転部分に巻き込まれる危険があるから','材料が汚れるから','手袋が重いから','木材を削れなくなるから'],
+     answer:'回転部分に巻き込まれる危険があるから',
+     exp:'手袋や衣服が回転するベルトに巻き込まれると、大きな事故につながります。'},
+    {q:'電源を入れる前の材料の位置として正しいものはどれですか。',
+     choices:['ベルトから離しておく','ベルトに強く押し付ける','ベルトの上に置く','片手でベルトに触れさせる'],
+     answer:'ベルトから離しておく',
+     exp:'材料を接触させたまま始動すると、材料が急に動く危険があります。'},
+    {q:'材料をベルトに当てるのはいつですか。',
+     choices:['ベルトの回転が安定してから','電源を入れる前','電源を入れると同時','ベルトが止まりかけたとき'],
+     answer:'ベルトの回転が安定してから',
+     exp:'回転が安定してから、材料をゆっくりベルトに近づけます。'},
+    {q:'材料の正しい持ち方はどれですか。',
+     choices:['両手で安定して持つ','片手だけで持つ','指先だけでつまむ','手を離してワークレストに置く'],
+     answer:'両手で安定して持つ',
+     exp:'材料が急に動かないよう、両手で持ってワークレストに当てます。'},
+    {q:'材料をベルトに当てる力として正しいものはどれですか。',
+     choices:['軽く当てる','全体重をかける','強く押し続ける','たたくように当てる'],
+     answer:'軽く当てる',
+     exp:'強く押し付けると、ベルトやモーターに大きな負担がかかります。'},
+    {q:'材料を一か所に当て続けると、どうなりますか。',
+     choices:['削れすぎたり焦げたりする','材料が大きくなる','ベルトが新しくなる','木粉が出なくなる'],
+     answer:'削れすぎたり焦げたりする',
+     exp:'同じ場所を研磨し続けると、その部分だけがへこんだり、摩擦熱で焦げたりします。'},
+    {q:'小さすぎる材料を加工してはいけない理由はどれですか。',
+     choices:['手がベルトに近づくから','木粉が出ないから','機械が重くなるから','ベルトの色が変わるから'],
+     answer:'手がベルトに近づくから',
+     exp:'小さい材料は安定して持ちにくく、手や指がベルトに近づくため危険です。'},
+    {q:'ベルトが横にずれたときはどうしますか。',
+     choices:['電源を切り、先生に知らせる','手で押して戻す','そのまま使い続ける','材料を強く押し付ける'],
+     answer:'電源を切り、先生に知らせる',
+     exp:'生徒が自分でベルトを調整せず、機械を停止して先生に知らせます。'},
+    {q:'加工を終了するとき、最初に行うことはどれですか。',
+     choices:['材料をベルトから離す','集塵機を先に止める','ベルトに手を触れる','材料を強く押し付ける'],
+     answer:'材料をベルトから離す',
+     exp:'材料をベルトから離してから電源を切り、完全に停止するまで待ちます。'}
+  ];
+
+  let qIdx=0, score=0, answered=false, finished=false;
+  let answers=[], quizOrder=[];
+  const qEl=document.getElementById('quizQuestion'), cEl=document.getElementById('quizChoices'),
+        rEl=document.getElementById('quizResult'), progEl=document.getElementById('quizProgress'),
+        scoreEl=document.getElementById('quizScore'), barEl=document.getElementById('quizProgressBar'),
+        nextBtn=document.getElementById('quizNextBtn'), restBtn=document.getElementById('quizRestartBtn');
+
+  function shuffle(arr){
+    const a=[...arr];
+    for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+    return a;
+  }
+  function render(){
+    if(!quizOrder.length) quizOrder=shuffle(QUIZ);
+    const q=quizOrder[qIdx]; answered=false; finished=false; nextBtn.disabled=true; nextBtn.textContent=(qIdx===QUIZ.length-1?'結果を見る →':'次の問題へ →');
+    progEl.textContent='問題 '+(qIdx+1)+' / '+QUIZ.length;
+    scoreEl.textContent='得点 '+score+' / '+qIdx;
+    barEl.style.width=((qIdx+1)/QUIZ.length*100)+'%';
+    qEl.textContent=q.q;
+    rEl.className='quiz-result'; rEl.textContent='';
+    cEl.innerHTML='';
+    shuffle(q.choices).forEach(c=>{
+      const b=document.createElement('button');
+      b.className='quiz-choice-btn'; b.type='button'; b.textContent=c;
+      b.addEventListener('click',()=>{
+        if(answered) return; answered=true; nextBtn.disabled=false;
+        const ok=(c===q.answer); if(ok) score++;
+        answers[qIdx]={question:q.q, selected:c, correct:q.answer, ok:ok};
+        scoreEl.textContent='得点 '+score+' / '+(qIdx+1);
+        cEl.querySelectorAll('.quiz-choice-btn').forEach(x=>{
+          x.disabled=true;
+          if(x.textContent===q.answer) x.classList.add('correct');
+          else if(x===b&&!ok) x.classList.add('wrong');
+        });
+        rEl.className='quiz-result '+(ok?'ok':'ng');
+        rEl.innerHTML=(ok?'✅ 正解！':'❌ 不正解。正解は「'+q.answer+'」')+
+          '<br><span style="font-weight:normal">'+q.exp+'</span>';
+      });
+      cEl.appendChild(b);
+    });
+  }
+  nextBtn.addEventListener('click',()=>{
+    if(!answered || finished) return;
+    if(qIdx<QUIZ.length-1){ qIdx++; render(); }
+    else{
+      finished=true;
+      const pct=Math.round(score/QUIZ.length*100);
+      let message='';
+      if(score===QUIZ.length) message='満点です！安全な操作の順序までよく理解できています。';
+      else if(pct>=80) message='よくできました。安全な使い方を理解しています。間違えた所だけ確認しましょう。';
+      else if(pct>=60) message='あと一歩です。「保護具・両手・軽く・動かす・異常なら止めて先生」を復習しましょう。';
+      else message='もう一度「各部の名称」と「安全な使い方」を確認してから挑戦しましょう。';
+      progEl.textContent='全10問 終了';
+      scoreEl.textContent='得点 '+score+' / '+QUIZ.length;
+      barEl.style.width='100%';
+      qEl.textContent='採点結果';
+      rEl.className='quiz-result fin';
+      const wrongAnswers=answers.filter(a=>a && !a.ok);
+      let reviewHtml='';
+      if(wrongAnswers.length===0){
+        reviewHtml='<div class="quiz-review-perfect">✅ 全問正解です。間違えた問題はありません。</div>';
+      }else{
+        reviewHtml='<div class="quiz-review"><div class="quiz-review-title">間違えた問題を確認しよう（'+wrongAnswers.length+'問）</div>'+
+          wrongAnswers.map((a,i)=>'<div class="quiz-review-item">'+
+            '<b>誤答 '+(i+1)+'</b>　'+a.question+'<br>'+
+            'あなたの答え：'+a.selected+'<br>'+
+            '<span class="quiz-review-answer">正解：'+a.correct+'</span></div>').join('')+
+          '</div>';
+      }
+      rEl.innerHTML='🎉 クイズ終了！<br>得点：<b>'+score+' / '+QUIZ.length+' 点（'+pct+'%）</b><br>'+message+reviewHtml;
+      cEl.innerHTML='';
+      nextBtn.disabled=true; nextBtn.textContent='採点済み';
+    }
+  });
+  restBtn.addEventListener('click',()=>{ if(!window.confirm('クイズを最初からやり直しますか？\n現在の回答と得点は消去されます。')) return; qIdx=0; score=0; answered=false; finished=false; answers=[]; quizOrder=shuffle(QUIZ); render(); });
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.addEventListener('click',()=>{ if(b.dataset.panel==='panel-quiz') render(); });
+  });
+  quizOrder=shuffle(QUIZ); render();
+})();
+</script>
+
+<script>
+/* CGの表示領域を1200:760に固定し、親領域内にcontain表示する */
+(function(){
+  const RATIO = 1200 / 760;
+  function fitWrap(wrap, layout, side){
+    if(!wrap || !layout) return;
+    const gap = parseFloat(getComputedStyle(layout).columnGap) || 0;
+    const sideW = side ? side.getBoundingClientRect().width : 0;
+    const availableW = Math.max(1, layout.clientWidth - sideW - gap);
+    const availableH = Math.max(1, layout.clientHeight);
+    let w = availableW;
+    let h = w / RATIO;
+    if(h > availableH){ h = availableH; w = h * RATIO; }
+    wrap.style.width = Math.floor(w) + 'px';
+    wrap.style.height = Math.floor(h) + 'px';
+  }
+  function fitAll(){
+    fitWrap(document.getElementById('cgWrap'), document.querySelector('#panel-parts .diagram-layout'), document.querySelector('#panel-parts .info-card'));
+    fitWrap(document.getElementById('simCanvasWrap'), document.querySelector('#panel-simulator .sim-layout'), document.querySelector('#panel-simulator .sim-ctrl-card'));
+  }
+  window.addEventListener('resize', fitAll);
+  document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>requestAnimationFrame(fitAll)));
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded',()=>requestAnimationFrame(fitAll));
+  else requestAnimationFrame(fitAll);
+  if('ResizeObserver' in window){
+    const ro = new ResizeObserver(()=>requestAnimationFrame(fitAll));
+    document.querySelectorAll('.diagram-layout,.sim-layout').forEach(el=>ro.observe(el));
+  }
+})();
+</script>
+
+</body>
+</html>

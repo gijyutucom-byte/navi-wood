@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>技術科 材料と加工 学習メニュー</title>
+<style>
+:root{
+  --brown:#6f4e37;--brown2:#8b6b4c;--ink:#2f2a24;--bg:#f5efe7;
+  --blue:#2468a2;--green:#37784c;--orange:#b86422;--purple:#64469a;
+  --shadow:0 8px 22px rgba(47,42,36,.13);--radius:17px;
+}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden}
+body{
+  font-family:"Hiragino Sans","Yu Gothic","Meiryo",sans-serif;color:var(--ink);
+  background:linear-gradient(145deg,#fbf8f4 0%,var(--bg) 100%);
+  display:grid;grid-template-rows:auto 1fr;
+}
+header{
+  min-height:52px;padding:5px 18px;color:#fff;text-align:center;
+  background:linear-gradient(135deg,var(--brown),var(--brown2));box-shadow:var(--shadow);
+  display:flex;flex-direction:column;justify-content:center;
+}
+header h1{margin:0;font-size:clamp(1.35rem,2vw,1.75rem);line-height:1.1;font-weight:900;letter-spacing:.02em}
+header p{margin:1px 0 0;font-size:clamp(.82rem,1.05vw,1rem);line-height:1.1;font-weight:700;opacity:.95}
+main{min-height:0;padding:6px 12px 8px;display:grid;grid-template-rows:auto auto;gap:7px;align-content:start}
+.menu-section{
+  min-height:0;border-radius:var(--radius);background:rgba(255,255,255,.92);box-shadow:var(--shadow);
+  padding:6px 8px;display:grid;grid-template-columns:minmax(210px,25%) 1fr;gap:7px;overflow:hidden;
+}
+.section-heading{
+  border-radius:11px;color:#fff;padding:5px 9px;display:flex;align-items:center;gap:8px;min-width:0;
+}
+.section-heading .big-icon{font-size:clamp(1.7rem,3.4vh,2.5rem);line-height:1;flex:0 0 auto}
+.section-heading h2{margin:0;font-size:clamp(1.12rem,1.5vw,1.42rem);line-height:1.18;font-weight:900}
+.section-heading p{margin:1px 0 0;font-size:clamp(.78rem,.95vw,.92rem);line-height:1.2;font-weight:700;opacity:.95}
+.section-heading.basic{background:linear-gradient(135deg,#245c8a,var(--blue))}
+.section-heading.wood{background:linear-gradient(135deg,#356642,var(--green))}
+.section-heading.student{background:linear-gradient(135deg,#975016,var(--orange))}
+.section-heading.teacher{background:linear-gradient(135deg,#50327f,var(--purple))}
+.cards{min-width:0;display:grid;gap:6px;align-items:stretch}
+.cards.one{grid-template-columns:1fr}
+.cards.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.cards.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.menu-card{
+  min-width:0;height:100%;border:2px solid #eadfD2;border-radius:14px;background:#fff;color:inherit;text-decoration:none;
+  padding:6px 8px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;
+  box-shadow:0 3px 10px rgba(47,42,36,.08);transition:.16s ease;overflow:hidden;
+}
+.menu-card:hover,.menu-card:focus-visible{transform:translateY(-2px);border-color:var(--brown2);box-shadow:0 8px 17px rgba(47,42,36,.16);outline:none}
+.card-icon svg{width:88%;height:88%;display:block}
+.card-icon{
+  width:clamp(48px,5.2vw,66px);height:clamp(48px,6.8vh,62px);border-radius:12px;
+  display:grid;place-items:center;font-size:clamp(2rem,4.8vh,3rem);background:#f6eee5;flex:0 0 auto;
+}
+.card-text{min-width:0}
+.card-text h3{margin:0;color:var(--brown);font-size:clamp(1.08rem,1.38vw,1.3rem);line-height:1.15;font-weight:900}
+.card-text p{margin:3px 0 0;color:#665b51;font-size:clamp(.78rem,.94vw,.94rem);line-height:1.25;font-weight:650}
+.open-mark{
+  width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--brown);color:#fff;
+  font-size:1.25rem;font-weight:900;flex:0 0 auto;
+}
+.teacher-badge,.student-badge{display:inline-block;margin-bottom:3px;padding:3px 9px;border-radius:999px;color:#fff;font-size:clamp(.72rem,.88vw,.84rem);font-weight:900}
+.student-badge{background:var(--orange)}.teacher-badge{background:var(--purple)}
+@media (min-width:901px){
+  main{grid-template-columns:1fr 1fr;grid-template-rows:auto auto;align-items:start;align-content:start}
+  .menu-section{grid-template-columns:1fr;grid-template-rows:auto auto;padding:6px;align-self:start}
+  .section-heading{padding:5px 9px}
+  .section-heading .big-icon{font-size:clamp(1.45rem,2.8vh,2rem)}
+  .section-heading h2{font-size:clamp(1.08rem,1.32vw,1.3rem)}
+  .section-heading p{display:none}
+  .cards.one,.cards.two,.cards.three{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cards.one .menu-card{grid-column:1/-1}
+  .cards.three .menu-card:first-child{grid-row:span 2}
+  .menu-card{grid-template-columns:auto 1fr;padding:5px 7px;gap:7px;min-height:62px}
+  .open-mark{display:none}
+  .card-icon{width:clamp(44px,3.8vw,58px);height:clamp(44px,5.8vh,54px)}
+  .card-text h3{font-size:clamp(1.02rem,1.16vw,1.18rem)}
+  .card-text p{font-size:clamp(.76rem,.84vw,.88rem);line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+}
+@media (max-height:700px) and (min-width:901px){
+  header{min-height:54px;padding:5px 16px} header p{display:none}
+  main{padding:7px 11px 9px;gap:7px}.menu-section{padding:6px;gap:6px}.section-heading{padding:5px 9px}
+  .card-icon{width:46px;height:46px;font-size:2rem}.menu-card{padding:5px 7px}.card-text p{display:none}
+}
+@media (max-width:900px){
+  html,body{height:auto;min-height:100%;overflow:auto}body{display:block}main{display:flex;flex-direction:column}
+  .menu-section{grid-template-columns:1fr}.cards.three{grid-template-columns:1fr}.cards.two{grid-template-columns:1fr 1fr}
+}
+@media (max-width:560px){.cards.two{grid-template-columns:1fr}.card-text p{display:none}.menu-card{min-height:76px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🪵 技術科「材料と加工」学習メニュー</h1>
+  <p>学びたい内容を選んでください</p>
+</header>
+<main>
+  <section class="menu-section">
+    <div class="section-heading basic">
+      <span class="big-icon">📐</span><div><h2>図法の基本</h2><p>立体を正しく表す図法を学びます</p></div>
+    </div>
+    <div class="cards one">
+      <a class="menu-card" href="zuho.html">
+        <div class="card-icon">📏</div><div class="card-text"><h3>図法の基本</h3><p>等角図・キャビネット図・第三角法を、図とシミュレータで学習します。</p></div><span class="open-mark">›</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="menu-section">
+    <div class="section-heading wood">
+      <span class="big-icon">🌳</span><div><h2>木材の特性と種類</h2><p>木材のつくり・性質・樹種を学びます</p></div>
+    </div>
+    <div class="cards three">
+      <a class="menu-card" href="wood_basic.html">
+        <div class="card-icon">🪵</div><div class="card-text"><h3>木材の基本</h3><p>木材各部の名称、年輪、繊維方向などの基本を学びます。</p></div><span class="open-mark">›</span>
+      </a>
+      <a class="menu-card" href="wood_zukan.html">
+        <div class="card-icon">🌲</div><div class="card-text"><h3>木材の種類</h3><p>代表的な針葉樹・広葉樹の特徴を図鑑形式で調べます。</p></div><span class="open-mark">›</span>
+      </a>
+      <a class="menu-card" href="wood_sori.html">
+        <div class="card-icon">〰️</div><div class="card-text"><h3>木材の反り</h3><p>含水率や木取りによる反りの違いと直し方を学びます。</p></div><span class="open-mark">›</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="menu-section">
+    <div class="section-heading student">
+      <span class="big-icon">🥽</span><div><h2>生徒も使う木工機械の安全な使い方</h2><p>生徒が授業で使う機械の安全な使い方を学びます</p></div>
+    </div>
+    <div class="cards two">
+      <a class="menu-card" href="belt_sander.html">
+        <div class="card-icon" aria-label="やすりがけ"><svg viewBox="0 0 80 60" role="img"><rect x="12" y="35" width="56" height="13" rx="4" fill="#a96f3d"/><path d="M18 34 L61 19 L67 31 L25 44 Z" fill="#d6b27f" stroke="#6f4e37" stroke-width="3"/><path d="M23 31 L58 19 M28 36 L63 24" stroke="#8b6b4c" stroke-width="2"/><path d="M12 51 H68" stroke="#6f4e37" stroke-width="4" stroke-linecap="round"/></svg></div><div class="card-text"><span class="student-badge">生徒向け</span><h3>ベルトサンダー</h3><p>やすりがけの基本、安全確認、加工操作をシミュレーションします。</p></div><span class="open-mark">›</span>
+      </a>
+      <a class="menu-card" href="drillpress.html">
+        <div class="card-icon" aria-label="ドリル"><svg viewBox="0 0 80 60" role="img"><rect x="18" y="10" width="38" height="18" rx="6" fill="#497aa3"/><rect x="48" y="15" width="14" height="8" rx="2" fill="#34495e"/><path d="M62 19 L70 23 L62 27 Z" fill="#6f4e37"/><path d="M31 28 V45 H43 V28" fill="#5b5b5b"/><path d="M37 45 V55" stroke="#34495e" stroke-width="5" stroke-linecap="round"/></svg></div><div class="card-text"><span class="student-badge">生徒向け</span><h3>ボール盤</h3><p>ドリルによる穴あけ、材料の固定、保護具と正しい操作手順を学びます。</p></div><span class="open-mark">›</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="menu-section">
+    <div class="section-heading teacher">
+      <span class="big-icon">👨‍🏫</span><div><h2>先生のみしか使わない木工機械の安全な使い方</h2><p>先生だけが操作する機械の安全な使い方と管理を学びます</p></div>
+    </div>
+    <div class="cards two">
+      <a class="menu-card" href="shokoban.html">
+        <div class="card-icon" aria-label="丸鋸"><svg viewBox="0 0 80 60" role="img"><rect x="10" y="38" width="60" height="10" rx="3" fill="#9b7653"/><circle cx="42" cy="34" r="18" fill="#d9dde2" stroke="#59636d" stroke-width="3"/><circle cx="42" cy="34" r="5" fill="#59636d"/><path d="M42 13 L46 18 L52 15 L53 22 L60 22 L57 29 L64 33 L57 37 L60 44 L53 44 L52 51 L46 48 L42 55 L38 48 L32 51 L31 44 L24 44 L27 37 L20 33 L27 29 L24 22 L31 22 L32 15 L38 18 Z" fill="none" stroke="#59636d" stroke-width="2"/></svg></div><div class="card-text"><span class="teacher-badge">教員向け</span><h3>昇降盤</h3><p>丸鋸による横引きを中心に、段取り・安全操作・指導上の注意を学びます。</p></div><span class="open-mark">›</span>
+      </a>
+      <a class="menu-card" href="jidokanna.html">
+        <div class="card-icon">⚙️</div><div class="card-text"><span class="teacher-badge">教員向け</span><h3>自動鉋盤</h3><p>各部名称、安全な使い方、加工前後の確認を学びます。</p></div><span class="open-mark">›</span>
+      </a>
+    </div>
+  </section>
+</main>
+</body>
+</html>
